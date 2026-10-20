@@ -10,12 +10,13 @@ import {
   Upload, 
   Volume2, 
   VolumeX, 
-  Sparkles 
+  Sparkles,
+  Swords
 } from 'lucide-react';
 import { sfx } from '../utils/audio';
 import { exportEntireGmDatabase } from '../utils/storage';
 
-export type ActiveTab = 'combat' | 'chase' | 'party' | 'bestiary' | 'netrunning' | 'reference';
+export type ActiveTab = 'combat' | 'encounters' | 'chase' | 'party' | 'bestiary' | 'netrunning' | 'reference';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -24,6 +25,7 @@ interface HeaderProps {
   onOpenImportModal: () => void;
   partyCount: number;
   combatantCount: number;
+  encountersCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,7 +34,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDiceRoller,
   onOpenImportModal,
   partyCount,
-  combatantCount
+  combatantCount,
+  encountersCount = 0
 }) => {
   const [isMuted, setIsMuted] = useState(sfx.getMuted());
 
@@ -44,6 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'combat', label: 'Боевой трекер', icon: <Skull className="w-4 h-4" />, badge: combatantCount },
+    { id: 'encounters', label: 'Энкаунтеры', icon: <Swords className="w-4 h-4 text-red-500" />, badge: encountersCount },
     { id: 'chase', label: 'Погони (Hot Pursuit)', icon: <ShieldAlert className="w-4 h-4 text-amber-400" /> },
     { id: 'party', label: 'Партия игроков', icon: <Users className="w-4 h-4" />, badge: partyCount },
     { id: 'bestiary', label: 'Бестиарий и Банды', icon: <ShieldAlert className="w-4 h-4" /> },

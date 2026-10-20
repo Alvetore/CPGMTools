@@ -29,11 +29,13 @@ export interface EncounterNpcItem {
   name: string;
   count: number;
   threatLevel: ThreatLevel;
+  type?: CombatantType;
   hpMax: number;
   headSp: number;
   bodySp: number;
   ref: number;
   dex: number;
+  move?: number;
   body: number;
   weapons: Weapon[];
   notes?: string;

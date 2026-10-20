@@ -20,7 +20,8 @@ import {
   Edit3,
   X,
   Target,
-  Zap
+  Zap,
+  Swords
 } from 'lucide-react';
 import { Combatant, ActiveCombatState, CombatLogEntry, Condition } from '../../types/combat';
 import { CriticalInjury, Weapon } from '../../types/character';
@@ -35,13 +36,15 @@ interface CombatTrackerViewProps {
   setCombatState: React.Dispatch<React.SetStateAction<ActiveCombatState>>;
   onOpenBestiaryModal: () => void;
   onAddPartyToCombat: () => void;
+  onOpenEncounters?: () => void;
 }
 
 export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   combatState,
   setCombatState,
   onOpenBestiaryModal,
-  onAddPartyToCombat
+  onAddPartyToCombat,
+  onOpenEncounters
 }) => {
   // Attack modal state (explicit attacker and target)
   const [attackModalData, setAttackModalData] = useState<{ attacker: Combatant; target?: Combatant } | null>(null);
@@ -211,6 +214,30 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
     }));
 
     addLog(`Брошена инициатива только для NPC (${npcs.length} участников). Значения игроков сохранены.`, 'system');
+  };
+
+  const handleClearAllCombatants = () => {
+    if (combatState.combatants.length === 0) return;
+    if (window.confirm(`Вы уверены, что хотите полностью очистить список участников (${combatState.combatants.length} комбатантов) и завершить текущий бой?`)) {
+      sfx.playClick();
+      setCombatState(prev => ({
+        ...prev,
+        isActive: false,
+        round: 1,
+        currentTurnIndex: 0,
+        combatants: [],
+        log: [
+          {
+            id: `log-${Date.now()}`,
+            timestamp: new Date().toLocaleTimeString(),
+            round: 1,
+            message: 'Список участников боя полностью очищен ГМом.',
+            type: 'system'
+          },
+          ...prev.log
+        ]
+      }));
+    }
   };
 
   const handleUpdateCombatant = (id: string, updates: Partial<Combatant>) => {
@@ -424,10 +451,18 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                     addLog('Бой завершен.', 'system');
                   }
                 }}
-                title="Сбросить бой"
-                className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-400 rounded border border-zinc-700 transition-colors"
+                title="Сбросить бой (раунд 1)"
+                className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-amber-400 rounded border border-zinc-700 transition-colors"
               >
                 <RotateCcw className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={handleClearAllCombatants}
+                title="Очистить всех участников боя"
+                className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-400 rounded border border-zinc-700 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -435,6 +470,17 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
 
         {/* Combat Management Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          {onOpenEncounters && (
+            <button
+              onClick={onOpenEncounters}
+              className="px-3 py-1.5 text-xs font-orbitron font-bold text-amber-400 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/60 rounded transition-all flex items-center gap-1.5"
+              title="Открыть заготовленные энкаунтеры"
+            >
+              <Swords className="w-3.5 h-3.5" />
+              ЭНКАУНТЕРЫ
+            </button>
+          )}
+
           <button
             onClick={handleRollAllInitiative}
             disabled={combatState.combatants.length === 0}
@@ -490,6 +536,16 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
           >
             <Plus className="w-4 h-4" />
           </button>
+
+          <button
+            onClick={handleClearAllCombatants}
+            disabled={combatState.combatants.length === 0}
+            className="px-3 py-1.5 text-xs font-orbitron font-bold text-red-400 bg-red-950/30 hover:bg-red-950/60 border border-red-800/60 rounded transition-all flex items-center gap-1.5 disabled:opacity-40"
+            title="Очистить всех участников боя"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">ОЧИСТИТЬ БОЙ</span>
+          </button>
         </div>
       </div>
 
@@ -532,14 +588,30 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
 
       {/* Combatants List */}
       <div className="space-y-2.5">
+        {combatState.combatants.length > 0 && (
+          <div className="flex items-center justify-between px-2 py-1.5 text-xs text-zinc-400 font-tech bg-zinc-950/60 border border-zinc-800/80 rounded-lg">
+            <span>
+              УЧАСТНИКИ БОЯ: <strong className="text-white font-orbitron">{combatState.combatants.length}</strong> (Игроки: {combatState.combatants.filter(c => c.type === 'player').length}, Враги/NPC: {combatState.combatants.filter(c => c.type !== 'player').length})
+            </span>
+            <button
+              onClick={handleClearAllCombatants}
+              className="text-red-400 hover:text-red-300 transition-colors flex items-center gap-1 text-[11px] uppercase font-bold"
+              title="Очистить всех участников боя"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Очистить список</span>
+            </button>
+          </div>
+        )}
+
         {combatState.combatants.length === 0 ? (
           <div className="bg-zinc-900/60 border border-dashed border-zinc-800 p-8 rounded-lg text-center space-y-3">
             <Skull className="w-10 h-10 text-zinc-600 mx-auto" />
             <h3 className="font-orbitron font-bold text-zinc-300">В бою пока нет участников</h3>
             <p className="text-xs text-zinc-500 max-w-md mx-auto font-tech">
-              Добавьте постоянную партию игроков одной кнопкой или выберите противников из официального бестиария Cyberpunk RED!
+              Добавьте постоянную партию игроков, выберите противников из бестиария или запустите готовый энкаунтер!
             </p>
-            <div className="flex justify-center gap-3 pt-2">
+            <div className="flex flex-wrap justify-center gap-3 pt-2">
               <button
                 onClick={onAddPartyToCombat}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-orbitron font-bold text-xs rounded clip-cyber-sm"
@@ -552,6 +624,15 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
               >
                 + ИЗ БЕСТИАРИЯ
               </button>
+              {onOpenEncounters && (
+                <button
+                  onClick={onOpenEncounters}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-black font-orbitron font-bold text-xs rounded clip-cyber-sm flex items-center gap-1.5"
+                >
+                  <Swords className="w-3.5 h-3.5" />
+                  + ЭНКАУНТЕРЫ
+                </button>
+              )}
             </div>
           </div>
         ) : (

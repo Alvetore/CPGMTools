@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header, ActiveTab } from './components/Header';
 import { CombatTrackerView } from './components/combat/CombatTrackerView';
+import { EncountersView } from './components/encounters/EncountersView';
 import { ChaseTrackerView } from './components/chase/ChaseTrackerView';
 import { PartyView } from './components/party/PartyView';
 import { BestiaryView } from './components/bestiary/BestiaryView';
@@ -11,7 +12,9 @@ import { DataManagementModal } from './components/common/DataManagementModal';
 
 import { PartyMember } from './types/party';
 import { ActiveCombatState, Combatant } from './types/combat';
-import { NpcTemplate } from './types/bestiary';
+import { NpcTemplate, Encounter } from './types/bestiary';
+import { OFFICIAL_CPR_BESTIARY } from './data/bestiaryData';
+import { DEFAULT_ENCOUNTERS } from './data/defaultEncounters';
 import { 
   loadStoredData, 
   saveStoredData, 
@@ -19,6 +22,7 @@ import {
   partyMemberToCombatant 
 } from './utils/storage';
 import { sfx } from './utils/audio';
+import { rollD10 } from './utils/dice';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('combat');
@@ -44,6 +48,11 @@ export const App: React.FC = () => {
     loadStoredData<NpcTemplate[]>(STORAGE_KEYS.CUSTOM_BESTIARY, [])
   );
 
+  // Encounters state
+  const [encounters, setEncounters] = useState<Encounter[]>(() => 
+    loadStoredData<Encounter[]>(STORAGE_KEYS.ENCOUNTERS, DEFAULT_ENCOUNTERS)
+  );
+
   // Modals
   const [isDiceModalOpen, setIsDiceModalOpen] = useState<boolean>(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
@@ -61,6 +70,10 @@ export const App: React.FC = () => {
     saveStoredData(STORAGE_KEYS.CUSTOM_BESTIARY, customBestiary);
   }, [customBestiary]);
 
+  useEffect(() => {
+    saveStoredData(STORAGE_KEYS.ENCOUNTERS, encounters);
+  }, [encounters]);
+
   // Reload state after backup restoration
   const reloadData = () => {
     setParty(loadStoredData<PartyMember[]>(STORAGE_KEYS.PARTY, []));
@@ -72,6 +85,7 @@ export const App: React.FC = () => {
       log: []
     }));
     setCustomBestiary(loadStoredData<NpcTemplate[]>(STORAGE_KEYS.CUSTOM_BESTIARY, []));
+    setEncounters(loadStoredData<Encounter[]>(STORAGE_KEYS.ENCOUNTERS, DEFAULT_ENCOUNTERS));
   };
 
   // Add party to combat
@@ -123,7 +137,7 @@ export const App: React.FC = () => {
         id: `c-npc-${npc.id}-${Date.now()}-${i}`,
         name: displayName,
         role: npc.threatLevel,
-        type: 'enemy',
+        type: npc.threatLevel === 'Drone' ? 'drone' : 'enemy',
         initiative: 0,
         ref: npc.stats.REF,
         dex: npc.stats.DEX,
@@ -163,6 +177,158 @@ export const App: React.FC = () => {
     setActiveTab('combat');
   };
 
+  // Encounters handlers
+  const handleSaveEncounter = (encounter: Encounter) => {
+    setEncounters(prev => {
+      const idx = prev.findIndex(e => e.id === encounter.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = encounter;
+        return copy;
+      }
+      return [encounter, ...prev];
+    });
+  };
+
+  const handleDeleteEncounter = (id: string) => {
+    setEncounters(prev => prev.filter(e => e.id !== id));
+  };
+
+  const handleDuplicateEncounter = (enc: Encounter) => {
+    sfx.playClick();
+    const copy: Encounter = {
+      ...enc,
+      id: `enc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      title: `${enc.title} (Копия)`,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    setEncounters(prev => [copy, ...prev]);
+  };
+
+  const handleStartCombatFromEncounter = (encounter: Encounter, includeParty: boolean) => {
+    sfx.playCritSuccess();
+    const combatants: Combatant[] = [];
+
+    // 1. Add Party if selected and available
+    if (includeParty && party.length > 0) {
+      party.forEach(member => {
+        combatants.push(partyMemberToCombatant(member, 0));
+      });
+    }
+
+    // 2. Add NPCs from encounter
+    encounter.npcs.forEach(npc => {
+      for (let i = 1; i <= npc.count; i++) {
+        const displayName = npc.count > 1 ? `${npc.name} #${i}` : npc.name;
+        combatants.push({
+          id: `c-enc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
+          name: displayName,
+          role: npc.threatLevel,
+          type: npc.type || (npc.threatLevel === 'Drone' ? 'drone' : 'enemy'),
+          initiative: 0,
+          ref: npc.ref,
+          dex: npc.dex,
+          move: npc.move || 5,
+          body: npc.body,
+          hpCurrent: npc.hpMax,
+          hpMax: npc.hpMax,
+          deathSavePenalties: 0,
+          headSp: npc.headSp,
+          headSpMax: npc.headSp,
+          bodySp: npc.bodySp,
+          bodySpMax: npc.bodySp,
+          weapons: npc.weapons || [],
+          conditions: [],
+          criticalInjuries: [],
+          notes: npc.notes || '',
+          isDefeated: false,
+          isDelayed: false
+        });
+      }
+    });
+
+    const newCombatState: ActiveCombatState = {
+      isActive: false, // Pre-combat phase so GM can review and roll initiative
+      round: 1,
+      currentTurnIndex: 0,
+      combatants,
+      log: [
+        {
+          id: `log-${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString(),
+          round: 1,
+          message: `Подготовлен энкаунтер: "${encounter.title}". Участников: ${combatants.length}${includeParty && party.length > 0 ? ` (партия: ${party.length} чел.)` : ''}.`,
+          type: 'system'
+        }
+      ]
+    };
+
+    setCombatState(newCombatState);
+    setActiveTab('combat');
+  };
+
+  const handleAddAsReinforcement = (encounter: Encounter) => {
+    sfx.playHit();
+    const newNpcs: Combatant[] = [];
+
+    encounter.npcs.forEach(npc => {
+      for (let i = 1; i <= npc.count; i++) {
+        const displayName = npc.count > 1 ? `${npc.name} #${i}` : npc.name;
+        const initVal = combatState.isActive ? rollD10() + npc.ref : 0;
+        newNpcs.push({
+          id: `c-reinf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
+          name: displayName,
+          role: npc.threatLevel,
+          type: npc.type || (npc.threatLevel === 'Drone' ? 'drone' : 'enemy'),
+          initiative: initVal,
+          ref: npc.ref,
+          dex: npc.dex,
+          move: npc.move || 5,
+          body: npc.body,
+          hpCurrent: npc.hpMax,
+          hpMax: npc.hpMax,
+          deathSavePenalties: 0,
+          headSp: npc.headSp,
+          headSpMax: npc.headSp,
+          bodySp: npc.bodySp,
+          bodySpMax: npc.bodySp,
+          weapons: npc.weapons || [],
+          conditions: [],
+          criticalInjuries: [],
+          notes: npc.notes || '',
+          isDefeated: false,
+          isDelayed: false
+        });
+      }
+    });
+
+    const updatedCombatants = [...combatState.combatants, ...newNpcs];
+    if (combatState.isActive) {
+      updatedCombatants.sort((a, b) => {
+        if (b.initiative !== a.initiative) return b.initiative - a.initiative;
+        return b.ref - a.ref;
+      });
+    }
+
+    setCombatState(prev => ({
+      ...prev,
+      combatants: updatedCombatants,
+      log: [
+        {
+          id: `log-${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString(),
+          round: prev.round,
+          message: `В активный бой прибыло подкрепление (Волна 2): "${encounter.title}" (+${newNpcs.length} комбатантов).`,
+          type: 'system'
+        },
+        ...prev.log
+      ]
+    }));
+
+    setActiveTab('combat');
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-rajdhani selection:bg-red-600 selection:text-white">
       
@@ -174,6 +340,7 @@ export const App: React.FC = () => {
         onOpenImportModal={() => setIsImportModalOpen(true)}
         partyCount={party.length}
         combatantCount={combatState.combatants.length}
+        encountersCount={encounters.length}
       />
 
       {/* Main App Content */}
@@ -184,6 +351,22 @@ export const App: React.FC = () => {
             setCombatState={setCombatState}
             onOpenBestiaryModal={() => setActiveTab('bestiary')}
             onAddPartyToCombat={handleAddPartyToCombat}
+            onOpenEncounters={() => setActiveTab('encounters')}
+          />
+        )}
+
+        {activeTab === 'encounters' && (
+          <EncountersView
+            encounters={encounters}
+            templates={[...OFFICIAL_CPR_BESTIARY, ...customBestiary]}
+            isCombatActive={combatState.isActive}
+            combatantsCount={combatState.combatants.length}
+            partyCount={party.length}
+            onSaveEncounter={handleSaveEncounter}
+            onDeleteEncounter={handleDeleteEncounter}
+            onDuplicateEncounter={handleDuplicateEncounter}
+            onStartCombat={handleStartCombatFromEncounter}
+            onAddAsReinforcement={handleAddAsReinforcement}
           />
         )}
 
