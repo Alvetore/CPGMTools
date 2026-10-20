@@ -15,7 +15,10 @@ import {
   Flame, 
   CheckCircle,
   Clock,
-  Sparkles
+  Sparkles,
+  Dices,
+  Edit3,
+  X
 } from 'lucide-react';
 import { Combatant, ActiveCombatState, CombatLogEntry, Condition } from '../../types/combat';
 import { CriticalInjury, Weapon } from '../../types/character';
@@ -41,6 +44,16 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   const [activeAttacker, setActiveAttacker] = useState<Combatant | null>(null);
   const [injuryModalCombatant, setInjuryModalCombatant] = useState<Combatant | null>(null);
   const [isLogExpanded, setIsLogExpanded] = useState<boolean>(true);
+
+  // Death Save manual/auto modal state
+  const [deathSaveModalTarget, setDeathSaveModalTarget] = useState<Combatant | null>(null);
+  const [deathSaveMode, setDeathSaveMode] = useState<'auto' | 'manual'>('auto');
+  const [manualDeathD10, setManualDeathD10] = useState<number>(5);
+  const [deathSaveResult, setDeathSaveResult] = useState<any | null>(null);
+
+  // Initiative manual/bulk modal state
+  const [isInitiativeModalOpen, setIsInitiativeModalOpen] = useState<boolean>(false);
+  const [initiativeDraft, setInitiativeDraft] = useState<{ [id: string]: number }>({});
 
   // Quick add manual combatant modal
   const [isQuickAddOpen, setIsQuickAddOpen] = useState<boolean>(false);
@@ -213,12 +226,13 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
     addLog(`${c.name}: ОЗ ${delta > 0 ? '+' : ''}${delta} (теперь ${newHp}/${c.hpMax}).`, delta < 0 ? 'damage' : 'heal');
   };
 
-  const handleDeathSaveRoll = (c: Combatant) => {
-    const result = executeDeathSave(c.body, c.deathSavePenalties || 0);
+  const handleDeathSaveRoll = (c: Combatant, manualRoll?: number) => {
+    const result = executeDeathSave(c.body, c.deathSavePenalties || 0, manualRoll);
     addLog(`${c.name}: ${result.message}`, 'deathsave');
     if (!result.isSaved) {
       handleUpdateCombatant(c.id, { isDefeated: true });
     }
+    return result;
   };
 
   const handleRemoveCombatant = (id: string) => {
@@ -346,7 +360,22 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
             disabled={combatState.combatants.length === 0}
             className="px-3 py-1.5 text-xs font-orbitron font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-600/50 hover:bg-cyan-900/60 rounded transition-all"
           >
-            БРОСИТЬ ИНИЦИАТИВУ ВСЕМ
+            БРОСИТЬ ИНИЦИАТИВУ ВСЕМ (АВТО)
+          </button>
+
+          <button
+            onClick={() => {
+              const draft: { [id: string]: number } = {};
+              combatState.combatants.forEach(c => {
+                draft[c.id] = c.initiative > c.ref ? Math.min(10, Math.max(1, c.initiative - c.ref)) : 5;
+              });
+              setInitiativeDraft(draft);
+              setIsInitiativeModalOpen(true);
+            }}
+            disabled={combatState.combatants.length === 0}
+            className="px-3 py-1.5 text-xs font-orbitron font-bold text-amber-300 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/60 rounded transition-all"
+          >
+            ✍️ ВВОД ИНИЦИАТИВЫ
           </button>
 
           <button
@@ -490,7 +519,12 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                         {/* Death save button if 0 HP */}
                         {c.hpCurrent <= 0 && (
                           <button
-                            onClick={() => handleDeathSaveRoll(c)}
+                            onClick={() => {
+                              setDeathSaveModalTarget(c);
+                              setDeathSaveResult(null);
+                              setManualDeathD10(5);
+                              setDeathSaveMode('auto');
+                            }}
                             className="text-[10px] font-orbitron font-bold px-2 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded animate-pulse"
                           >
                             Спасбросок смерти (Штраф +{c.deathSavePenalties})
@@ -802,6 +836,236 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Death Save Modal with Manual/Auto input */}
+      {deathSaveModalTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-purple-600/70 rounded-lg max-w-md w-full p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(168,85,247,0.25)]">
+            <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+              <div className="flex items-center gap-2">
+                <Skull className="w-5 h-5 text-purple-400" />
+                <h3 className="font-orbitron font-bold text-white text-base">СПАСБРОСОК ОТ СМЕРТИ</h3>
+              </div>
+              <button
+                onClick={() => setDeathSaveModalTarget(null)}
+                className="text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-zinc-950 p-3 rounded border border-zinc-800 text-xs font-tech space-y-1">
+              <div className="text-white font-bold text-sm">{deathSaveModalTarget.name}</div>
+              <div className="text-zinc-400 flex items-center justify-between">
+                <span>Характеристика ТЕЛО: <strong className="text-white">{deathSaveModalTarget.body}</strong></span>
+                <span>Штраф раундов смерти: <strong className="text-purple-400">+{deathSaveModalTarget.deathSavePenalties || 0}</strong></span>
+              </div>
+              <div className="text-[11px] text-zinc-500 pt-1">
+                Для выживания нужно выбросить на 1d10 + штраф СТРОГО МЕНЬШЕ характеристики ТЕЛО. Выпадение 10 — мгновенная смерть.
+              </div>
+            </div>
+
+            {/* Mode switch */}
+            <div className="flex items-center justify-between bg-zinc-950 p-2 rounded border border-zinc-800">
+              <span className="text-zinc-400 text-xs font-tech font-bold uppercase">Режим броска:</span>
+              <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800 text-xs font-tech">
+                <button
+                  type="button"
+                  onClick={() => setDeathSaveMode('auto')}
+                  className={`px-2.5 py-1 rounded flex items-center gap-1 transition-colors ${
+                    deathSaveMode === 'auto' ? 'bg-purple-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Dices className="w-3.5 h-3.5" />
+                  Автобросок
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeathSaveMode('manual')}
+                  className={`px-2.5 py-1 rounded flex items-center gap-1 transition-colors ${
+                    deathSaveMode === 'manual' ? 'bg-purple-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Ручной кубик
+                </button>
+              </div>
+            </div>
+
+            {/* Manual input */}
+            {deathSaveMode === 'manual' && (
+              <div className="p-3 bg-zinc-950 rounded border border-purple-500/50 space-y-2 animate-in fade-in text-xs font-tech">
+                <div className="flex items-center gap-3">
+                  <span className="text-zinc-300">Выпало на 1d10 (1–10):</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={manualDeathD10}
+                    onChange={(e) => setManualDeathD10(parseInt(e.target.value) || 1)}
+                    className="w-16 bg-zinc-900 border border-purple-500 rounded px-2.5 py-1 text-center font-bold text-purple-300 text-sm"
+                  />
+                  {manualDeathD10 === 10 && (
+                    <span className="text-red-400 font-bold animate-pulse">Крит. провал (10)!</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                const res = handleDeathSaveRoll(
+                  deathSaveModalTarget,
+                  deathSaveMode === 'manual' ? manualDeathD10 : undefined
+                );
+                setDeathSaveResult(res);
+              }}
+              className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md uppercase tracking-wider"
+            >
+              {deathSaveMode === 'manual' ? 'Применить ручной бросок' : 'Бросить 1d10 (автоматически)'}
+            </button>
+
+            {deathSaveResult && (
+              <div className={`p-3.5 rounded border text-xs font-tech ${
+                deathSaveResult.isSaved ? 'bg-emerald-950/60 border-emerald-600 text-emerald-200' : 'bg-red-950/70 border-red-600 text-red-200'
+              }`}>
+                <div className="font-orbitron font-bold text-sm mb-1">
+                  {deathSaveResult.isSaved ? 'Спасбросок успешен! Персонаж жив.' : 'Спасбросок провален! Персонаж погибает.'}
+                </div>
+                <div>{deathSaveResult.message}</div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2 border-t border-zinc-800">
+              <button
+                onClick={() => setDeathSaveModalTarget(null)}
+                className="px-4 py-1.5 text-xs text-zinc-400 hover:text-white rounded"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk/Manual Initiative Modal */}
+      {isInitiativeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-lg w-full max-h-[85vh] overflow-y-auto p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(245,158,11,0.25)]">
+            <div className="flex items-center justify-between border-b border-amber-900/60 pb-3">
+              <div className="flex items-center gap-2">
+                <Dices className="w-5 h-5 text-amber-400" />
+                <h3 className="font-orbitron font-bold text-white text-base">ВВОД И РАСЧЕТ ИНИЦИАТИВЫ</h3>
+              </div>
+              <button
+                onClick={() => setIsInitiativeModalOpen(false)}
+                className="text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs font-tech text-zinc-400">
+              Введите результат физического кубика 1d10 для каждого участника или бросьте случайно. Инициатива = РЕФ + 1d10.
+            </p>
+
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  const draft: { [id: string]: number } = {};
+                  combatState.combatants.forEach(c => {
+                    draft[c.id] = rollD10();
+                  });
+                  setInitiativeDraft(draft);
+                }}
+                className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-300 text-xs font-tech font-bold rounded border border-zinc-700 flex items-center gap-1.5"
+              >
+                <Dices className="w-3.5 h-3.5" />
+                Бросить случайные 1d10 для всех
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {combatState.combatants.map(c => {
+                const rolled = initiativeDraft[c.id] ?? 5;
+                const total = c.ref + rolled;
+                return (
+                  <div key={c.id} className="flex items-center justify-between bg-zinc-950 p-2.5 rounded border border-zinc-800 text-xs font-tech">
+                    <div>
+                      <span className="font-bold text-white mr-2">{c.name}</span>
+                      <span className="text-zinc-500">РЕФ: {c.ref}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-400 text-[11px]">1d10:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={rolled}
+                        onChange={(e) => {
+                          const val = Math.min(10, Math.max(1, parseInt(e.target.value) || 1));
+                          setInitiativeDraft(prev => ({ ...prev, [c.id]: val }));
+                        }}
+                        className="w-12 bg-zinc-900 border border-amber-500/70 rounded px-1.5 py-0.5 text-center font-bold text-amber-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInitiativeDraft(prev => ({ ...prev, [c.id]: rollD10() }));
+                        }}
+                        title="Бросить 1d10 для этого участника"
+                        className="p-1 text-zinc-400 hover:text-white"
+                      >
+                        🎲
+                      </button>
+                      <span className="font-orbitron font-bold text-white min-w-[45px] text-right">
+                        = {total}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setIsInitiativeModalOpen(false)}
+                className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white rounded"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  sfx.playDiceRoll();
+                  const updated = combatState.combatants.map(c => {
+                    const rolled = initiativeDraft[c.id] ?? 5;
+                    return { ...c, initiative: c.ref + rolled };
+                  });
+                  // Sort descending by initiative, tie-break by REF
+                  updated.sort((a, b) => {
+                    if (b.initiative !== a.initiative) return b.initiative - a.initiative;
+                    return b.ref - a.ref;
+                  });
+                  setCombatState(prev => ({
+                    ...prev,
+                    combatants: updated,
+                    currentTurnIndex: 0
+                  }));
+                  addLog('Инициатива обновлена и отсортирована.', 'system');
+                  setIsInitiativeModalOpen(false);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded clip-cyber-sm"
+              >
+                Применить и отсортировать
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

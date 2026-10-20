@@ -14,7 +14,10 @@ import {
   FastForward, 
   Zap,
   CheckCircle,
-  HelpCircle
+  HelpCircle,
+  Dices,
+  Edit3,
+  X
 } from 'lucide-react';
 import { 
   ChaseVehicle, 
@@ -30,6 +33,19 @@ export const ChaseTrackerView: React.FC = () => {
   const [chaseRound, setChaseRound] = useState<number>(1);
   const [chaseLog, setChaseLog] = useState<string[]>([]);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
+  const [isRoundPositioningModalOpen, setIsRoundPositioningModalOpen] = useState<boolean>(false);
+  const [positioningDraft, setPositioningDraft] = useState<{ [id: string]: number }>({});
+
+  // Maneuver execution modal state
+  const [activeManeuverModal, setActiveManeuverModal] = useState<{
+    vehicle: ChaseVehicle;
+    maneuverId: string;
+    title: string;
+    dv: number;
+  } | null>(null);
+  const [maneuverMode, setManeuverMode] = useState<'auto' | 'manual'>('auto');
+  const [maneuverManualD10, setManeuverManualD10] = useState<number>(5);
+  const [maneuverResult, setManeuverResult] = useState<any | null>(null);
 
   // Initial sample vehicles
   const [vehicles, setVehicles] = useState<ChaseVehicle[]>([
@@ -104,7 +120,7 @@ export const ChaseTrackerView: React.FC = () => {
   };
 
   // Positioning check at the end of the round
-  const handleRollPositioningForVehicle = (v: ChaseVehicle) => {
+  const handleRollPositioningForVehicle = (v: ChaseVehicle, manualD10?: number) => {
     const { effectiveSpeed, isHalved } = getEffectiveSpeed(v);
     if (effectiveSpeed === 'crashed') {
       sfx.playCritFailure();
@@ -114,7 +130,13 @@ export const ChaseTrackerView: React.FC = () => {
     }
 
     const dv = SPEED_POSITIONING_DVS[effectiveSpeed];
-    const check = executeCPRCheck(v.driverBase, 0, 0, dv);
+    const check = executeCPRCheck(
+      v.driverBase, 
+      0, 
+      0, 
+      dv,
+      manualD10 !== undefined ? { firstDie: manualD10 } : undefined
+    );
 
     if (check.isSuccess) {
       sfx.playCritSuccess();
@@ -125,12 +147,13 @@ export const ChaseTrackerView: React.FC = () => {
         isEscaped: isNowEscaped,
         isPitSuffering: false // PIT effect clears after round
       });
-      addLog(`🚗 ${v.name} (${v.driverName}): Проверка позиционирования УСПЕХ (${check.grandTotal} vs СЛ ${dv}). Продвижение на клетку ${nextSquare}!`);
+      addLog(`🚗 ${v.name} (${v.driverName}): Проверка позиционирования УСПЕХ (${check.grandTotal} vs СЛ ${dv}${manualD10 !== undefined ? ', ручной d10: ' + manualD10 : ''}). Продвижение на клетку ${nextSquare}!`);
     } else {
       sfx.playCritFailure();
       handleUpdateVehicle(v.id, { isPitSuffering: false });
-      addLog(`⚠️ ${v.name} (${v.driverName}): Проверка позиционирования ПРОВАЛ (${check.grandTotal} vs СЛ ${dv}). Остаётся на клетке ${v.gridSquare}.`);
+      addLog(`⚠️ ${v.name} (${v.driverName}): Проверка позиционирования ПРОВАЛ (${check.grandTotal} vs СЛ ${dv}${manualD10 !== undefined ? ', ручной d10: ' + manualD10 : ''}). Остаётся на клетке ${v.gridSquare}.`);
     }
+    return check;
   };
 
   const handleRollAllPositioning = () => {
@@ -160,10 +183,14 @@ export const ChaseTrackerView: React.FC = () => {
   };
 
   // Maneuver actions
-  const handleExecuteManeuver = (v: ChaseVehicle, mId: string) => {
+  const handleExecuteManeuver = (v: ChaseVehicle, mId: string, manualD10?: number) => {
     sfx.playClick();
+    const manualInput = manualD10 !== undefined ? { firstDie: manualD10 } : undefined;
+    let checkResult = null;
+
     if (mId === 'm-nos') {
-      const check = executeCPRCheck(v.driverBase, 0, 0, 13);
+      const check = executeCPRCheck(v.driverBase, 0, 0, 13, manualInput);
+      checkResult = check;
       if (check.isSuccess) {
         sfx.playCritSuccess();
         const nextSquare = v.gridSquare + 1;
@@ -180,7 +207,8 @@ export const ChaseTrackerView: React.FC = () => {
         alert('Манёвр PIT можно выполнять только против ТС, находящегося на одной клетке (бок о бок)!');
         return;
       }
-      const check = executeCPRCheck(v.driverBase, 0, 0, 15);
+      const check = executeCPRCheck(v.driverBase, 0, 0, 15, manualInput);
+      checkResult = check;
       if (check.isSuccess) {
         sfx.playCritSuccess();
         handleUpdateVehicle(target.id, { isPitSuffering: true });
@@ -195,7 +223,8 @@ export const ChaseTrackerView: React.FC = () => {
         alert('Манёвр «Выход вперёд» можно выполнять только против ТС на одной клетке (бок о бок)!');
         return;
       }
-      const check = executeCPRCheck(v.driverBase, 0, 0, 17);
+      const check = executeCPRCheck(v.driverBase, 0, 0, 17, manualInput);
+      checkResult = check;
       if (check.isSuccess) {
         sfx.playCritSuccess();
         const nextSquare = v.gridSquare + 1;
@@ -209,7 +238,8 @@ export const ChaseTrackerView: React.FC = () => {
       handleUpdateVehicle(v.id, { isPulledClose: !v.isPulledClose });
       addLog(`🎯 ${v.name}: смещение к ближнему краю полосы дальности (доступен абордаж и ближний бой).`);
     } else if (mId === 'm-ram') {
-      const check = executeCPRCheck(v.driverBase, 0, 0, 17);
+      const check = executeCPRCheck(v.driverBase, 0, 0, 17, manualInput);
+      checkResult = check;
       if (check.isSuccess) {
         sfx.playHit();
         addLog(`💥 ${v.name} успешно таранит цель на полной скорости! Примените урон ПСП обоим ТС.`);
@@ -218,6 +248,7 @@ export const ChaseTrackerView: React.FC = () => {
         addLog(`⚠️ ${v.name}: провал тарана (${check.grandTotal} vs СЛ 17).`);
       }
     }
+    return checkResult;
   };
 
   const handleAddVehicle = (e: React.FormEvent) => {
@@ -272,10 +303,27 @@ export const ChaseTrackerView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleRollAllPositioning}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-black text-xs rounded transition-all clip-cyber-btn shadow-md"
+            className="flex items-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md"
           >
             <FastForward className="w-4 h-4 fill-current" />
-            <span>ИТОГ РАУНДА (БРОСОК ПОЗИЦИОНИРОВАНИЯ)</span>
+            <span>ИТОГ РАУНДА (АВТО)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              const draft: { [id: string]: number } = {};
+              vehicles.forEach(v => {
+                if (!v.isWrecked && !v.isEscaped) {
+                  draft[v.id] = 5;
+                }
+              });
+              setPositioningDraft(draft);
+              setIsRoundPositioningModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 bg-amber-950/60 border border-amber-600/70 hover:bg-amber-900/60 text-amber-300 font-orbitron font-bold text-xs rounded transition-all"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>✍️ РУЧНОЙ ВВОД РАУНДА</span>
           </button>
 
           <button
@@ -484,31 +532,98 @@ export const ChaseTrackerView: React.FC = () => {
 
               {/* Maneuvers Action Buttons */}
               <div className="space-y-1.5 pt-1 border-t border-zinc-800/80">
-                <span className="text-[10px] text-zinc-500 uppercase font-tech block">Манёвры водителя (Hot Pursuit):</span>
+                <span className="text-[10px] text-zinc-500 uppercase font-tech block">Манёвры и проверки (Hot Pursuit):</span>
                 <div className="flex flex-wrap gap-1.5">
                   <button
-                    onClick={() => handleExecuteManeuver(v, 'm-nos')}
+                    onClick={() => {
+                      const { effectiveSpeed } = getEffectiveSpeed(v);
+                      if (effectiveSpeed === 'crashed') {
+                        handleRollPositioningForVehicle(v);
+                        return;
+                      }
+                      setActiveManeuverModal({
+                        vehicle: v,
+                        maneuverId: 'positioning',
+                        title: `Позиционирование (${effectiveSpeed} СКО)`,
+                        dv: SPEED_POSITIONING_DVS[effectiveSpeed]
+                      });
+                      setManeuverResult(null);
+                      setManeuverMode('auto');
+                      setManeuverManualD10(5);
+                    }}
+                    className="px-2 py-1 bg-amber-950/70 border border-amber-500 hover:bg-amber-900 text-amber-300 rounded text-xs font-tech font-bold"
+                  >
+                    🎲 Позиция
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveManeuverModal({
+                        vehicle: v,
+                        maneuverId: 'm-nos',
+                        title: '⚡ Нитро NOS (СЛ 13)',
+                        dv: 13
+                      });
+                      setManeuverResult(null);
+                      setManeuverMode('auto');
+                      setManeuverManualD10(5);
+                    }}
                     className="px-2 py-1 bg-amber-950/60 border border-amber-600/70 hover:bg-amber-900/60 text-amber-300 rounded text-xs font-tech font-bold"
                   >
-                    ⚡ NOS (СЛ 13)
+                    ⚡ NOS (13)
                   </button>
                   <button
-                    onClick={() => handleExecuteManeuver(v, 'm-pit')}
+                    onClick={() => {
+                      setActiveManeuverModal({
+                        vehicle: v,
+                        maneuverId: 'm-pit',
+                        title: '🚓 Манёвр PIT (СЛ 15)',
+                        dv: 15
+                      });
+                      setManeuverResult(null);
+                      setManeuverMode('auto');
+                      setManeuverManualD10(5);
+                    }}
                     className="px-2 py-1 bg-blue-950/60 border border-blue-600/70 hover:bg-blue-900/60 text-blue-300 rounded text-xs font-tech font-bold"
                   >
-                    🚓 Манёвр PIT (СЛ 15)
+                    🚓 PIT (15)
                   </button>
                   <button
-                    onClick={() => handleExecuteManeuver(v, 'm-overtake')}
+                    onClick={() => {
+                      setActiveManeuverModal({
+                        vehicle: v,
+                        maneuverId: 'm-overtake',
+                        title: '🏎️ Опережение (СЛ 17)',
+                        dv: 17
+                      });
+                      setManeuverResult(null);
+                      setManeuverMode('auto');
+                      setManeuverManualD10(5);
+                    }}
                     className="px-2 py-1 bg-red-950/60 border border-red-600/70 hover:bg-red-900/60 text-red-300 rounded text-xs font-tech font-bold"
                   >
-                    🏎️ Опережение (СЛ 17)
+                    🏎️ Обгон (17)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveManeuverModal({
+                        vehicle: v,
+                        maneuverId: 'm-ram',
+                        title: '💥 Таран на скорости (СЛ 17)',
+                        dv: 17
+                      });
+                      setManeuverResult(null);
+                      setManeuverMode('auto');
+                      setManeuverManualD10(5);
+                    }}
+                    className="px-2 py-1 bg-purple-950/60 border border-purple-600/70 hover:bg-purple-900/60 text-purple-300 rounded text-xs font-tech font-bold"
+                  >
+                    💥 Таран (17)
                   </button>
                   <button
                     onClick={() => handleExecuteManeuver(v, 'm-pull-close')}
                     className="px-2 py-1 bg-zinc-950 border border-zinc-700 hover:bg-zinc-800 text-zinc-300 rounded text-xs font-tech"
                   >
-                    🎯 Подтянуться ближе
+                    🎯 Подтянуться
                   </button>
                 </div>
               </div>
@@ -705,6 +820,255 @@ export const ChaseTrackerView: React.FC = () => {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Round Positioning Check Modal (Auto/Manual) */}
+      {isRoundPositioningModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-lg w-full max-h-[85vh] overflow-y-auto p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(245,158,11,0.25)] text-xs font-tech">
+            <div className="flex items-center justify-between border-b border-amber-900/60 pb-3">
+              <div className="flex items-center gap-2">
+                <FastForward className="w-5 h-5 text-amber-400" />
+                <h3 className="font-orbitron font-bold text-white text-base">ИТОГ РАУНДА {chaseRound}: ПОЗИЦИОНИРОВАНИЕ</h3>
+              </div>
+              <button
+                onClick={() => setIsRoundPositioningModalOpen(false)}
+                className="text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-zinc-400">
+              В конце каждого раунда погони каждый водитель проходит проверку навыка управления ТС против СЛ своей боевой скорости. Введите выпавший на столе 1d10 или бросьте автоматически.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                const draft: { [id: string]: number } = {};
+                vehicles.forEach(v => {
+                  if (!v.isWrecked && !v.isEscaped) {
+                    draft[v.id] = rollD10();
+                  }
+                });
+                setPositioningDraft(draft);
+              }}
+              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-amber-300 font-bold rounded border border-zinc-700 flex items-center gap-1.5"
+            >
+              <Dices className="w-3.5 h-3.5" />
+              Бросить случайные 1d10 для всех ТС
+            </button>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {vehicles.filter(v => !v.isWrecked && !v.isEscaped).map(v => {
+                const { effectiveSpeed } = getEffectiveSpeed(v);
+                const dv = effectiveSpeed !== 'crashed' ? SPEED_POSITIONING_DVS[effectiveSpeed] : 99;
+                const rolled = positioningDraft[v.id] ?? 5;
+                const total = v.driverBase + rolled;
+                const isPass = total > dv;
+
+                return (
+                  <div key={v.id} className="bg-zinc-950 p-2.5 rounded border border-zinc-800 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <strong className="text-white">{v.name}</strong>
+                        <span className="text-zinc-400 ml-1.5">({v.driverName}, База {v.driverBase})</span>
+                      </div>
+                      <span className="font-orbitron font-bold text-amber-400">
+                        {effectiveSpeed} СКО ➔ СЛ {dv}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-400 text-[11px]">1d10:</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={rolled}
+                          onChange={(e) => {
+                            const val = Math.min(10, Math.max(1, parseInt(e.target.value) || 1));
+                            setPositioningDraft(prev => ({ ...prev, [v.id]: val }));
+                          }}
+                          className="w-12 bg-zinc-900 border border-amber-500 rounded px-1.5 py-0.5 text-center font-bold text-amber-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPositioningDraft(prev => ({ ...prev, [v.id]: rollD10() }));
+                          }}
+                          className="text-zinc-400 hover:text-white p-1"
+                          title="Бросить 1d10"
+                        >
+                          🎲
+                        </button>
+                      </div>
+
+                      <div className="font-orbitron font-bold text-xs">
+                        {total} vs СЛ {dv} ➔{' '}
+                        <span className={isPass ? 'text-emerald-400' : 'text-red-400'}>
+                          {isPass ? 'УСПЕХ (+1 клетка)' : 'ПРОВАЛ (на месте)'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setIsRoundPositioningModalOpen(false)}
+                className="px-3 py-1.5 text-zinc-400 hover:text-white rounded"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  vehicles.forEach(v => {
+                    if (!v.isWrecked && !v.isEscaped) {
+                      const rolled = positioningDraft[v.id] ?? 5;
+                      handleRollPositioningForVehicle(v, rolled);
+                    }
+                  });
+                  setChaseRound(r => r + 1);
+                  addLog(`--- Конец раунда ${chaseRound}. Начало раунда ${chaseRound + 1} погони ---`);
+                  setIsRoundPositioningModalOpen(false);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded clip-cyber-sm"
+              >
+                Применить итоги раунда
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Maneuver Execution Modal (Auto / Manual) */}
+      {activeManeuverModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-cyan-600/70 rounded-lg max-w-md w-full p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(6,182,212,0.25)] text-xs font-tech">
+            <div className="flex items-center justify-between border-b border-cyan-900/60 pb-3">
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-cyan-400" />
+                <h3 className="font-orbitron font-bold text-white text-base">{activeManeuverModal.title}</h3>
+              </div>
+              <button
+                onClick={() => setActiveManeuverModal(null)}
+                className="text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-zinc-950 p-3 rounded border border-zinc-800 space-y-1">
+              <div>
+                <strong className="text-white">{activeManeuverModal.vehicle.name}</strong>
+                <span className="text-zinc-400 ml-2">Водитель: {activeManeuverModal.vehicle.driverName}</span>
+              </div>
+              <div className="flex items-center justify-between text-zinc-300">
+                <span>База навыка водителя: <strong className="text-amber-400">{activeManeuverModal.vehicle.driverBase}</strong></span>
+                <span>Сложность (СЛ / DV): <strong className="text-white font-orbitron">{activeManeuverModal.dv}</strong></span>
+              </div>
+            </div>
+
+            {/* Mode switch */}
+            <div className="flex items-center justify-between bg-zinc-950 p-2 rounded border border-zinc-800">
+              <span className="text-zinc-400 font-bold uppercase text-[11px]">Режим проверки:</span>
+              <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setManeuverMode('auto')}
+                  className={`px-2.5 py-1 rounded flex items-center gap-1 transition-colors ${
+                    maneuverMode === 'auto' ? 'bg-cyan-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Dices className="w-3.5 h-3.5" />
+                  Автобросок
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManeuverMode('manual')}
+                  className={`px-2.5 py-1 rounded flex items-center gap-1 transition-colors ${
+                    maneuverMode === 'manual' ? 'bg-cyan-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Ручной ввод 1d10
+                </button>
+              </div>
+            </div>
+
+            {/* Manual 1d10 input */}
+            {maneuverMode === 'manual' && (
+              <div className="p-3 bg-zinc-950 rounded border border-cyan-500/50 space-y-2 animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <span className="text-zinc-300">Результат 1d10 (1–10):</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={maneuverManualD10}
+                    onChange={(e) => setManeuverManualD10(parseInt(e.target.value) || 1)}
+                    className="w-16 bg-zinc-900 border border-cyan-500 rounded px-2.5 py-1 text-center font-bold text-cyan-300 text-sm"
+                  />
+                  {maneuverManualD10 === 10 && (
+                    <span className="text-emerald-400 font-bold animate-pulse">Крит. успех (10)!</span>
+                  )}
+                  {maneuverManualD10 === 1 && (
+                    <span className="text-red-400 font-bold animate-pulse">Крит. провал (1)!</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                let res;
+                if (activeManeuverModal.maneuverId === 'positioning') {
+                  res = handleRollPositioningForVehicle(
+                    activeManeuverModal.vehicle,
+                    maneuverMode === 'manual' ? maneuverManualD10 : undefined
+                  );
+                } else {
+                  res = handleExecuteManeuver(
+                    activeManeuverModal.vehicle,
+                    activeManeuverModal.maneuverId,
+                    maneuverMode === 'manual' ? maneuverManualD10 : undefined
+                  );
+                }
+                setManeuverResult(res);
+              }}
+              className="w-full py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md uppercase tracking-wider"
+            >
+              {maneuverMode === 'manual' ? 'Применить ручной бросок манёвра' : 'Выполнить бросок (авто)'}
+            </button>
+
+            {maneuverResult && (
+              <div className={`p-3 rounded border text-xs font-tech ${
+                maneuverResult.isSuccess ? 'bg-emerald-950/60 border-emerald-600 text-emerald-200' : 'bg-red-950/60 border-red-600 text-red-200'
+              }`}>
+                <div className="font-orbitron font-bold text-sm mb-1">
+                  {maneuverResult.isSuccess ? 'УСПЕШНЫЙ МАНЁВР!' : 'ПРОВАЛ МАНЁВРА!'}
+                </div>
+                <div>{maneuverResult.textSummary}</div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2 border-t border-zinc-800">
+              <button
+                onClick={() => setActiveManeuverModal(null)}
+                className="px-4 py-1.5 text-zinc-400 hover:text-white rounded"
+              >
+                Закрыть
+              </button>
             </div>
           </div>
         </div>

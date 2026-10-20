@@ -9,6 +9,8 @@ export interface ApplyDamageParams {
   isMelee?: boolean; // Melee weapons and Martial Arts ignore half armor SP
   isApAmmo?: boolean; // AP ammo ablates SP by 2 instead of 1
   isCritInjuryRoll?: boolean; // If two 6s rolled, +5 bonus damage and auto injury
+  manualInjuryRoll2d6?: number; // Optional manual 2d6 roll (2-12)
+  manualInjuryId?: string; // Optional manual selection of specific injury ID
 }
 
 export interface DamageResolutionResult {
@@ -30,7 +32,9 @@ export function resolveCprDamage(params: ApplyDamageParams): DamageResolutionRes
     targetSp,
     isMelee = false,
     isApAmmo = false,
-    isCritInjuryRoll = false
+    isCritInjuryRoll = false,
+    manualInjuryRoll2d6,
+    manualInjuryId
   } = params;
 
   // Melee attacks ignore half armor SP (round down in CPR)
@@ -60,14 +64,22 @@ export function resolveCprDamage(params: ApplyDamageParams): DamageResolutionRes
     critBonusHp = 5;
     finalHpLoss += critBonusHp;
 
-    // Roll 2d6 for injury
-    const d1 = rollD6();
-    const d2 = rollD6();
-    const roll2d6 = d1 + d2;
     const injuryPool = location === 'head' ? CPR_CRITICAL_INJURIES_HEAD : CPR_CRITICAL_INJURIES_BODY;
-    const match = injuryPool.find(i => i.rollNumber === roll2d6);
-    if (match) {
-      criticalInjury = { ...match, isActive: true };
+
+    if (manualInjuryId) {
+      const match = injuryPool.find(i => i.id === manualInjuryId);
+      if (match) {
+        criticalInjury = { ...match, isActive: true };
+      }
+    } else {
+      // Roll 2d6 for injury or use manual roll
+      const roll2d6 = manualInjuryRoll2d6 !== undefined 
+        ? Math.min(12, Math.max(2, manualInjuryRoll2d6))
+        : rollD6() + rollD6();
+      const match = injuryPool.find(i => i.rollNumber === roll2d6);
+      if (match) {
+        criticalInjury = { ...match, isActive: true };
+      }
     }
   }
 
@@ -80,7 +92,7 @@ export function resolveCprDamage(params: ApplyDamageParams): DamageResolutionRes
   }
 
   if (isCritInjuryRoll && criticalInjury) {
-    logSummary += `КРИТИЧЕСКАЯ ТРАВМА (выпали две шестерки): +5 урона и [${criticalInjury.nameRu}]! `;
+    logSummary += `КРИТИЧЕСКАЯ ТРАВМА: +5 урона и [${criticalInjury.nameRu}]! `;
   }
 
   logSummary += `Итого потеряно ПЗ: ${finalHpLoss}.`;

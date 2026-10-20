@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Crosshair, Shield, Zap, Skull, Check, X, AlertTriangle } from 'lucide-react';
+import { Crosshair, Shield, Zap, Skull, Check, X, AlertTriangle, Dices, Edit3 } from 'lucide-react';
 import { Combatant } from '../../types/combat';
-import { CPR_RANGE_DV_TABLE } from '../../data/cprRules';
+import { CPR_RANGE_DV_TABLE, CPR_CRITICAL_INJURIES_HEAD, CPR_CRITICAL_INJURIES_BODY } from '../../data/cprRules';
 import { executeCPRCheck, rollDamageFormula } from '../../utils/dice';
 import { resolveCprDamage } from '../../utils/cprCombat';
 import { sfx } from '../../utils/audio';
@@ -50,6 +50,18 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
   const [attackerSkillBase, setAttackerSkillBase] = useState<number>(attacker.ref + 4); // Default to REF + 4
   const [luckSpent, setLuckSpent] = useState<number>(0);
 
+  // Attack Roll Mode (Auto vs Manual)
+  const [attackMode, setAttackMode] = useState<'auto' | 'manual'>('auto');
+  const [manualD10, setManualD10] = useState<number>(5);
+  const [manualExploded, setManualExploded] = useState<number>(5);
+  const [manualBotch, setManualBotch] = useState<number>(5);
+
+  // Damage Roll Mode (Auto vs Manual)
+  const [damageMode, setDamageMode] = useState<'auto' | 'manual'>('auto');
+  const [manualDamageTotal, setManualDamageTotal] = useState<number>(12);
+  const [manualIsCrit, setManualIsCrit] = useState<boolean>(false);
+  const [manualInjuryId, setManualInjuryId] = useState<string>('');
+
   // Resolution state
   const [attackRoll, setAttackRoll] = useState<any | null>(null);
   const [damageRoll, setDamageRoll] = useState<any | null>(null);
@@ -73,14 +85,28 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
   // Aimed shot penalty (-8 in CPR)
   const aimedShotPenalty = targetLocation === 'head' ? -8 : 0;
 
+  const injuriesList = targetLocation === 'head' ? CPR_CRITICAL_INJURIES_HEAD : CPR_CRITICAL_INJURIES_BODY;
+
   const handleRollAttack = () => {
     sfx.playClick();
-    const result = executeCPRCheck(attackerSkillBase, aimedShotPenalty, luckSpent, targetDv ?? 15);
+    let result;
+    if (attackMode === 'manual') {
+      result = executeCPRCheck(attackerSkillBase, aimedShotPenalty, luckSpent, targetDv ?? 15, {
+        firstDie: manualD10,
+        explodedDie: manualD10 === 10 ? manualExploded : undefined,
+        botchDie: manualD10 === 1 ? manualBotch : undefined
+      });
+    } else {
+      result = executeCPRCheck(attackerSkillBase, aimedShotPenalty, luckSpent, targetDv ?? 15);
+    }
     setAttackRoll(result);
 
     if (result.isSuccess) {
-      // Roll damage automatically
-      handleRollDamage();
+      if (damageMode === 'auto') {
+        handleRollDamage();
+      } else {
+        handleApplyManualDamage();
+      }
     } else {
       setDamageRoll(null);
       setDamageResolution(null);
@@ -100,6 +126,28 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
         isMelee,
         isApAmmo,
         isCritInjuryRoll: dResult.isCriticalInjury
+      });
+      setDamageResolution(resolved);
+    }
+  };
+
+  const handleApplyManualDamage = () => {
+    const dResult = rollDamageFormula(activeWeapon.damage || '3d6', {
+      totalDamage: manualDamageTotal,
+      isCriticalInjury: manualIsCrit
+    });
+    setDamageRoll(dResult);
+
+    if (target) {
+      const currentSp = targetLocation === 'head' ? target.headSp : target.bodySp;
+      const resolved = resolveCprDamage({
+        rawDamage: dResult.totalDamage,
+        location: targetLocation,
+        targetSp: currentSp,
+        isMelee,
+        isApAmmo,
+        isCritInjuryRoll: manualIsCrit,
+        manualInjuryId: manualIsCrit && manualInjuryId ? manualInjuryId : undefined
       });
       setDamageResolution(resolved);
     }
@@ -313,14 +361,95 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
             </div>
           </div>
 
-          {/* Step 1: Roll Attack Check */}
-          <div>
+          {/* Step 1: Mode Switch & Attack Roll */}
+          <div className="bg-zinc-950 p-3 rounded border border-zinc-800 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-orbitron font-bold text-white flex items-center gap-1.5">
+                <Crosshair className="w-3.5 h-3.5 text-red-500" />
+                1. БРОСОК АТАКИ (1d10 + База)
+              </span>
+
+              <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800 text-[11px] font-tech">
+                <button
+                  type="button"
+                  onClick={() => setAttackMode('auto')}
+                  className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
+                    attackMode === 'auto' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Dices className="w-3 h-3" />
+                  Автобросок
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttackMode('manual')}
+                  className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
+                    attackMode === 'manual' ? 'bg-amber-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Edit3 className="w-3 h-3" />
+                  Ручной ввод
+                </button>
+              </div>
+            </div>
+
+            {/* Manual input controls for 1d10 */}
+            {attackMode === 'manual' && (
+              <div className="p-2.5 bg-zinc-900/90 rounded border border-amber-600/40 text-xs font-tech space-y-2 animate-in fade-in">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div>
+                    <span className="text-zinc-400 mr-2">Результат 1d10 (1–10):</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={manualD10}
+                      onChange={(e) => setManualD10(parseInt(e.target.value) || 1)}
+                      className="w-16 bg-zinc-950 border border-amber-500 rounded px-2 py-1 text-center font-bold text-amber-300"
+                    />
+                  </div>
+
+                  {manualD10 === 10 && (
+                    <div className="flex items-center gap-2 text-emerald-400 animate-in fade-in">
+                      <span>Взрыв (+10):</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={manualExploded}
+                        onChange={(e) => setManualExploded(parseInt(e.target.value) || 1)}
+                        className="w-14 bg-zinc-950 border border-emerald-500 rounded px-2 py-1 text-center font-bold text-emerald-300"
+                      />
+                      <span className="text-[10px] text-zinc-400">доп. 1d10</span>
+                    </div>
+                  )}
+
+                  {manualD10 === 1 && (
+                    <div className="flex items-center gap-2 text-red-400 animate-in fade-in">
+                      <span>Провал (-1):</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={manualBotch}
+                        onChange={(e) => setManualBotch(parseInt(e.target.value) || 1)}
+                        className="w-14 bg-zinc-950 border border-red-500 rounded px-2 py-1 text-center font-bold text-red-300"
+                      />
+                      <span className="text-[10px] text-zinc-400">штраф 1d10</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <button
               onClick={handleRollAttack}
               disabled={!target}
-              className="w-full py-2.5 px-4 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-orbitron font-bold tracking-wider rounded transition-all clip-cyber-btn shadow-lg"
+              className={`w-full py-2 px-4 text-white font-orbitron font-bold text-xs tracking-wider rounded transition-all clip-cyber-btn shadow-lg ${
+                attackMode === 'manual' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-red-600 hover:bg-red-500'
+              }`}
             >
-              1. БРОСИТЬ АТАКУ (1d10 + База)
+              {attackMode === 'manual' ? 'ПРИМЕНИТЬ РУЧНОЙ БРОСОК АТАКИ' : 'БРОСИТЬ АТАКУ (1d10 + База)'}
             </button>
           </div>
 
@@ -340,43 +469,144 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
           )}
 
           {/* Step 2: Damage Resolution */}
-          {attackRoll && attackRoll.isSuccess && damageResolution && (
-            <div className="p-3.5 bg-zinc-950 rounded border border-amber-600/60 space-y-2 text-xs">
+          {attackRoll && attackRoll.isSuccess && (
+            <div className="p-3.5 bg-zinc-950 rounded border border-amber-600/60 space-y-3 text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-orbitron font-bold text-amber-400 uppercase">
-                  Расчет урона ({activeWeapon.damage})
+                  2. Расчет урона ({activeWeapon.damage})
                 </span>
-                {damageRoll?.isCriticalInjury && (
-                  <span className="px-2 py-0.5 rounded bg-red-600 text-white font-bold font-tech animate-pulse flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    КРИТИЧЕСКАЯ ТРАВМА (+5 урона)
-                  </span>
-                )}
+
+                <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800 text-[11px] font-tech">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDamageMode('auto');
+                      handleRollDamage();
+                    }}
+                    className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
+                      damageMode === 'auto' ? 'bg-amber-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Dices className="w-3 h-3" />
+                    Автобросок
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDamageMode('manual');
+                      handleApplyManualDamage();
+                    }}
+                    className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
+                      damageMode === 'manual' ? 'bg-cyan-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    Ручной урон
+                  </button>
+                </div>
               </div>
 
-              <div className="text-zinc-300 font-tech">
-                Кубики: [{damageRoll?.diceRolls.join(', ')}] = {damageRoll?.baseSum}
-                {damageRoll?.bonusDamage > 0 && ` + ${damageRoll.bonusDamage} бонус`}
-                {' ➔ '} Итоговый урон: <strong className="text-white text-sm">{damageRoll?.totalDamage}</strong>
-              </div>
+              {/* Manual Damage Input */}
+              {damageMode === 'manual' && (
+                <div className="p-3 bg-zinc-900/90 rounded border border-cyan-600/40 space-y-2.5 font-tech animate-in fade-in">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-400">Чистый урон с кубиков:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={manualDamageTotal}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          setManualDamageTotal(val);
+                        }}
+                        className="w-20 bg-zinc-950 border border-cyan-500 rounded px-2.5 py-1 text-center font-bold text-white text-sm"
+                      />
+                    </div>
 
-              <div className="p-2 bg-zinc-900 rounded border border-zinc-800 text-zinc-200 font-tech">
-                {damageResolution.logSummary}
-              </div>
+                    <label className="flex items-center gap-2 cursor-pointer text-amber-300 font-bold">
+                      <input
+                        type="checkbox"
+                        checked={manualIsCrit}
+                        onChange={(e) => {
+                          setManualIsCrit(e.target.checked);
+                        }}
+                        className="accent-amber-500"
+                      />
+                      <span>Выпало две 6-ки (+5 урона и критическая травма)</span>
+                    </label>
+                  </div>
 
-              {damageResolution.criticalInjury && (
-                <div className="p-2 bg-red-950/60 border border-red-700/80 rounded text-red-200 font-tech">
-                  <strong>Получена травма: {damageResolution.criticalInjury.nameRu}</strong>
-                  <div className="text-[11px] text-zinc-300 mt-0.5">{damageResolution.criticalInjury.effectRu}</div>
+                  {/* Manual Injury Selection */}
+                  {manualIsCrit && (
+                    <div className="pt-1 border-t border-zinc-800 flex flex-wrap items-center gap-2">
+                      <span className="text-zinc-400 text-[11px]">Выбрать травму (или бросить случайно):</span>
+                      <select
+                        value={manualInjuryId}
+                        onChange={(e) => setManualInjuryId(e.target.value)}
+                        className="bg-zinc-950 border border-red-700/80 rounded px-2 py-1 text-red-300 text-xs outline-none"
+                      >
+                        <option value="">Случайный бросок 2d6 по таблице</option>
+                        {injuriesList.map(inj => (
+                          <option key={inj.id} value={inj.id}>
+                            {inj.rollNumber}: {inj.nameRu} ({inj.effectRu.substring(0, 45)}...)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleApplyManualDamage}
+                    className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded text-xs"
+                  >
+                    Пересчитать ручной урон
+                  </button>
                 </div>
               )}
 
-              <button
-                onClick={handleApply}
-                className="w-full mt-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-orbitron font-bold tracking-wider rounded transition-all clip-cyber-btn shadow-lg"
-              >
-                ПРИМЕНИТЬ УРОН И АБЛЯЦИЮ К ЦЕЛИ
-              </button>
+              {damageRoll && (
+                <div className="text-zinc-300 font-tech">
+                  {damageRoll.isManualRoll ? (
+                    <span>Введён ручной урон: <strong className="text-white text-sm">{damageRoll.totalDamage}</strong></span>
+                  ) : (
+                    <span>
+                      Кубики: [{damageRoll?.diceRolls.join(', ')}] = {damageRoll?.baseSum}
+                      {damageRoll?.bonusDamage > 0 && ` + ${damageRoll.bonusDamage} бонус`}
+                      {' ➔ '} Итоговый урон: <strong className="text-white text-sm">{damageRoll?.totalDamage}</strong>
+                    </span>
+                  )}
+                  {damageRoll?.isCriticalInjury && (
+                    <span className="ml-2 px-2 py-0.5 rounded bg-red-600 text-white font-bold font-tech animate-pulse inline-flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      КРИТИЧЕСКАЯ ТРАВМА (+5 урона)
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {damageResolution && (
+                <>
+                  <div className="p-2 bg-zinc-900 rounded border border-zinc-800 text-zinc-200 font-tech">
+                    {damageResolution.logSummary}
+                  </div>
+
+                  {damageResolution.criticalInjury && (
+                    <div className="p-2 bg-red-950/60 border border-red-700/80 rounded text-red-200 font-tech">
+                      <strong>Получена травма: {damageResolution.criticalInjury.nameRu}</strong>
+                      <div className="text-[11px] text-zinc-300 mt-0.5">{damageResolution.criticalInjury.effectRu}</div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleApply}
+                    className="w-full mt-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-orbitron font-bold tracking-wider rounded transition-all clip-cyber-btn shadow-lg"
+                  >
+                    ПРИМЕНИТЬ УРОН И АБЛЯЦИЮ К ЦЕЛИ
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

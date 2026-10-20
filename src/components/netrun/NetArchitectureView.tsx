@@ -13,7 +13,10 @@ import {
   Play, 
   CheckCircle2, 
   Dices,
-  RefreshCw
+  RefreshCw,
+  Edit3,
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import { NetArchitecture, NetFloor, NetNodeType } from '../../types/netrun';
 import { OFFICIAL_BLACK_ICE, DEMON_PROGRAMS } from '../../data/blackIceData';
@@ -110,6 +113,15 @@ export const NetArchitectureView: React.FC = () => {
   const [netActionsMax, setNetActionsMax] = useState<number>(3); // Interface 4-6 = 3 actions
   const [netActionsLeft, setNetActionsLeft] = useState<number>(3);
   const [runnerLog, setRunnerLog] = useState<string[]>([]);
+
+  // Manual hack check modal states
+  const [hackModalFloor, setHackModalFloor] = useState<NetFloor | null>(null);
+  const [hackInputMode, setHackInputMode] = useState<'auto' | 'manual'>('auto');
+  const [manualHackD10, setManualHackD10] = useState<number>(5);
+  const [manualHackExploded, setManualHackExploded] = useState<number>(5);
+  const [manualHackBotch, setManualHackBotch] = useState<number>(5);
+  const [hackResult, setHackResult] = useState<any | null>(null);
+  const [customIceDmg, setCustomIceDmg] = useState<number>(5);
 
   const addRunnerLog = (msg: string) => {
     setRunnerLog(prev => [msg, ...prev.slice(0, 19)]);
@@ -217,19 +229,24 @@ export const NetArchitectureView: React.FC = () => {
   };
 
   // Floor interaction check
-  const handleCheckFloor = (floor: NetFloor) => {
+  const handleCheckFloor = (
+    floor: NetFloor,
+    manualD10?: { firstDie: number; explodedDie?: number; botchDie?: number }
+  ) => {
     sfx.playClick();
     if (netActionsLeft <= 0) {
       alert('У нетраннера закончились сетевые действия в этом ходу! Нажмите "Новый ход нетраннера".');
       return;
     }
 
-    const roll = executeCPRCheck(netrunnerInterface, 0, 0, floor.dv);
+    const roll = executeCPRCheck(netrunnerInterface, 0, 0, floor.dv, manualD10);
     setNetActionsLeft(prev => prev - 1);
+
+    const manualPrefix = manualD10 ? ' [ручной бросок]' : '';
 
     if (roll.isSuccess) {
       sfx.playCritSuccess();
-      addRunnerLog(`Этаж ${floor.floorNumber} [${floor.name}]: УСПЕХ! Бросок ${roll.grandTotal} vs DV ${floor.dv}. Узел взломан/разблокирован!`);
+      addRunnerLog(`Этаж ${floor.floorNumber} [${floor.name}]: УСПЕХ!${manualPrefix} Бросок ${roll.grandTotal} vs DV ${floor.dv}. Узел взломан/разблокирован!`);
       // Update floor isUnlocked
       setArchitectures(prev => {
         const copy = [...prev];
@@ -240,8 +257,9 @@ export const NetArchitectureView: React.FC = () => {
       });
     } else {
       sfx.playCritFailure();
-      addRunnerLog(`Этаж ${floor.floorNumber} [${floor.name}]: ПРОВАЛ! Бросок ${roll.grandTotal} vs DV ${floor.dv}. Доступ заблокирован!`);
+      addRunnerLog(`Этаж ${floor.floorNumber} [${floor.name}]: ПРОВАЛ!${manualPrefix} Бросок ${roll.grandTotal} vs DV ${floor.dv}. Доступ заблокирован!`);
     }
+    return roll;
   };
 
   // Black ICE combat damage
@@ -358,6 +376,29 @@ export const NetArchitectureView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800 text-[11px] font-tech">
+              <button
+                type="button"
+                onClick={() => setHackInputMode('auto')}
+                className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
+                  hackInputMode === 'auto' ? 'bg-cyan-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Dices className="w-3 h-3" />
+                Автоброски
+              </button>
+              <button
+                type="button"
+                onClick={() => setHackInputMode('manual')}
+                className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
+                  hackInputMode === 'manual' ? 'bg-amber-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Edit3 className="w-3 h-3" />
+                Ручной ввод
+              </button>
+            </div>
+
             <button
               onClick={handleResetNetTurn}
               className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-orbitron font-bold text-xs rounded clip-cyber-sm transition-all"
@@ -436,18 +477,39 @@ export const NetArchitectureView: React.FC = () => {
                   </div>
 
                   {/* Right: DV and Interaction Buttons */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <div className="bg-zinc-950 px-2.5 py-1 rounded border border-zinc-800 text-center font-tech">
                       <div className="text-[9px] text-zinc-500">СЛОЖНОСТЬ</div>
                       <div className="font-orbitron font-bold text-amber-400 text-xs">DV {floor.dv}</div>
                     </div>
 
-                    <button
-                      onClick={() => handleCheckFloor(floor)}
-                      className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm"
-                    >
-                      Взлом (Интерфейс)
-                    </button>
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => {
+                          if (hackInputMode === 'manual') {
+                            setHackModalFloor(floor);
+                            setHackResult(null);
+                            setManualHackD10(5);
+                          } else {
+                            handleCheckFloor(floor);
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-orbitron font-bold text-xs rounded-l transition-all"
+                      >
+                        Взлом (Интерфейс)
+                      </button>
+                      <button
+                        onClick={() => {
+                          setHackModalFloor(floor);
+                          setHackResult(null);
+                          setManualHackD10(5);
+                        }}
+                        title="Ручной ввод броска 1d10"
+                        className="p-1.5 bg-zinc-950 hover:bg-zinc-800 border-y border-r border-zinc-700 text-amber-400 rounded-r"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
 
                     <button
                       onClick={() => setCurrentRunnerFloor(floor.floorNumber)}
@@ -483,11 +545,11 @@ export const NetArchitectureView: React.FC = () => {
                       ></div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] font-tech text-zinc-400">
+                    <div className="flex items-center justify-between text-[11px] font-tech text-zinc-400 flex-wrap gap-2">
                       <div>СКОР: {floor.blackIce.spd} | АТК: {floor.blackIce.atk} | ЗАЩ: {floor.blackIce.def}</div>
                       
                       <div className="flex items-center gap-1">
-                        <span className="text-zinc-500 mr-1">Нанести урон REZ:</span>
+                        <span className="text-zinc-500 mr-1">Урон REZ:</span>
                         {[5, 10, 15].map(dmg => (
                           <button
                             key={dmg}
@@ -497,6 +559,19 @@ export const NetArchitectureView: React.FC = () => {
                             -{dmg}
                           </button>
                         ))}
+                        <input
+                          type="number"
+                          min="1"
+                          value={customIceDmg}
+                          onChange={(e) => setCustomIceDmg(parseInt(e.target.value) || 1)}
+                          className="w-10 bg-zinc-900 border border-zinc-700 rounded px-1 py-0.5 text-center text-white text-xs font-bold ml-1"
+                        />
+                        <button
+                          onClick={() => handleDamageBlackIce(floor, customIceDmg)}
+                          className="px-2 py-0.5 bg-red-800 hover:bg-red-700 text-white rounded font-bold text-xs"
+                        >
+                          -Урон
+                        </button>
                       </div>
                     </div>
 
@@ -565,6 +640,148 @@ export const NetArchitectureView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Manual / Auto Hack Check Modal */}
+      {hackModalFloor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-cyan-600/70 rounded-lg max-w-md w-full p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(6,182,212,0.25)] text-xs font-tech">
+            <div className="flex items-center justify-between border-b border-cyan-900/60 pb-3">
+              <div className="flex items-center gap-2">
+                <Network className="w-5 h-5 text-cyan-400" />
+                <h3 className="font-orbitron font-bold text-white text-base">ВЗЛОМ УЗЛА СЕТИ</h3>
+              </div>
+              <button
+                onClick={() => setHackModalFloor(null)}
+                className="text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-zinc-950 p-3 rounded border border-zinc-800 space-y-1">
+              <div className="text-white font-bold text-sm">
+                Этаж {hackModalFloor.floorNumber}: {hackModalFloor.name}
+              </div>
+              <div className="flex items-center justify-between text-zinc-300">
+                <span>Интерфейс нетраннера: <strong className="text-cyan-400">{netrunnerInterface}</strong></span>
+                <span>Сложность (DV): <strong className="text-white font-orbitron text-sm">DV {hackModalFloor.dv}</strong></span>
+              </div>
+              <div className="text-[11px] text-zinc-500">
+                Действий осталось: <strong className="text-white">{netActionsLeft} / {netActionsMax}</strong>
+              </div>
+            </div>
+
+            {/* Mode switch */}
+            <div className="flex items-center justify-between bg-zinc-950 p-2 rounded border border-zinc-800">
+              <span className="text-zinc-400 font-bold uppercase text-[11px]">Режим проверки:</span>
+              <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setHackInputMode('auto')}
+                  className={`px-2.5 py-1 rounded flex items-center gap-1 transition-colors ${
+                    hackInputMode === 'auto' ? 'bg-cyan-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Dices className="w-3.5 h-3.5" />
+                  Автобросок
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHackInputMode('manual')}
+                  className={`px-2.5 py-1 rounded flex items-center gap-1 transition-colors ${
+                    hackInputMode === 'manual' ? 'bg-cyan-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Ручной кубик 1d10
+                </button>
+              </div>
+            </div>
+
+            {/* Manual input */}
+            {hackInputMode === 'manual' && (
+              <div className="p-3 bg-zinc-950 rounded border border-cyan-500/50 space-y-2 animate-in fade-in">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-300">Кубик 1d10 (1–10):</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={manualHackD10}
+                      onChange={(e) => setManualHackD10(parseInt(e.target.value) || 1)}
+                      className="w-16 bg-zinc-900 border border-cyan-500 rounded px-2.5 py-1 text-center font-bold text-cyan-300 text-sm"
+                    />
+                  </div>
+
+                  {manualHackD10 === 10 && (
+                    <div className="flex items-center gap-1.5 text-emerald-400">
+                      <span>Взрыв (+10):</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={manualHackExploded}
+                        onChange={(e) => setManualHackExploded(parseInt(e.target.value) || 1)}
+                        className="w-12 bg-zinc-900 border border-emerald-500 rounded px-1.5 py-0.5 text-center font-bold text-emerald-300"
+                      />
+                    </div>
+                  )}
+
+                  {manualHackD10 === 1 && (
+                    <div className="flex items-center gap-1.5 text-red-400">
+                      <span>Провал (-1):</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={manualHackBotch}
+                        onChange={(e) => setManualHackBotch(parseInt(e.target.value) || 1)}
+                        className="w-12 bg-zinc-900 border border-red-500 rounded px-1.5 py-0.5 text-center font-bold text-red-300"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                const manualInput = hackInputMode === 'manual' ? {
+                  firstDie: manualHackD10,
+                  explodedDie: manualHackD10 === 10 ? manualHackExploded : undefined,
+                  botchDie: manualHackD10 === 1 ? manualHackBotch : undefined
+                } : undefined;
+                const res = handleCheckFloor(hackModalFloor, manualInput);
+                setHackResult(res);
+              }}
+              className="w-full py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md uppercase tracking-wider"
+            >
+              {hackInputMode === 'manual' ? 'Применить ручной бросок взлома' : 'Выполнить взлом (автобросок)'}
+            </button>
+
+            {hackResult && (
+              <div className={`p-3 rounded border text-xs font-tech ${
+                hackResult.isSuccess ? 'bg-emerald-950/60 border-emerald-600 text-emerald-200' : 'bg-red-950/60 border-red-600 text-red-200'
+              }`}>
+                <div className="font-orbitron font-bold text-sm mb-1">
+                  {hackResult.isSuccess ? 'УСПЕШНЫЙ ВЗЛОМ УЗЛА!' : 'ПРОВАЛ ВЗЛОМА!'}
+                </div>
+                <div>{hackResult.textSummary}</div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2 border-t border-zinc-800">
+              <button
+                onClick={() => setHackModalFloor(null)}
+                className="px-4 py-1.5 text-zinc-400 hover:text-white rounded"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

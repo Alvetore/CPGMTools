@@ -9,6 +9,12 @@ export function rollD6(): number {
   return Math.floor(Math.random() * 6) + 1;
 }
 
+export interface ManualD10Input {
+  firstDie: number;
+  explodedDie?: number;
+  botchDie?: number;
+}
+
 export interface CPRCheckResult {
   baseVal: number;
   luckSpent: number;
@@ -22,6 +28,7 @@ export interface CPRCheckResult {
   isSuccess?: boolean;
   isCritSuccess: boolean;
   isCritFail: boolean;
+  isManualRoll?: boolean;
   textSummary: string;
 }
 
@@ -29,20 +36,25 @@ export function executeCPRCheck(
   baseVal: number,
   modifier: number = 0,
   luckSpent: number = 0,
-  targetDv?: number
+  targetDv?: number,
+  manualD10?: ManualD10Input
 ): CPRCheckResult {
-  sfx.playDiceRoll();
+  if (!manualD10) {
+    sfx.playDiceRoll();
+  }
 
-  const firstDie = rollD10();
+  const firstDie = manualD10 ? Math.min(10, Math.max(1, manualD10.firstDie)) : rollD10();
   let d10Total = firstDie;
   let isCritSuccess = false;
   let isCritFail = false;
-  let explodedDie: number | undefined;
-  let botchDie: number | undefined;
+  let explodedDie: number | undefined = manualD10?.explodedDie;
+  let botchDie: number | undefined = manualD10?.botchDie;
 
   if (firstDie === 10) {
     isCritSuccess = true;
-    explodedDie = rollD10();
+    if (explodedDie === undefined) {
+      explodedDie = rollD10();
+    }
     d10Total += explodedDie;
     setTimeout(() => {
       sfx.playCritSuccess();
@@ -59,7 +71,9 @@ export function executeCPRCheck(
     }, 120);
   } else if (firstDie === 1) {
     isCritFail = true;
-    botchDie = rollD10();
+    if (botchDie === undefined) {
+      botchDie = rollD10();
+    }
     d10Total -= botchDie;
     setTimeout(() => {
       sfx.playCritFailure();
@@ -80,12 +94,14 @@ export function executeCPRCheck(
   if (modifier !== 0) rollParts.push(`мод ${modifier > 0 ? '+' : ''}${modifier}`);
   if (luckSpent > 0) rollParts.push(`удача +${luckSpent}`);
 
+  const manualTag = manualD10 ? ' [ручной]' : '';
+
   if (isCritSuccess) {
-    rollParts.push(`1d10 [10! + ${explodedDie}] = +${d10Total}`);
+    rollParts.push(`1d10${manualTag} [10! + ${explodedDie}] = +${d10Total}`);
   } else if (isCritFail) {
-    rollParts.push(`1d10 [1! - ${botchDie}] = ${d10Total}`);
+    rollParts.push(`1d10${manualTag} [1! - ${botchDie}] = ${d10Total}`);
   } else {
-    rollParts.push(`1d10 [${firstDie}]`);
+    rollParts.push(`1d10${manualTag} [${firstDie}]`);
   }
 
   let textSummary = `${rollParts.join(' + ')} = ${grandTotal}`;
@@ -106,6 +122,7 @@ export function executeCPRCheck(
     isSuccess,
     isCritSuccess,
     isCritFail,
+    isManualRoll: !!manualD10,
     textSummary
   };
 }
@@ -118,15 +135,56 @@ export interface DamageRollResult {
   totalDamage: number;
   sixesCount: number;
   isCriticalInjury: boolean;
+  isManualRoll?: boolean;
 }
 
-export function rollDamageFormula(formula: string): DamageRollResult {
+export interface ManualDamageInput {
+  totalDamage?: number;
+  diceRolls?: number[];
+  sixesCount?: number;
+  isCriticalInjury?: boolean;
+}
+
+export function rollDamageFormula(
+  formula: string,
+  manualDamage?: ManualDamageInput
+): DamageRollResult {
   sfx.playHit();
   
   // match "3d6", "4d6", "5d6" etc.
   const match = formula.toLowerCase().match(/^(\d+)d6(?:\+(\d+))?$/);
   const count = match ? parseInt(match[1], 10) : 3;
   const staticBonus = match && match[2] ? parseInt(match[2], 10) : 0;
+
+  if (manualDamage) {
+    const isCriticalInjury = manualDamage.isCriticalInjury ?? ((manualDamage.sixesCount ?? 0) >= 2);
+    const bonusDamage = isCriticalInjury ? 5 : 0;
+    let baseSum = 0;
+    let diceRolls: number[] = [];
+
+    if (manualDamage.diceRolls && manualDamage.diceRolls.length > 0) {
+      diceRolls = manualDamage.diceRolls;
+      baseSum = diceRolls.reduce((a, b) => a + b, 0);
+    } else if (manualDamage.totalDamage !== undefined) {
+      baseSum = Math.max(0, manualDamage.totalDamage - staticBonus - bonusDamage);
+      diceRolls = [baseSum];
+    }
+
+    const totalDamage = manualDamage.totalDamage !== undefined
+      ? manualDamage.totalDamage
+      : baseSum + staticBonus + bonusDamage;
+
+    return {
+      formula,
+      diceRolls,
+      baseSum,
+      bonusDamage,
+      totalDamage,
+      sixesCount: manualDamage.sixesCount ?? (isCriticalInjury ? 2 : 0),
+      isCriticalInjury,
+      isManualRoll: true
+    };
+  }
 
   const diceRolls: number[] = [];
   let baseSum = 0;
@@ -153,7 +211,8 @@ export function rollDamageFormula(formula: string): DamageRollResult {
     bonusDamage,
     totalDamage,
     sixesCount,
-    isCriticalInjury
+    isCriticalInjury,
+    isManualRoll: false
   };
 }
 
@@ -164,12 +223,19 @@ export interface DeathSaveResult {
   total: number;
   isSaved: boolean;
   isCriticalDeath: boolean;
+  isManualRoll?: boolean;
   message: string;
 }
 
-export function executeDeathSave(bodyStat: number, penalty: number): DeathSaveResult {
-  sfx.playDiceRoll();
-  const roll = rollD10();
+export function executeDeathSave(
+  bodyStat: number, 
+  penalty: number,
+  manualRoll?: number
+): DeathSaveResult {
+  if (manualRoll === undefined) {
+    sfx.playDiceRoll();
+  }
+  const roll = manualRoll !== undefined ? Math.min(10, Math.max(1, manualRoll)) : rollD10();
   const total = roll + penalty;
   
   // Natural 10 is automatic death
@@ -177,13 +243,15 @@ export function executeDeathSave(bodyStat: number, penalty: number): DeathSaveRe
   // Saved if total is LESS than BODY stat
   const isSaved = !isCriticalDeath && total < bodyStat;
 
+  const manualPrefix = manualRoll !== undefined ? ' [ручной бросок]' : '';
+
   let message = '';
   if (isCriticalDeath) {
-    message = `Критический провал! Выпала натуральная 10. Персонаж погибает на месте!`;
+    message = `Критический провал!${manualPrefix} Выпала натуральная 10. Персонаж погибает на месте!`;
   } else if (isSaved) {
-    message = `Спасбросок успешен! Бросок: 1d10(${roll}) + штраф(${penalty}) = ${total} < ТЕЛО(${bodyStat}). Персонаж цепляется за жизнь!`;
+    message = `Спасбросок успешен!${manualPrefix} Бросок: 1d10(${roll}) + штраф(${penalty}) = ${total} < ТЕЛО(${bodyStat}). Персонаж цепляется за жизнь!`;
   } else {
-    message = `Спасбросок провален! Бросок: 1d10(${roll}) + штраф(${penalty}) = ${total} >= ТЕЛО(${bodyStat}). Персонаж умирает!`;
+    message = `Спасбросок провален!${manualPrefix} Бросок: 1d10(${roll}) + штраф(${penalty}) = ${total} >= ТЕЛО(${bodyStat}). Персонаж умирает!`;
   }
 
   return {
@@ -193,6 +261,7 @@ export function executeDeathSave(bodyStat: number, penalty: number): DeathSaveRe
     total,
     isSaved,
     isCriticalDeath,
+    isManualRoll: manualRoll !== undefined,
     message
   };
 }

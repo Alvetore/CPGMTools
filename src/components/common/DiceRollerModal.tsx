@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dices, X, Sparkles, AlertTriangle, Skull, Shield, Heart } from 'lucide-react';
+import { Dices, X, Sparkles, AlertTriangle, Skull, Shield, Heart, Edit3 } from 'lucide-react';
 import { executeCPRCheck, rollDamageFormula, executeDeathSave, rollD10, rollD6 } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
 
@@ -17,29 +17,66 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
   const [targetDv, setTargetDv] = useState<number>(15);
   const [checkResult, setCheckResult] = useState<any | null>(null);
 
+  // Check manual state
+  const [checkMode, setCheckMode] = useState<'auto' | 'manual'>('auto');
+  const [manualD10, setManualD10] = useState<number>(5);
+  const [manualExploded, setManualExploded] = useState<number>(5);
+  const [manualBotch, setManualBotch] = useState<number>(5);
+
   // Damage state
   const [damageFormula, setDamageFormula] = useState<string>('4d6');
   const [damageResult, setDamageResult] = useState<any | null>(null);
+
+  // Damage manual state
+  const [damageMode, setDamageMode] = useState<'auto' | 'manual'>('auto');
+  const [manualDamageTotal, setManualDamageTotal] = useState<number>(14);
+  const [manualDamageIsCrit, setManualDamageIsCrit] = useState<boolean>(false);
 
   // Death Save state
   const [bodyStat, setBodyStat] = useState<number>(6);
   const [deathPenalty, setDeathPenalty] = useState<number>(0);
   const [deathResult, setDeathResult] = useState<any | null>(null);
 
+  // Death Save manual state
+  const [deathMode, setDeathMode] = useState<'auto' | 'manual'>('auto');
+  const [manualDeathD10, setManualDeathD10] = useState<number>(5);
+
   const handleRollCheck = () => {
     sfx.playClick();
-    const res = executeCPRCheck(baseStatSkill, modifier, luckSpent, targetDv);
+    let res;
+    if (checkMode === 'manual') {
+      res = executeCPRCheck(baseStatSkill, modifier, luckSpent, targetDv, {
+        firstDie: manualD10,
+        explodedDie: manualD10 === 10 ? manualExploded : undefined,
+        botchDie: manualD10 === 1 ? manualBotch : undefined
+      });
+    } else {
+      res = executeCPRCheck(baseStatSkill, modifier, luckSpent, targetDv);
+    }
     setCheckResult(res);
   };
 
   const handleRollDamage = (formula: string) => {
     sfx.playHit();
-    const res = rollDamageFormula(formula);
+    let res;
+    if (damageMode === 'manual') {
+      res = rollDamageFormula(formula, {
+        totalDamage: manualDamageTotal,
+        isCriticalInjury: manualDamageIsCrit
+      });
+    } else {
+      res = rollDamageFormula(formula);
+    }
     setDamageResult(res);
   };
 
   const handleRollDeathSave = () => {
-    const res = executeDeathSave(bodyStat, deathPenalty);
+    let res;
+    if (deathMode === 'manual') {
+      res = executeDeathSave(bodyStat, deathPenalty, manualDeathD10);
+    } else {
+      res = executeDeathSave(bodyStat, deathPenalty);
+    }
     setDeathResult(res);
   };
 
@@ -96,6 +133,31 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
           {/* TAB 1: 1d10 Check */}
           {activeTab === 'check' && (
             <div className="space-y-3.5">
+              {/* Mode switch */}
+              <div className="flex items-center justify-between bg-zinc-950 p-2 rounded border border-zinc-800">
+                <span className="text-zinc-400 uppercase text-[11px] font-bold">Режим броска:</span>
+                <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800">
+                  <button
+                    onClick={() => setCheckMode('auto')}
+                    className={`px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors ${
+                      checkMode === 'auto' ? 'bg-amber-600 text-black font-bold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Dices className="w-3.5 h-3.5" />
+                    Автобросок
+                  </button>
+                  <button
+                    onClick={() => setCheckMode('manual')}
+                    className={`px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors ${
+                      checkMode === 'manual' ? 'bg-amber-600 text-black font-bold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Ручной ввод кубика
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-zinc-400 block mb-1 uppercase text-[11px]">База (ХАР + Навык)</label>
@@ -157,11 +219,59 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
                 ))}
               </div>
 
+              {/* Manual D10 inputs */}
+              {checkMode === 'manual' && (
+                <div className="p-3 bg-zinc-950 rounded border border-amber-500/50 space-y-2 animate-in fade-in">
+                  <div className="text-[11px] font-bold text-amber-300 uppercase">Ручной результат дайса 1d10:</div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-400">1d10 (1–10):</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={manualD10}
+                        onChange={(e) => setManualD10(parseInt(e.target.value) || 1)}
+                        className="w-16 bg-zinc-900 border border-amber-500 rounded px-2 py-1 text-center font-bold text-amber-300 text-sm"
+                      />
+                    </div>
+
+                    {manualD10 === 10 && (
+                      <div className="flex items-center gap-2 text-emerald-400 animate-in fade-in">
+                        <span>Взрыв (+10!):</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={manualExploded}
+                          onChange={(e) => setManualExploded(parseInt(e.target.value) || 1)}
+                          className="w-14 bg-zinc-900 border border-emerald-500 rounded px-2 py-1 text-center font-bold text-emerald-300"
+                        />
+                      </div>
+                    )}
+
+                    {manualD10 === 1 && (
+                      <div className="flex items-center gap-2 text-red-400 animate-in fade-in">
+                        <span>Провал (-1!):</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={manualBotch}
+                          onChange={(e) => setManualBotch(parseInt(e.target.value) || 1)}
+                          className="w-14 bg-zinc-900 border border-red-500 rounded px-2 py-1 text-center font-bold text-red-300"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={handleRollCheck}
                 className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md uppercase tracking-wider"
               >
-                Бросить проверку 1d10
+                {checkMode === 'manual' ? 'Применить ручной бросок 1d10' : 'Бросить проверку 1d10'}
               </button>
 
               {checkResult && (
@@ -183,8 +293,33 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
           {/* TAB 2: Nd6 Damage */}
           {activeTab === 'damage' && (
             <div className="space-y-3.5">
+              {/* Mode switch */}
+              <div className="flex items-center justify-between bg-zinc-950 p-2 rounded border border-zinc-800">
+                <span className="text-zinc-400 uppercase text-[11px] font-bold">Режим урона:</span>
+                <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800">
+                  <button
+                    onClick={() => setDamageMode('auto')}
+                    className={`px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors ${
+                      damageMode === 'auto' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Dices className="w-3.5 h-3.5" />
+                    Автобросок
+                  </button>
+                  <button
+                    onClick={() => setDamageMode('manual')}
+                    className={`px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors ${
+                      damageMode === 'manual' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Ручной ввод урона
+                  </button>
+                </div>
+              </div>
+
               <div>
-                <label className="text-zinc-400 block mb-1 uppercase text-[11px]">Формула урона</label>
+                <label className="text-zinc-400 block mb-1 uppercase text-[11px]">Формула оружия</label>
                 <input
                   type="text"
                   value={damageFormula}
@@ -203,7 +338,9 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
                       key={p}
                       onClick={() => {
                         setDamageFormula(formula);
-                        handleRollDamage(formula);
+                        if (damageMode === 'auto') {
+                          handleRollDamage(formula);
+                        }
                       }}
                       className="px-2.5 py-1 rounded bg-zinc-950 border border-zinc-800 text-zinc-300 hover:border-red-500 text-xs font-tech"
                     >
@@ -213,11 +350,40 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
                 })}
               </div>
 
+              {/* Manual Damage Inputs */}
+              {damageMode === 'manual' && (
+                <div className="p-3 bg-zinc-950 rounded border border-red-500/50 space-y-2.5 animate-in fade-in">
+                  <div className="text-[11px] font-bold text-red-300 uppercase">Ручные параметры урона:</div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-400">Суммарный урон с кубиков:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={manualDamageTotal}
+                        onChange={(e) => setManualDamageTotal(parseInt(e.target.value) || 0)}
+                        className="w-20 bg-zinc-900 border border-red-500 rounded px-2.5 py-1 text-center font-bold text-white text-sm"
+                      />
+                    </div>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-amber-300 font-bold">
+                      <input
+                        type="checkbox"
+                        checked={manualDamageIsCrit}
+                        onChange={(e) => setManualDamageIsCrit(e.target.checked)}
+                        className="accent-amber-500"
+                      />
+                      <span>Выпало две 6-ки (+5 урона)</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={() => handleRollDamage(damageFormula)}
                 className="w-full py-2.5 px-4 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md uppercase tracking-wider"
               >
-                Бросить урон ({damageFormula})
+                {damageMode === 'manual' ? 'Применить ручной урон' : `Бросить урон (${damageFormula})`}
               </button>
 
               {damageResult && (
@@ -235,8 +401,14 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
                   </div>
 
                   <div className="text-zinc-300 font-tech">
-                    Выпавшие кости: [{damageResult.diceRolls.join(', ')}] = {damageResult.baseSum}
-                    {damageResult.bonusDamage > 0 && ` + ${damageResult.bonusDamage} бонус за две шестерки`}
+                    {damageResult.isManualRoll ? (
+                      <span>Ручной ввод урона</span>
+                    ) : (
+                      <span>
+                        Выпавшие кости: [{damageResult.diceRolls.join(', ')}] = {damageResult.baseSum}
+                        {damageResult.bonusDamage > 0 && ` + ${damageResult.bonusDamage} бонус за две шестерки`}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
@@ -246,6 +418,31 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
           {/* TAB 3: Death Save */}
           {activeTab === 'deathsave' && (
             <div className="space-y-3.5">
+              {/* Mode switch */}
+              <div className="flex items-center justify-between bg-zinc-950 p-2 rounded border border-zinc-800">
+                <span className="text-zinc-400 uppercase text-[11px] font-bold">Режим спасброска:</span>
+                <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800">
+                  <button
+                    onClick={() => setDeathMode('auto')}
+                    className={`px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors ${
+                      deathMode === 'auto' ? 'bg-purple-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Dices className="w-3.5 h-3.5" />
+                    Автобросок
+                  </button>
+                  <button
+                    onClick={() => setDeathMode('manual')}
+                    className={`px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors ${
+                      deathMode === 'manual' ? 'bg-purple-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Ручной ввод кубика
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-zinc-400 block mb-1 uppercase text-[11px]">Характеристика ТЕЛО (BODY)</label>
@@ -269,6 +466,29 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
                 </div>
               </div>
 
+              {/* Manual Death Save D10 input */}
+              {deathMode === 'manual' && (
+                <div className="p-3 bg-zinc-950 rounded border border-purple-500/50 space-y-2 animate-in fade-in">
+                  <div className="text-[11px] font-bold text-purple-300 uppercase">Ручной результат дайса 1d10:</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">1d10 (1–10):</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={manualDeathD10}
+                      onChange={(e) => setManualDeathD10(parseInt(e.target.value) || 1)}
+                      className="w-16 bg-zinc-900 border border-purple-500 rounded px-2 py-1 text-center font-bold text-purple-300 text-sm"
+                    />
+                    {manualDeathD10 === 10 && (
+                      <span className="text-red-400 font-bold text-xs ml-2 animate-pulse">
+                        💀 Натуральная 10 = Мгновенная смерть!
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="p-2.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-400 text-xs">
                 Правило спасброска CPR: бросается 1d10 + штраф раундов. Если результат СТРОГО МЕНЬШЕ характеристики ТЕЛО — персонаж выжил в этом ходу. Выпадение натуральной 10 означает мгновенную смерть.
               </div>
@@ -277,7 +497,7 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
                 onClick={handleRollDeathSave}
                 className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md uppercase tracking-wider"
               >
-                Бросить спасбросок от смерти (1d10)
+                {deathMode === 'manual' ? 'Применить ручной спасбросок (1d10)' : 'Бросить спасбросок от смерти (1d10)'}
               </button>
 
               {deathResult && (
