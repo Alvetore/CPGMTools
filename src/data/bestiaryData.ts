@@ -340,5 +340,232 @@ export const OFFICIAL_CPR_BESTIARY: NpcTemplate[] = [
     cyberware: [],
     gear: [],
     tactics: 'Патрулирует периметр. Уязвим к ЭМИ-гранатам и взлому через Сеть.'
+  },
+  {
+    id: 'dg-bozo-prankster',
+    nameRu: 'Бозо: Шут-подрывник (Bozo Prankster)',
+    nameEn: 'Bozo Prankster',
+    threatLevel: 'Mook',
+    faction: 'Бозо (Bozos)',
+    description: 'Клоун-психопат с биоскульптурным красным носом-пищалкой и безумным хохотом. Любит садистские сюрпризы.',
+    stats: { INT: 4, REF: 7, DEX: 7, TECH: 4, COOL: 3, WILL: 5, LUCK: 0, MOVE: 6, BODY: 6, EMP: 1 },
+    hpMax: 35,
+    headSp: 7,
+    bodySp: 7,
+    armorName: 'Усиленный комбинезон клоуна (ОС 7)',
+    weapons: [
+      {
+        id: 'w-bozo-shotgun',
+        name: 'Помповый дробовик с конфетти и картечью',
+        category: 'Shotgun',
+        damage: '5d6',
+        standardRof: 1,
+        magCapacity: 6,
+        currentAmmo: 6,
+        ammoType: 'Картечь'
+      },
+      {
+        id: 'w-bozo-teeth',
+        name: 'Взрывающиеся искусственные зубы (Heavy Melee)',
+        category: 'Heavy Melee',
+        damage: '3d6',
+        standardRof: 2,
+        magCapacity: 1,
+        currentAmmo: 1,
+        ammoType: 'Melee'
+      }
+    ],
+    skills: [
+      { nameRu: 'Длинноствольное оружие', base: 11 },
+      { nameRu: 'Уклонение', base: 12 },
+      { nameRu: 'Атлетика', base: 10 },
+      { nameRu: 'Скрытность', base: 10 },
+      { nameRu: 'Драка', base: 11 }
+    ],
+    cyberware: ['Аудио-пищалка в носу', 'Взрывные зубы', 'Подкожный распылитель веселящего газа'],
+    gear: ['Баллон с веселящим газом', 'Цветок-брызгалка с кислотой', 'Заводная челюсть-мина'],
+    tactics: 'Нападает с неожиданными звуками и хохотом. Брызжет газом, чтобы дезориентировать цели.'
+  },
+  {
+    id: 'dg-puma-operative',
+    nameRu: 'Danger Gal: Оперативница отряда Puma',
+    nameEn: 'Danger Gal Puma Operative',
+    threatLevel: 'Lieutenant',
+    faction: 'Danger Gal Отряд Puma',
+    description: 'Элитная сыщица и телохранительница Danger Gal в стильном костюме с кошачьими мотивами.',
+    stats: { INT: 7, REF: 8, DEX: 8, TECH: 4, COOL: 7, WILL: 6, LUCK: 3, MOVE: 7, BODY: 6, EMP: 5 },
+    hpMax: 45,
+    headSp: 11,
+    bodySp: 11,
+    armorName: 'Дизайнерский бронекостюм Danger Gal (ОС 11)',
+    weapons: [
+      {
+        id: 'w-puma-smg',
+        name: 'Смарт-ПП Militech (Отличное кач-во)',
+        category: 'SMG',
+        damage: '3d6',
+        standardRof: 1,
+        magCapacity: 30,
+        currentAmmo: 30,
+        ammoType: 'Смарт-патроны',
+        quality: 'Excellent'
+      },
+      {
+        id: 'w-puma-claws',
+        name: 'Кошачьи вибро-когти (Light Melee)',
+        category: 'Light Melee',
+        damage: '1d6',
+        standardRof: 2,
+        magCapacity: 1,
+        currentAmmo: 1,
+        ammoType: 'Melee'
+      }
+    ],
+    skills: [
+      { nameRu: 'Стрельба из ПП', base: 14 },
+      { nameRu: 'Уклонение', base: 14 },
+      { nameRu: 'Внимание / Восприятие', base: 13 },
+      { nameRu: 'Скрытность', base: 12 },
+      { nameRu: 'Проницательность', base: 12 },
+      { nameRu: 'Расследование', base: 13 }
+    ],
+    cyberware: ['Кошачьи киберглаза (термооптика)', 'Выдвижные когти', 'Смартлинк', 'Нейролинк'],
+    gear: ['Электрошоковые гранаты x2', 'Зашифрованный коммлинк Danger Gal', 'Фирменный значок отряда Puma'],
+    tactics: 'Работает тактически, обходит цель с фланга, глушит ЭМИ и электрошоком.'
+  },
+  {
+    id: 'dg-ncpd-patrol',
+    nameRu: 'NCPD: Офицер участка №1',
+    nameEn: 'NCPD Precinct 1 Patrol Officer',
+    threatLevel: 'Mook',
+    faction: 'Участок №1 NCPD',
+    description: 'Патрульный полицейский Центрального района Найт-Сити в бронежилете и фуражке.',
+    stats: { INT: 4, REF: 6, DEX: 6, TECH: 3, COOL: 5, WILL: 5, LUCK: 0, MOVE: 5, BODY: 7, EMP: 4 },
+    hpMax: 40,
+    headSp: 11,
+    bodySp: 11,
+    armorName: 'Полицейский бронежилет (ОС 11)',
+    weapons: [
+      {
+        id: 'w-ncpd-pistol',
+        name: 'Служебный тяжёлый пистолет Sternmeyer',
+        category: 'Heavy Pistol',
+        damage: '3d6',
+        standardRof: 2,
+        magCapacity: 12,
+        currentAmmo: 12,
+        ammoType: 'Пистолетные'
+      },
+      {
+        id: 'w-ncpd-shotgun',
+        name: 'Полицейский тактический дробовик',
+        category: 'Shotgun',
+        damage: '5d6',
+        standardRof: 1,
+        magCapacity: 8,
+        currentAmmo: 8,
+        ammoType: 'Жаканы'
+      }
+    ],
+    skills: [
+      { nameRu: 'Короткоствольное оружие', base: 12 },
+      { nameRu: 'Длинноствольное оружие', base: 11 },
+      { nameRu: 'Драка / Захваты', base: 10 },
+      { nameRu: 'Уклонение', base: 8 },
+      { nameRu: 'Внимание', base: 9 }
+    ],
+    cyberware: ['Полицейская рация на частоте NCPD'],
+    gear: ['Наручники x3', 'Светошумовая граната', 'Полицейский Агент'],
+    tactics: 'Действует парами, командует бросить оружие, при сопротивлении открывает огонь на поражение.'
+  },
+  {
+    id: 'dg-piranha-ganger',
+    nameRu: 'Пиранья: Уличный рейвер',
+    nameEn: 'Piranha Party Ganger',
+    threatLevel: 'Mook',
+    faction: 'Пираньи (Piranhas)',
+    description: 'Обвешанный светящимися браслетами уличный бандит, накачанный вечериночными стимуляторами.',
+    stats: { INT: 3, REF: 6, DEX: 7, TECH: 3, COOL: 4, WILL: 4, LUCK: 0, MOVE: 6, BODY: 5, EMP: 3 },
+    hpMax: 30,
+    headSp: 4,
+    bodySp: 4,
+    armorName: 'Неоновая куртка (ОС 4)',
+    weapons: [
+      {
+        id: 'w-pir-smg',
+        name: 'Скорострельный компактный ПП',
+        category: 'SMG',
+        damage: '3d6',
+        standardRof: 1,
+        magCapacity: 30,
+        currentAmmo: 30,
+        ammoType: 'Пистолетные'
+      },
+      {
+        id: 'w-pir-knife',
+        name: 'Зазубренный нож (Light Melee)',
+        category: 'Light Melee',
+        damage: '1d6',
+        standardRof: 2,
+        magCapacity: 1,
+        currentAmmo: 1,
+        ammoType: 'Melee'
+      }
+    ],
+    skills: [
+      { nameRu: 'Стрельба из ПП', base: 10 },
+      { nameRu: 'Драка', base: 11 },
+      { nameRu: 'Уклонение', base: 11 },
+      { nameRu: 'Скрытность', base: 8 }
+    ],
+    cyberware: ['Биомонитор', 'Встроенный стробоскоп в очках'],
+    gear: ['Ингалятор Synthcoke x2', 'Светящиеся палочки', 'Бутылка с зажигательной смесью'],
+    tactics: 'Атакует толпой под громкую музыку, пытается взять числом и ослепить стробоскопами.'
+  },
+  {
+    id: 'dg-bozo-boss',
+    nameRu: 'Бозо: Кольцевой Мастер «Большой Нос»',
+    nameEn: 'Bozo Ringmaster Big Nose',
+    threatLevel: 'Boss',
+    faction: 'Бозо (Bozos)',
+    description: 'Лидер банды клоунов-маньяков в трёхцветном смокинге с золотым черепом на трости и гигантским красным носом.',
+    stats: { INT: 6, REF: 8, DEX: 8, TECH: 5, COOL: 7, WILL: 8, LUCK: 5, MOVE: 7, BODY: 9, EMP: 1 },
+    hpMax: 65,
+    headSp: 13,
+    bodySp: 13,
+    armorName: 'Тяжёлый бронированный фрак (ОС 13)',
+    weapons: [
+      {
+        id: 'w-bozo-gl',
+        name: 'Гранатомёт-сюрприз (Газовые гранаты)',
+        category: 'Grenade Launcher',
+        damage: '6d6',
+        standardRof: 1,
+        magCapacity: 4,
+        currentAmmo: 4,
+        ammoType: 'Газовые гранаты'
+      },
+      {
+        id: 'w-bozo-cane',
+        name: 'Трость с моно-лезвием (Heavy Melee)',
+        category: 'Heavy Melee',
+        damage: '3d6',
+        standardRof: 2,
+        magCapacity: 1,
+        currentAmmo: 1,
+        ammoType: 'Melee'
+      }
+    ],
+    skills: [
+      { nameRu: 'Тяжёлое оружие', base: 14 },
+      { nameRu: 'Холодное оружие', base: 14 },
+      { nameRu: 'Уклонение', base: 14 },
+      { nameRu: 'Атлетика', base: 12 },
+      { nameRu: 'Устрашение', base: 13 },
+      { nameRu: 'Подрывное дело', base: 12 }
+    ],
+    cyberware: ['Керензиков (+2 к инициативе)', 'Подкожная броня', 'Встроенный звуковой усилитель смеха', 'Нейролинк'],
+    gear: ['Нервно-паралитический газ x2', 'Мины-хлопушки x3', 'Красный шарик с зарином'],
+    tactics: 'Забрасывает поле боя газовыми гранатами, заставляя жертв кашлять и задыхаться, пока его клоуны добивают их.'
   }
 ];

@@ -15,7 +15,7 @@ import {
 import { sfx } from '../utils/audio';
 import { exportEntireGmDatabase } from '../utils/storage';
 
-export type ActiveTab = 'combat' | 'party' | 'bestiary' | 'netrunning' | 'reference';
+export type ActiveTab = 'combat' | 'chase' | 'party' | 'bestiary' | 'netrunning' | 'reference';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -44,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'combat', label: 'Боевой трекер', icon: <Skull className="w-4 h-4" />, badge: combatantCount },
+    { id: 'chase', label: 'Погони (Hot Pursuit)', icon: <ShieldAlert className="w-4 h-4 text-amber-400" /> },
     { id: 'party', label: 'Партия игроков', icon: <Users className="w-4 h-4" />, badge: partyCount },
     { id: 'bestiary', label: 'Бестиарий и Банды', icon: <ShieldAlert className="w-4 h-4" /> },
     { id: 'netrunning', label: 'Архитектура Сети', icon: <Network className="w-4 h-4" /> },
@@ -114,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
                 sfx.playClick();
                 onOpenImportModal();
               }}
-              title="Импорт базы данных или персонажей из CyberpunkCharSheetG"
+              title="Импорт базы данных или персонажей из чарника Cyberpunk RED"
               className="p-2 text-zinc-400 hover:text-cyan-400 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded transition-colors"
             >
               <Upload className="w-4 h-4" />

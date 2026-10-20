@@ -70,7 +70,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           }
         } catch (err) {
           console.error('Ошибка чтения JSON персонажа:', err);
-          alert('Не удалось прочитать файл персонажа. Убедитесь, что это корректный JSON лист из CyberpunkCharSheetG.');
+          alert('Не удалось прочитать файл персонажа. Убедитесь, что это корректный JSON лист из Cyberpunk RED CharSheet.');
         }
       };
       reader.readAsText(file);
@@ -115,7 +115,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
             </span>
           </div>
           <p className="text-xs text-zinc-400 font-tech mt-1">
-            Импортируйте персонажей напрямую из интерактивного чарника <strong>CyberpunkCharSheetG</strong> в один клик!
+            Импортируйте персонажей напрямую из интерактивного чарника <a href="https://alvetore.github.io/CyberpunkREDCharSheet/" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-bold hover:text-cyan-300">Cyberpunk RED CharSheet</a> в один клик!
           </p>
         </div>
 
@@ -165,7 +165,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           <FileText className="w-12 h-12 text-zinc-600 mx-auto" />
           <h3 className="font-orbitron font-bold text-zinc-300 text-base">Партия пуста</h3>
           <p className="text-xs text-zinc-500 max-w-lg mx-auto font-tech">
-            Попросите ваших игроков выгрузить JSON-файл их персонажа из <strong>CyberpunkCharSheetG</strong> (кнопка Экспорт в шапке чарника) и загрузите файлы сюда. Все статы, оружие, броня и здоровье подтянутся автоматически!
+            Попросите ваших игроков выгрузить JSON-файл их персонажа из <a href="https://alvetore.github.io/CyberpunkREDCharSheet/" target="_blank" rel="noreferrer" className="text-cyan-400 underline font-bold">Cyberpunk RED CharSheet</a> (кнопка Экспорт в шапке чарника) и загрузите файлы сюда. Все статы, оружие, броня и здоровье подтянутся автоматически!
           </p>
           <div className="pt-2">
             <button

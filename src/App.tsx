@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header, ActiveTab } from './components/Header';
 import { CombatTrackerView } from './components/combat/CombatTrackerView';
+import { ChaseTrackerView } from './components/chase/ChaseTrackerView';
 import { PartyView } from './components/party/PartyView';
 import { BestiaryView } from './components/bestiary/BestiaryView';
 import { NetArchitectureView } from './components/netrun/NetArchitectureView';
@@ -184,6 +185,10 @@ export const App: React.FC = () => {
             onOpenBestiaryModal={() => setActiveTab('bestiary')}
             onAddPartyToCombat={handleAddPartyToCombat}
           />
+        )}
+
+        {activeTab === 'chase' && (
+          <ChaseTrackerView />
         )}
 
         {activeTab === 'party' && (

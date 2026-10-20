@@ -40,7 +40,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
           onDataRestored();
           onClose();
         } else if (data.stats && data.armor) {
-          // Single character from CyberpunkCharSheetG
+          // Single character from Cyberpunk RED CharSheet
           const member = convertCharSheetToPartyMember(data as Character);
           const currentParty = JSON.parse(localStorage.getItem(STORAGE_KEYS.PARTY) || '[]') as PartyMember[];
           currentParty.push(member);
@@ -51,7 +51,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
           onDataRestored();
           onClose();
         } else {
-          alert('Неизвестный формат файла. Убедитесь, что это бэкап CPGMTools или лист из CyberpunkCharSheetG.');
+          alert('Неизвестный формат файла. Убедитесь, что это бэкап CPGMTools или лист из Cyberpunk RED CharSheet.');
         }
       } catch (err) {
         console.error('Ошибка импорта:', err);

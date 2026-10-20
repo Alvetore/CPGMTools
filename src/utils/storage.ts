@@ -36,7 +36,7 @@ export function saveStoredData<T>(key: string, data: T): void {
 export { STORAGE_KEYS };
 
 /**
- * Converts a Character JSON exported from CyberpunkCharSheetG into a PartyMember
+ * Converts a Character JSON exported from Cyberpunk RED CharSheet into a PartyMember
  */
 export function convertCharSheetToPartyMember(char: Character): PartyMember {
   const body = char.stats?.BODY ?? 6;

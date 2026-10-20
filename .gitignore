@@ -22,4 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-corebook.txt
+*.txt
+*.pdf

@@ -45,7 +45,7 @@ export interface Combatant {
   
   isDefeated: boolean;
   isDelayed: boolean;
-  sourceCharacterId?: string; // If imported from CyberpunkCharSheetG
+  sourceCharacterId?: string; // If imported from Cyberpunk RED CharSheet
 }
 
 export interface CombatLogEntry {
