@@ -9,14 +9,24 @@ import {
   Eye, 
   Sparkles, 
   Swords, 
-  RefreshCw,
-  FileText,
-  Edit2,
-  X
+  RefreshCw, 
+  FileText, 
+  Edit2, 
+  X,
+  Brain,
+  Skull,
+  Activity,
+  Dices
 } from 'lucide-react';
 import { PartyMember } from '../../types/party';
 import { Character, Weapon } from '../../types/character';
 import { convertCharSheetToPartyMember } from '../../utils/storage';
+import { 
+  getCyberpsychosisStage, 
+  PSYCHOPATHY_CHECKLIST, 
+  PsychopathyTrait 
+} from '../../data/cprDrugsAndCyberpsychosis';
+import { rollD10, rollD6 } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
 
 interface PartyViewProps {
@@ -36,6 +46,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Cyberpsychosis & Mental State Modal state
+  const [selectedPsychoMember, setSelectedPsychoMember] = useState<PartyMember | null>(null);
+  const [rolledTrait, setRolledTrait] = useState<PsychopathyTrait | null>(null);
+
   // Form Fields
   const [name, setName] = useState<string>('');
   const [handle, setHandle] = useState<string>('');
@@ -45,6 +59,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [move, setMove] = useState<number>(6);
   const [body, setBody] = useState<number>(7);
   const [will, setWill] = useState<number>(6);
+  const [emp, setEmp] = useState<number>(5);
+  const [humanity, setHumanity] = useState<number>(50);
   const [luck, setLuck] = useState<number>(5);
   const [hpMax, setHpMax] = useState<number>(45);
   const [headSp, setHeadSp] = useState<number>(11);
@@ -64,6 +80,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setMove(6);
     setBody(7);
     setWill(6);
+    setEmp(5);
+    setHumanity(50);
     setLuck(5);
     setHpMax(45);
     setHeadSp(11);
@@ -85,6 +103,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setMove(member.move);
     setBody(member.body);
     setWill(6);
+    setEmp(member.emp ?? Math.max(0, Math.floor((member.humanity ?? 50) / 10)));
+    setHumanity(member.humanity ?? 50);
     setLuck(member.luckMax);
     setHpMax(member.hpMax);
     setHeadSp(member.headSpMax);
@@ -130,6 +150,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
         dex,
         move,
         body,
+        emp,
+        humanity,
         luckMax: luck,
         luckCurrent: Math.min(m.luckCurrent, luck),
         hpMax,
@@ -159,8 +181,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
         dex,
         move,
         body,
-        emp: 5,
-        humanity: 50,
+        emp,
+        humanity,
         luckMax: luck,
         luckCurrent: luck,
         passivePerception,
@@ -370,7 +392,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
               </div>
 
               {/* Core Stats Bar */}
-              <div className="grid grid-cols-5 gap-1 bg-zinc-950 p-2 rounded border border-zinc-800 text-center font-tech text-xs">
+              <div className="grid grid-cols-6 gap-1 bg-zinc-950 p-2 rounded border border-zinc-800 text-center font-tech text-xs">
                 <div>
                   <div className="text-[10px] text-zinc-500">РЕФ</div>
                   <strong className="text-cyan-400">{member.ref}</strong>
@@ -386,6 +408,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
                 <div>
                   <div className="text-[10px] text-zinc-500">ТЕЛО</div>
                   <strong className="text-cyan-400">{member.body}</strong>
+                </div>
+                <div>
+                  <div className="text-[10px] text-zinc-500">ЭМП</div>
+                  <strong className="text-rose-400">{member.emp ?? Math.max(0, Math.floor((member.humanity ?? 50) / 10))}</strong>
                 </div>
                 <div>
                   <div className="text-[10px] text-zinc-500">УДАЧА</div>
@@ -429,6 +455,63 @@ export const PartyView: React.FC<PartyViewProps> = ({
                     <span>База Восприятия:</span>
                   </span>
                   <strong className="text-amber-300 font-orbitron">{member.passivePerception}</strong>
+                </div>
+
+                {/* Humanity & Cyberpsychosis Status Indicator */}
+                <div className="bg-zinc-950 p-2 rounded border border-zinc-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
+                      <Brain className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Человечность:</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <strong className="text-white font-orbitron text-xs">
+                        {member.humanity ?? 50}
+                      </strong>
+                      <span className="text-[10px] text-zinc-500 font-orbitron">
+                        (ЭМП {member.emp ?? Math.max(0, Math.floor((member.humanity ?? 50) / 10))})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden border border-zinc-800">
+                    <div
+                      className={`h-full ${
+                        (member.humanity ?? 50) <= 0
+                          ? 'bg-purple-600'
+                          : (member.humanity ?? 50) < 10
+                          ? 'bg-red-600'
+                          : (member.humanity ?? 50) < 20
+                          ? 'bg-orange-500'
+                          : (member.humanity ?? 50) < 30
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${Math.max(0, Math.min(100, ((member.humanity ?? 50) / 80) * 100))}%` }}
+                    ></div>
+                  </div>
+
+                  {(() => {
+                    const stage = getCyberpsychosisStage(member.humanity ?? 50, member.emp);
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sfx.playClick();
+                          setSelectedPsychoMember(member);
+                          setRolledTrait(null);
+                        }}
+                        title="Кликните для просмотра симптомов киберпсихоза, советов по отыгрышу и броска черт психопатии"
+                        className={`w-full mt-1 px-2 py-1 rounded border text-[10px] font-orbitron font-bold flex items-center justify-between transition-all hover:brightness-125 ${stage.badgeColor}`}
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Activity className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{stage.title}</span>
+                        </div>
+                        <span className="text-[9px] underline opacity-80 flex-shrink-0">Отыгрыш & Черты ➔</span>
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -604,6 +687,33 @@ export const PartyView: React.FC<PartyViewProps> = ({
               </div>
             </div>
 
+            {/* Humanity & EMP */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-zinc-950 p-3 rounded border border-zinc-800">
+              <div>
+                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">Человечность (Humanity)</label>
+                <input
+                  type="number"
+                  value={humanity}
+                  onChange={(e) => {
+                    const h = parseInt(e.target.value) || 0;
+                    setHumanity(h);
+                    setEmp(Math.max(0, Math.floor(h / 10)));
+                  }}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1 text-rose-400 font-orbitron font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">Эмпатия (EMP: Человечность ÷ 10)</label>
+                <input
+                  type="number"
+                  value={emp}
+                  onChange={(e) => setEmp(parseInt(e.target.value) || 0)}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1 text-cyan-400 font-orbitron font-bold"
+                />
+              </div>
+            </div>
+
             {/* Armor SP */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -680,6 +790,293 @@ export const PartyView: React.FC<PartyViewProps> = ({
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Cyberpsychosis & Mental Trauma Modal */}
+      {selectedPsychoMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-rose-600/80 rounded-lg max-w-2xl w-full max-h-[92vh] overflow-y-auto p-5 space-y-4 clip-cyber shadow-2xl text-xs font-tech">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Brain className="w-5 h-5 text-rose-500" />
+                <div>
+                  <h3 className="font-orbitron font-bold text-white text-base">
+                    МЕНТАЛЬНОЕ СОСТОЯНИЕ & КИБЕРПСИХОЗ
+                  </h3>
+                  <span className="text-zinc-400 text-xs">
+                    {selectedPsychoMember.name} «{selectedPsychoMember.handle}» • {selectedPsychoMember.role}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  sfx.playClick();
+                  setSelectedPsychoMember(null);
+                  setRolledTrait(null);
+                }}
+                className="text-zinc-400 hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Humanity & EMP Adjuster */}
+            <div className="bg-zinc-950 p-3.5 rounded-lg border border-zinc-800 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] text-zinc-500 uppercase block">Текущая Человечность & Эмпатия:</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="font-orbitron font-black text-2xl text-white">
+                      {selectedPsychoMember.humanity ?? 50}
+                    </span>
+                    <span className="text-sm font-orbitron text-rose-400 bg-rose-950 px-2 py-0.5 rounded border border-rose-800">
+                      ЭМП {selectedPsychoMember.emp ?? Math.max(0, Math.floor((selectedPsychoMember.humanity ?? 50) / 10))}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Adjustment Buttons */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] text-zinc-500 self-center mr-1">Изменить ПЧ:</span>
+                  
+                  {/* Losses */}
+                  <button
+                    onClick={() => {
+                      const cur = selectedPsychoMember.humanity ?? 50;
+                      const next = cur - 1;
+                      const nextEmp = Math.max(0, Math.floor(next / 10));
+                      setParty(prev => prev.map(m => m.id === selectedPsychoMember.id ? { ...m, humanity: next, emp: nextEmp } : m));
+                      setSelectedPsychoMember(prev => prev ? { ...prev, humanity: next, emp: nextEmp } : null);
+                      sfx.playCritFailure();
+                    }}
+                    className="px-2 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 font-orbitron font-bold text-[10px] rounded"
+                    title="Потерять 1 Человечность"
+                  >
+                    -1
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const roll = rollD6();
+                      const cur = selectedPsychoMember.humanity ?? 50;
+                      const next = cur - roll;
+                      const nextEmp = Math.max(0, Math.floor(next / 10));
+                      setParty(prev => prev.map(m => m.id === selectedPsychoMember.id ? { ...m, humanity: next, emp: nextEmp } : m));
+                      setSelectedPsychoMember(prev => prev ? { ...prev, humanity: next, emp: nextEmp } : null);
+                      sfx.playCritFailure();
+                    }}
+                    className="px-2 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 font-orbitron font-bold text-[10px] rounded flex items-center gap-1"
+                    title="Бросить -1d6 Человечности (травма)"
+                  >
+                    <Dices className="w-3 h-3" />
+                    <span>-1d6</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const roll = rollD6() + rollD6();
+                      const cur = selectedPsychoMember.humanity ?? 50;
+                      const next = cur - roll;
+                      const nextEmp = Math.max(0, Math.floor(next / 10));
+                      setParty(prev => prev.map(m => m.id === selectedPsychoMember.id ? { ...m, humanity: next, emp: nextEmp } : m));
+                      setSelectedPsychoMember(prev => prev ? { ...prev, humanity: next, emp: nextEmp } : null);
+                      sfx.playCritFailure();
+                    }}
+                    className="px-2 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 font-orbitron font-bold text-[10px] rounded flex items-center gap-1"
+                    title="Бросить -2d6 Человечности (тяжёлая травма)"
+                  >
+                    <Dices className="w-3 h-3" />
+                    <span>-2d6</span>
+                  </button>
+
+                  {/* Gains */}
+                  <button
+                    onClick={() => {
+                      const cur = selectedPsychoMember.humanity ?? 50;
+                      const next = cur + 1;
+                      const nextEmp = Math.max(0, Math.floor(next / 10));
+                      setParty(prev => prev.map(m => m.id === selectedPsychoMember.id ? { ...m, humanity: next, emp: nextEmp } : m));
+                      setSelectedPsychoMember(prev => prev ? { ...prev, humanity: next, emp: nextEmp } : null);
+                      sfx.playCritSuccess();
+                    }}
+                    className="px-2 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 font-orbitron font-bold text-[10px] rounded"
+                    title="Восстановить +1 Человечность"
+                  >
+                    +1
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const roll = rollD6();
+                      const cur = selectedPsychoMember.humanity ?? 50;
+                      const next = cur + roll;
+                      const nextEmp = Math.max(0, Math.floor(next / 10));
+                      setParty(prev => prev.map(m => m.id === selectedPsychoMember.id ? { ...m, humanity: next, emp: nextEmp } : m));
+                      setSelectedPsychoMember(prev => prev ? { ...prev, humanity: next, emp: nextEmp } : null);
+                      sfx.playCritSuccess();
+                    }}
+                    className="px-2 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 font-orbitron font-bold text-[10px] rounded flex items-center gap-1"
+                    title="Бросить +1d6 Человечности (терапия/дружба)"
+                  >
+                    <Dices className="w-3 h-3" />
+                    <span>+1d6</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const roll = rollD6() + rollD6();
+                      const cur = selectedPsychoMember.humanity ?? 50;
+                      const next = cur + roll;
+                      const nextEmp = Math.max(0, Math.floor(next / 10));
+                      setParty(prev => prev.map(m => m.id === selectedPsychoMember.id ? { ...m, humanity: next, emp: nextEmp } : m));
+                      setSelectedPsychoMember(prev => prev ? { ...prev, humanity: next, emp: nextEmp } : null);
+                      sfx.playCritSuccess();
+                    }}
+                    className="px-2 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 font-orbitron font-bold text-[10px] rounded flex items-center gap-1"
+                    title="Бросить +2d6 Человечности (терапия)"
+                  >
+                    <Dices className="w-3 h-3" />
+                    <span>+2d6</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-800">
+                <div
+                  className={`h-full ${
+                    (selectedPsychoMember.humanity ?? 50) <= 0
+                      ? 'bg-purple-600'
+                      : (selectedPsychoMember.humanity ?? 50) < 10
+                      ? 'bg-red-600'
+                      : (selectedPsychoMember.humanity ?? 50) < 20
+                      ? 'bg-orange-500'
+                      : (selectedPsychoMember.humanity ?? 50) < 30
+                      ? 'bg-amber-500'
+                      : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${Math.max(0, Math.min(100, ((selectedPsychoMember.humanity ?? 50) / 80) * 100))}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Computed Stage Details */}
+            {(() => {
+              const stage = getCyberpsychosisStage(selectedPsychoMember.humanity ?? 50, selectedPsychoMember.emp);
+              return (
+                <div className={`p-4 rounded-lg border space-y-3 ${stage.badgeColor}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/80 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Skull className="w-5 h-5" />
+                      <h4 className="font-orbitron font-black text-base uppercase">
+                        {stage.title}
+                      </h4>
+                    </div>
+
+                    <span className="text-xs font-orbitron font-bold px-2 py-0.5 rounded bg-zinc-950/80 border border-zinc-800 text-white">
+                      {stage.requiredTraitsCount > 0 
+                        ? `Обязательно черт: ${stage.requiredTraitsCount}` 
+                        : 'Стабилен (черты не обязательны)'}
+                    </span>
+                  </div>
+
+                  <p className="text-zinc-200 text-xs leading-relaxed">
+                    {stage.description}
+                  </p>
+
+                  <div className="bg-zinc-950/70 p-3 rounded border border-zinc-800 space-y-1">
+                    <strong className="block text-[10px] uppercase font-orbitron text-amber-400">
+                      Советы по отыгрышу роли (Roleplay):
+                    </strong>
+                    <ul className="list-disc list-inside space-y-0.5 text-zinc-300 text-xs">
+                      {stage.roleplayTips.map((tip, i) => (
+                        <li key={i}>{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Psychopathy Traits Roller */}
+            <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+                <div>
+                  <h4 className="font-orbitron font-bold text-white text-xs uppercase flex items-center gap-1.5">
+                    <Skull className="w-4 h-4 text-red-500" />
+                    <span>КОНТРОЛЬНЫЙ СПИСОК ПСИХОПАТИИ (1d10)</span>
+                  </h4>
+                  <span className="text-[11px] text-zinc-400">
+                    Бросьте 1d10, чтобы определить наклонность характера при падении Человечности
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    sfx.playDiceRoll();
+                    const roll = rollD10();
+                    const trait = PSYCHOPATHY_CHECKLIST.find(t => t.d10 === roll) || PSYCHOPATHY_CHECKLIST[0];
+                    setRolledTrait(trait);
+                  }}
+                  className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded clip-cyber-btn shadow flex items-center gap-1.5"
+                >
+                  <Dices className="w-3.5 h-3.5" />
+                  <span>БРОСИТЬ ЧЕРТУ (1d10)</span>
+                </button>
+              </div>
+
+              {/* Rolled Trait Display */}
+              {rolledTrait && (
+                <div className="p-3 bg-zinc-900 border border-red-600/70 rounded-lg space-y-2 animate-in fade-in">
+                  <div className="flex items-center justify-between border-b border-zinc-800 pb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-red-600 text-white font-orbitron font-bold text-xs flex items-center justify-center">
+                        {rolledTrait.d10}
+                      </span>
+                      <strong className="text-white text-sm font-orbitron">{rolledTrait.nameRu}</strong>
+                    </div>
+                    <span className="text-zinc-500 text-[11px]">{rolledTrait.nameEn}</span>
+                  </div>
+
+                  <p className="text-zinc-200 text-xs leading-relaxed">{rolledTrait.description}</p>
+
+                  <div className="p-2 bg-zinc-950 rounded border border-amber-900/60 text-amber-200 text-xs">
+                    <strong className="block text-[10px] uppercase font-orbitron text-amber-400 mb-0.5">
+                      Отыгрыш:
+                    </strong>
+                    {rolledTrait.roleplayAdvice}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick traits list */}
+              <div className="grid grid-cols-2 gap-1.5 pt-1">
+                {PSYCHOPATHY_CHECKLIST.map(t => (
+                  <button
+                    key={t.d10}
+                    onClick={() => {
+                      sfx.playClick();
+                      setRolledTrait(t);
+                    }}
+                    className={`p-1.5 rounded border text-left text-[11px] transition flex items-center gap-1.5 ${
+                      rolledTrait?.d10 === t.d10
+                        ? 'bg-zinc-900 border-red-500 text-white'
+                        : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="w-4 h-4 rounded bg-zinc-800 text-red-400 font-orbitron font-bold text-[9px] flex items-center justify-center flex-shrink-0">
+                      {t.d10}
+                    </span>
+                    <span className="truncate">{t.nameRu}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

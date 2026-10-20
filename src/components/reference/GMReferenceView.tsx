@@ -23,7 +23,12 @@ import {
   Car,
   Award,
   Plus,
-  Play
+  Play,
+  Pill,
+  Brain,
+  Skull,
+  Activity,
+  FlaskConical
 } from 'lucide-react';
 import { 
   CPR_RANGE_DV_TABLE, 
@@ -49,6 +54,24 @@ import {
   SituationalModifier,
   StreetIncidentEvent
 } from '../../data/cprExpandedRules';
+import {
+  STREET_DRUGS,
+  MEDTECH_PHARMACEUTICALS,
+  COMBAT_CHEMICALS,
+  DRUG_INTENSITY_TIERS,
+  CYBERPSYCHOSIS_STAGES,
+  PSYCHOPATHY_CHECKLIST,
+  INSTANT_HUMANITY_LOSS,
+  LONG_TERM_HUMANITY_LOSS,
+  INSTANT_HUMANITY_GAIN,
+  LONG_TERM_HUMANITY_GAIN,
+  getCyberpsychosisStage,
+  StreetDrug,
+  MedtechPharma,
+  CombatChemical,
+  PsychopathyTrait,
+  HumanityEvent
+} from '../../data/cprDrugsAndCyberpsychosis';
 import { WEATHER_CONDITIONS, GIG_GENERATOR_DATA, POCKET_JUNK_TABLE } from '../../data/nightCityData';
 import { GeneratedGig, GeneratedWeather, PocketLootItem } from '../../types/generators';
 import { rollD10, rollD6 } from '../../utils/dice';
@@ -60,6 +83,8 @@ type ReferenceTab =
   | 'economic' 
   | 'traps' 
   | 'special' 
+  | 'drugs'
+  | 'psycho'
   | 'incidents' 
   | 'gigs' 
   | 'weather' 
@@ -110,6 +135,127 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
   // 10. Pocket Loot State
   const [rolledLoot, setRolledLoot] = useState<PocketLootItem | null>(null);
   const [rolledLootHistory, setRolledLootHistory] = useState<PocketLootItem[]>([]);
+
+  // 11. Drugs & Pharmaceuticals State
+  const [drugTabCategory, setDrugTabCategory] = useState<'all' | 'street' | 'pharma' | 'combat' | 'intensity'>('all');
+  const [drugSearchQuery, setDrugSearchQuery] = useState<string>('');
+  const [selectedDrugForCheck, setSelectedDrugForCheck] = useState<StreetDrug | CombatChemical | null>(null);
+  const [resistBaseStat, setResistBaseStat] = useState<number>(12);
+  const [manualResistRoll, setManualResistRoll] = useState<number>(5);
+  const [resistTestResult, setResistTestResult] = useState<{
+    rolledValue: number;
+    extraExplode?: number;
+    total: number;
+    targetDv: number;
+    isSuccess: boolean;
+    isCritSuccess: boolean;
+    isCritFailure: boolean;
+    substanceName: string;
+  } | null>(null);
+
+  // 12. Cyberpsychosis & Mental Trauma State
+  const [calcHumanity, setCalcHumanity] = useState<number>(45);
+  const [selectedTrait, setSelectedTrait] = useState<PsychopathyTrait | null>(null);
+  const [manualTraitD10, setManualTraitD10] = useState<number>(1);
+  const [humanityEventsTab, setHumanityEventsTab] = useState<'instant_loss' | 'longterm_loss' | 'instant_gain' | 'longterm_gain'>('instant_loss');
+  const [rolledHumanityResult, setRolledHumanityResult] = useState<{
+    tierTitle: string;
+    diceNotation: string;
+    diceRolls: number[];
+    total: number;
+    isGain: boolean;
+  } | null>(null);
+
+  const handleSelectDrugForResist = (drug: StreetDrug | CombatChemical) => {
+    sfx.playClick();
+    setSelectedDrugForCheck(drug);
+    setResistTestResult(null);
+  };
+
+  const handleRollDrugResist = (targetDv: number, substanceName: string) => {
+    sfx.playDiceRoll();
+    const d10 = rollD10();
+    let total = resistBaseStat + d10;
+    let extraExplode: number | undefined = undefined;
+
+    if (d10 === 10) {
+      const explodeD10 = rollD10();
+      extraExplode = explodeD10;
+      total += explodeD10;
+    } else if (d10 === 1) {
+      const fumbleD10 = rollD10();
+      extraExplode = -fumbleD10;
+      total -= fumbleD10;
+    }
+
+    const isSuccess = total >= targetDv;
+    if (isSuccess) sfx.playCritSuccess();
+    else sfx.playCritFailure();
+
+    setResistTestResult({
+      rolledValue: d10,
+      extraExplode,
+      total,
+      targetDv,
+      isSuccess,
+      isCritSuccess: d10 === 10,
+      isCritFailure: d10 === 1,
+      substanceName
+    });
+  };
+
+  const handleManualDrugResist = (targetDv: number, substanceName: string) => {
+    sfx.playClick();
+    const d10 = Math.max(1, Math.min(10, manualResistRoll));
+    const total = resistBaseStat + d10;
+    const isSuccess = total >= targetDv;
+    if (isSuccess) sfx.playCritSuccess();
+    else sfx.playCritFailure();
+
+    setResistTestResult({
+      rolledValue: d10,
+      total,
+      targetDv,
+      isSuccess,
+      isCritSuccess: d10 === 10,
+      isCritFailure: d10 === 1,
+      substanceName
+    });
+  };
+
+  const handleRollTrait = (forcedD10?: number) => {
+    sfx.playDiceRoll();
+    const roll = forcedD10 !== undefined ? forcedD10 : rollD10();
+    const trait = PSYCHOPATHY_CHECKLIST.find(t => t.d10 === roll) || PSYCHOPATHY_CHECKLIST[0];
+    setSelectedTrait(trait);
+  };
+
+  const handleRollHumanityDice = (tierTitle: string, diceNotation: string, isGain: boolean) => {
+    sfx.playDiceRoll();
+    let numDice = 1;
+    if (diceNotation.includes('2d6') || diceNotation.includes('2к6')) numDice = 2;
+    else if (diceNotation.includes('3d6') || diceNotation.includes('3к6')) numDice = 3;
+    else if (diceNotation.includes('4d6') || diceNotation.includes('4к6')) numDice = 4;
+
+    const rolls: number[] = [];
+    let sum = 0;
+    for (let i = 0; i < numDice; i++) {
+      const r = rollD6();
+      rolls.push(r);
+      sum += r;
+    }
+
+    if (isGain) sfx.playCritSuccess();
+    else sfx.playCritFailure();
+
+    setRolledHumanityResult({
+      tierTitle,
+      diceNotation,
+      diceRolls: rolls,
+      total: sum,
+      isGain
+    });
+  };
 
   // Toggle modifier checkbox
   const toggleModifier = (id: string) => {
@@ -280,6 +426,8 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
           { id: 'economic', label: 'Экономика & Прайсы', icon: <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> },
           { id: 'traps', label: 'Ловушки & Дроны', icon: <Bomb className="w-3.5 h-3.5 text-amber-400" /> },
           { id: 'special', label: 'Спецправила: Засада & Удача', icon: <Zap className="w-3.5 h-3.5 text-purple-400" /> },
+          { id: 'drugs', label: 'Фармацевтика & Наркотики', icon: <Pill className="w-3.5 h-3.5 text-pink-400" /> },
+          { id: 'psycho', label: 'Киберпсихоз & Травмы', icon: <Brain className="w-3.5 h-3.5 text-rose-500" /> },
           { id: 'incidents', label: 'Случайные ситуации & Кафе', icon: <Flame className="w-3.5 h-3.5 text-orange-400" /> },
           { id: 'gigs', label: 'Генератор заказов (Gigs)', icon: <FileText className="w-3.5 h-3.5" /> },
           { id: 'weather', label: 'Погода и атмосфера', icon: <CloudRain className="w-3.5 h-3.5 text-sky-400" /> },
@@ -930,6 +1078,796 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUBTAB: DRUGS & PHARMACEUTICALS */}
+      {subTab === 'drugs' && (
+        <div className="space-y-4 animate-in fade-in">
+          {/* Header & Controls */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3 shadow-md">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
+                  <Pill className="w-5 h-5 text-pink-400" />
+                  <span>ФАРМАЦЕВТИКА, УЛИЧНЫЕ НАРКОТИКИ И БОЕВАЯ ХИМИЯ</span>
+                </h3>
+                <p className="text-xs text-zinc-400 font-tech mt-0.5">
+                  Эффекты, длительность, СЛ зависимости, препараты МедТеха и боевые нейротоксины Найт-Сити
+                </p>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative min-w-[200px]">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-zinc-500" />
+                <input
+                  type="text"
+                  value={drugSearchQuery}
+                  onChange={(e) => setDrugSearchQuery(e.target.value)}
+                  placeholder="Поиск по названию или эффекту..."
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500 font-tech"
+                />
+              </div>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-zinc-800">
+              {[
+                { id: 'all', label: `Все вещества (${STREET_DRUGS.length + MEDTECH_PHARMACEUTICALS.length + COMBAT_CHEMICALS.length})` },
+                { id: 'street', label: `🧪 Уличные наркотики (${STREET_DRUGS.length})` },
+                { id: 'pharma', label: `💉 Препараты МедТеха (${MEDTECH_PHARMACEUTICALS.length})` },
+                { id: 'combat', label: `☠️ Боевая химия (${COMBAT_CHEMICALS.length})` },
+                { id: 'intensity', label: `⚖️ Шкала интенсивности ядов` }
+              ].map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    sfx.playClick();
+                    setDrugTabCategory(cat.id as any);
+                  }}
+                  className={`px-3 py-1 text-xs font-tech font-bold rounded transition-all ${
+                    drugTabCategory === cat.id
+                      ? 'bg-pink-600 text-white shadow-md'
+                      : 'bg-zinc-950 text-zinc-400 hover:text-white border border-zinc-800'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Interactive Resistance & Addiction Roller Panel */}
+          <div className="bg-zinc-900 border border-pink-900/60 rounded-lg p-4 space-y-3 shadow-md">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-pink-400" />
+                <h4 className="font-orbitron font-bold text-white text-xs uppercase">
+                  ТЕСТ НА СОПРОТИВЛЕНИЕ ПЫТКАМ/НАРКОТИКАМ И ЗАВИСИМОСТЬ
+                </h4>
+              </div>
+              <span className="text-[11px] font-tech text-zinc-400">
+                Формула: 1d10 + База Сопротивления (ТЕЛО + ВОЛЯ) vs СЛ вторичного эффекта
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-3 text-xs font-tech items-end">
+              <div>
+                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">
+                  Выбранный препарат:
+                </label>
+                <div className="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-white font-bold truncate">
+                  {selectedDrugForCheck ? selectedDrugForCheck.nameRu : 'Любое вещество (вручную)'}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">
+                  База навыка персонажа:
+                </label>
+                <input
+                  type="number"
+                  value={resistBaseStat}
+                  onChange={(e) => setResistBaseStat(parseInt(e.target.value) || 0)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-cyan-400 font-orbitron font-bold text-center"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">
+                  Сложность (СЛ / DV):
+                </label>
+                <div className="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-amber-400 font-orbitron font-bold text-center">
+                  {selectedDrugForCheck ? `СЛ ${selectedDrugForCheck.secondaryDv}` : 'СЛ 15 (Стандарт)'}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    const dv = selectedDrugForCheck ? selectedDrugForCheck.secondaryDv : 15;
+                    const name = selectedDrugForCheck ? selectedDrugForCheck.nameRu : 'Вещество';
+                    handleRollDrugResist(dv, name);
+                  }}
+                  className="flex-1 py-2 px-3 bg-pink-600 hover:bg-pink-500 text-white font-orbitron font-bold text-xs rounded clip-cyber-btn shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <Dices className="w-3.5 h-3.5" />
+                  <span>БРОСИТЬ (1d10)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Manual Roll input for tabletop IRL */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-tech border-t border-zinc-800/80">
+              <span className="text-zinc-500 text-[11px]">Ручной ввод броска кубика игрока (1–10):</span>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={manualResistRoll}
+                onChange={(e) => setManualResistRoll(parseInt(e.target.value) || 1)}
+                className="w-16 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-white font-orbitron text-center"
+              />
+              <button
+                onClick={() => {
+                  const dv = selectedDrugForCheck ? selectedDrugForCheck.secondaryDv : 15;
+                  const name = selectedDrugForCheck ? selectedDrugForCheck.nameRu : 'Вещество';
+                  handleManualDrugResist(dv, name);
+                }}
+                className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-orbitron text-[11px]"
+              >
+                Применить ручной бросок
+              </button>
+            </div>
+
+            {/* Resistance Test Result Display */}
+            {resistTestResult && (
+              <div className={`p-3 rounded-lg border text-xs font-tech animate-in fade-in flex flex-wrap items-center justify-between gap-3 ${
+                resistTestResult.isSuccess
+                  ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-200'
+                  : 'bg-red-950/60 border-red-500/80 text-red-200'
+              }`}>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-orbitron font-bold text-sm">
+                      {resistTestResult.isSuccess ? '✓ СПАСБРОСОК УСПЕШЕН!' : '✕ СПАСБРОСОК ПРОВАЛЕН!'}
+                    </span>
+                    {resistTestResult.isCritSuccess && (
+                      <span className="bg-emerald-500 text-black px-1.5 py-0.5 rounded text-[10px] font-bold">
+                        КРИТИЧЕСКИЙ УСПЕХ (10)
+                      </span>
+                    )}
+                    {resistTestResult.isCritFailure && (
+                      <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">
+                        КРИТИЧЕСКИЙ ПРОВАЛ (1)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] opacity-90 mt-0.5">
+                    Вещество: <strong>{resistTestResult.substanceName}</strong> • Итог: <strong>{resistTestResult.total}</strong> (База {resistBaseStat} + Куб {resistTestResult.rolledValue}{resistTestResult.extraExplode ? ` + взрыв ${resistTestResult.extraExplode}` : ''}) vs СЛ {resistTestResult.targetDv}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  {resistTestResult.isSuccess ? (
+                    <span className="text-emerald-400 font-bold">Зависимость / вторичный эффект предотвращены!</span>
+                  ) : (
+                    <span className="text-red-400 font-bold">Вступает в силу побочный эффект или зависимость!</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* STREET DRUGS CARDS */}
+          {(drugTabCategory === 'all' || drugTabCategory === 'street') && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-orbitron font-bold text-pink-400 uppercase tracking-wider">
+                  Уличные Наркотики Найт-Сити
+                </span>
+                <div className="h-px bg-zinc-800 flex-1"></div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-tech">
+                {STREET_DRUGS
+                  .filter(d => {
+                    const q = drugSearchQuery.toLowerCase();
+                    return !q || d.nameRu.toLowerCase().includes(q) || d.nameEn.toLowerCase().includes(q) || d.primaryEffect.toLowerCase().includes(q);
+                  })
+                  .map(drug => (
+                    <div 
+                      key={drug.id} 
+                      className={`bg-zinc-950 border rounded-lg p-3.5 flex flex-col justify-between space-y-3 transition-all ${
+                        selectedDrugForCheck?.id === drug.id
+                          ? 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.25)]'
+                          : 'border-zinc-800 hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="space-y-2">
+                        {/* Title & Badges */}
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-zinc-800 pb-2">
+                          <div>
+                            <h4 className="font-orbitron font-bold text-white text-sm">
+                              {drug.nameRu}
+                            </h4>
+                            <span className="text-[11px] text-zinc-500">{drug.nameEn}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-bold text-[10px]">
+                              ⏳ {drug.duration}
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800 text-emerald-400 font-orbitron font-bold text-[10px]">
+                              {drug.priceCategory}
+                            </span>
+                          </div>
+                        </div>
+
+                        {drug.description && (
+                          <p className="text-zinc-400 text-[11px] italic leading-tight">
+                            {drug.description}
+                          </p>
+                        )}
+
+                        {/* Primary Effect */}
+                        <div className="p-2 bg-zinc-900/80 rounded border border-cyan-900/50 space-y-0.5">
+                          <strong className="block text-[10px] uppercase font-orbitron text-cyan-400">
+                            ★ Первичный эффект:
+                          </strong>
+                          <p className="text-zinc-200 leading-relaxed text-[11px]">
+                            {drug.primaryEffect}
+                          </p>
+                        </div>
+
+                        {/* Secondary Effect & DV */}
+                        <div className="p-2 bg-zinc-900/80 rounded border border-pink-950 space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <strong className="text-[10px] uppercase font-orbitron text-pink-400">
+                              ⚠ Вторичный эффект & Зависимость:
+                            </strong>
+                            <span className="px-1.5 py-0.2 rounded bg-pink-950 border border-pink-700 text-pink-300 font-orbitron font-bold text-[10px]">
+                              СЛ {drug.secondaryDv}
+                            </span>
+                          </div>
+                          <p className="text-zinc-300 leading-relaxed text-[11px]">
+                            {drug.secondaryEffect}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <button
+                        onClick={() => handleSelectDrugForResist(drug)}
+                        className={`w-full py-1.5 px-3 rounded font-orbitron font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+                          selectedDrugForCheck?.id === drug.id
+                            ? 'bg-pink-600 text-white'
+                            : 'bg-zinc-900 hover:bg-zinc-800 text-pink-300 border border-pink-900/50'
+                        }`}
+                      >
+                        <Shield className="w-3.5 h-3.5" />
+                        <span>Тест на сопротивление (СЛ {drug.secondaryDv})</span>
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* MEDTECH PHARMACEUTICALS */}
+          {(drugTabCategory === 'all' || drugTabCategory === 'pharma') && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-orbitron font-bold text-cyan-400 uppercase tracking-wider">
+                  Препараты и Лекарства МедТеха (MedTech Pharmaceuticals)
+                </span>
+                <div className="h-px bg-zinc-800 flex-1"></div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs font-tech">
+                {MEDTECH_PHARMACEUTICALS
+                  .filter(p => {
+                    const q = drugSearchQuery.toLowerCase();
+                    return !q || p.nameRu.toLowerCase().includes(q) || p.nameEn.toLowerCase().includes(q) || p.effect.toLowerCase().includes(q);
+                  })
+                  .map(pharma => (
+                    <div key={pharma.id} className="bg-zinc-950 border border-zinc-800 rounded-lg p-3.5 flex flex-col justify-between space-y-2.5">
+                      <div>
+                        <div className="border-b border-zinc-800 pb-1.5 mb-2">
+                          <h4 className="font-orbitron font-bold text-white text-sm">
+                            {pharma.nameRu}
+                          </h4>
+                          <span className="text-[11px] text-zinc-500">{pharma.nameEn}</span>
+                        </div>
+
+                        <p className="text-zinc-200 text-xs leading-relaxed">
+                          {pharma.effect}
+                        </p>
+                      </div>
+
+                      {pharma.usageLimit && (
+                        <div className="p-1.5 bg-zinc-900 rounded border border-zinc-800 text-[10px] text-cyan-300">
+                          <strong>Ограничение:</strong> {pharma.usageLimit}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* COMBAT CHEMISTRY */}
+          {(drugTabCategory === 'all' || drugTabCategory === 'combat') && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-orbitron font-bold text-red-500 uppercase tracking-wider">
+                  Боевая Химия, Нейротоксины и Яды (Combat Chemistry)
+                </span>
+                <div className="h-px bg-zinc-800 flex-1"></div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-tech">
+                {COMBAT_CHEMICALS
+                  .filter(c => {
+                    const q = drugSearchQuery.toLowerCase();
+                    return !q || c.nameRu.toLowerCase().includes(q) || c.nameEn.toLowerCase().includes(q) || c.primaryEffect.toLowerCase().includes(q);
+                  })
+                  .map(chem => (
+                    <div 
+                      key={chem.id} 
+                      className={`bg-zinc-950 border rounded-lg p-3.5 flex flex-col justify-between space-y-3 transition-all ${
+                        selectedDrugForCheck?.id === chem.id
+                          ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.25)]'
+                          : 'border-zinc-800 hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-zinc-800 pb-2">
+                          <div>
+                            <h4 className="font-orbitron font-bold text-white text-sm">
+                              {chem.nameRu}
+                            </h4>
+                            <span className="text-[11px] text-zinc-500">{chem.nameEn}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 font-bold text-[10px]">
+                              ⏳ {chem.duration}
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-red-950 border border-red-800 text-red-400 font-orbitron font-bold text-[10px]">
+                              {chem.priceCategory}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-zinc-400 text-[11px] italic leading-tight">
+                          {chem.description}
+                        </p>
+
+                        <div className="p-2 bg-zinc-900/80 rounded border border-red-900/50 space-y-0.5">
+                          <strong className="block text-[10px] uppercase font-orbitron text-red-400">
+                            ★ Поражающий эффект:
+                          </strong>
+                          <p className="text-zinc-200 leading-relaxed text-[11px]">
+                            {chem.primaryEffect}
+                          </p>
+                        </div>
+
+                        <div className="p-2 bg-zinc-900/80 rounded border border-zinc-800 space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <strong className="text-[10px] uppercase font-orbitron text-amber-400">
+                              Вторичные последствия:
+                            </strong>
+                            <span className="px-1.5 py-0.2 rounded bg-amber-950 border border-amber-700 text-amber-300 font-orbitron font-bold text-[10px]">
+                              СЛ {chem.secondaryDv}
+                            </span>
+                          </div>
+                          <p className="text-zinc-300 leading-relaxed text-[11px]">
+                            {chem.secondaryEffect}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleSelectDrugForResist(chem)}
+                        className={`w-full py-1.5 px-3 rounded font-orbitron font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+                          selectedDrugForCheck?.id === chem.id
+                            ? 'bg-red-600 text-white'
+                            : 'bg-zinc-900 hover:bg-zinc-800 text-red-300 border border-red-900/50'
+                        }`}
+                      >
+                        <Shield className="w-3.5 h-3.5" />
+                        <span>Тест на сопротивление (СЛ {chem.secondaryDv})</span>
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* DRUG INTENSITY TIERS */}
+          {(drugTabCategory === 'all' || drugTabCategory === 'intensity') && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3 shadow-md">
+              <h4 className="font-orbitron font-bold text-white text-xs uppercase flex items-center gap-2">
+                <FlaskConical className="w-4 h-4 text-purple-400" />
+                <span>ШКАЛА ИНТЕНСИВНОСТИ И СЛОЖНОСТИ СОПРОТИВЛЕНИЯ ЯДАМ</span>
+              </h4>
+              <p className="text-xs text-zinc-400 font-tech">
+                Базовые пороги сложности для ядов, газов, токсинов и самодельной химии в Cyberpunk RED:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-tech">
+                {DRUG_INTENSITY_TIERS.map((tier, idx) => (
+                  <div key={idx} className="bg-zinc-950 border border-zinc-800 p-3 rounded-lg flex flex-col justify-between space-y-1.5">
+                    <div className="flex items-center justify-between border-b border-zinc-800 pb-1.5">
+                      <strong className="text-white text-sm">{tier.intensity}</strong>
+                      <span className="font-orbitron font-bold text-purple-400 bg-purple-950 px-2 py-0.5 rounded border border-purple-800">
+                        СЛ {tier.dv}
+                      </span>
+                    </div>
+                    <div className="text-zinc-300 text-[11px] pt-1">
+                      <strong>Примеры:</strong> {tier.examples}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUBTAB: CYBERPSYCHOSIS & MENTAL TRAUMA */}
+      {subTab === 'psycho' && (
+        <div className="space-y-4 animate-in fade-in">
+          {/* Header */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-2 shadow-md">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-rose-500" />
+                  <span>КИБЕРПСИХОЗ, ПСИХОЛОГИЧЕСКИЕ ТРАВМЫ И ТЕРАПИЯ</span>
+                </h3>
+                <p className="text-xs text-zinc-400 font-tech mt-0.5">
+                  «Чумба, ты что, киберпсих?» • Стадии деперсонализации, 10 черт психопатии и таблицы потери Человечности
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-tech text-zinc-400">Cyberpunk RED Core (p.232) & Data Pool</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Humanity & Stage Calculator */}
+          <div className="bg-zinc-900 border border-rose-900/60 rounded-lg p-4 space-y-4 shadow-md font-tech">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+              <h4 className="font-orbitron font-bold text-white text-xs uppercase flex items-center gap-2">
+                <Activity className="w-4 h-4 text-rose-500" />
+                <span>ИНТЕРАКТИВНЫЙ РАСЧЁТ СТАДИИ КИБЕРПСИХОЗА</span>
+              </h4>
+              <span className="text-[11px] text-zinc-400">
+                ЭМП = Человечность ÷ 10 (округление вниз)
+              </span>
+            </div>
+
+            {/* Slider & Input */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+              <div className="sm:col-span-2 space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-zinc-400">Текущая Человечность (Humanity):</span>
+                  <strong className="text-white font-orbitron text-sm">{calcHumanity}</strong>
+                </div>
+                <input
+                  type="range"
+                  min={-10}
+                  max={80}
+                  value={calcHumanity}
+                  onChange={(e) => setCalcHumanity(parseInt(e.target.value) || 0)}
+                  className="w-full accent-rose-500 cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-zinc-500 font-orbitron">
+                  <span>-10 (Экстремальный)</span>
+                  <span>0 (Киберпсихоз)</span>
+                  <span>10 (ЭМП 1)</span>
+                  <span>20 (ЭМП 2)</span>
+                  <span>30+ (Стабилен)</span>
+                </div>
+              </div>
+
+              <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-center space-y-1">
+                <span className="text-[10px] text-zinc-500 uppercase block">Расчётное значение ЭМП (EMP):</span>
+                <strong className={`font-orbitron text-2xl font-black ${
+                  calcHumanity <= 0 ? 'text-purple-400' : Math.floor(calcHumanity / 10) === 0 ? 'text-red-500' : Math.floor(calcHumanity / 10) === 1 ? 'text-orange-400' : 'text-emerald-400'
+                }`}>
+                  {calcHumanity <= 0 ? '0 (Крах)' : Math.max(0, Math.floor(calcHumanity / 10))}
+                </strong>
+              </div>
+            </div>
+
+            {/* Calculated Stage Card */}
+            {(() => {
+              const stage = getCyberpsychosisStage(calcHumanity);
+              return (
+                <div className={`p-4 rounded-lg border space-y-3 animate-in fade-in ${stage.badgeColor}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/80 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Skull className="w-5 h-5" />
+                      <h5 className="font-orbitron font-black text-base uppercase tracking-wide">
+                        {stage.title}
+                      </h5>
+                    </div>
+
+                    <span className="text-xs font-orbitron font-bold px-2 py-0.5 rounded bg-zinc-950/80 border border-zinc-800 text-white">
+                      {stage.requiredTraitsCount > 0 
+                        ? `Обязательно черт: ${stage.requiredTraitsCount}` 
+                        : 'Психопатических черт нет'}
+                    </span>
+                  </div>
+
+                  <p className="text-zinc-200 text-xs sm:text-sm leading-relaxed">
+                    {stage.description}
+                  </p>
+
+                  <div className="bg-zinc-950/70 p-3 rounded border border-zinc-800 space-y-1">
+                    <strong className="block text-[11px] uppercase font-orbitron text-amber-400">
+                      Рекомендации по отыгрышу роли (Roleplay):
+                    </strong>
+                    <ul className="list-disc list-inside space-y-1 text-zinc-300 text-xs">
+                      {stage.roleplayTips.map((tip, i) => (
+                        <li key={i}>{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Psychopathy Checklist 1d10 */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-4 shadow-md font-tech">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-3">
+              <div>
+                <h4 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
+                  <Skull className="w-5 h-5 text-red-500" />
+                  <span>КОНТРОЛЬНЫЙ СПИСОК ПСИХОПАТИИ (1d10)</span>
+                </h4>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Черты характера, развивающиеся при потере Человечности (CP:R стр.232 & Data Pool)
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => handleRollTrait()}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded clip-cyber-btn shadow-md flex items-center gap-1.5"
+                >
+                  <Dices className="w-4 h-4" />
+                  <span>БРОСИТЬ ЧЕРТУ (1d10)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick 1-10 selector pills */}
+            <div className="flex flex-wrap gap-1">
+              <span className="text-[11px] text-zinc-500 self-center mr-1">Выбрать кубик:</span>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                <button
+                  key={n}
+                  onClick={() => handleRollTrait(n)}
+                  className={`w-7 h-7 rounded text-xs font-orbitron font-bold transition-all ${
+                    selectedTrait?.d10 === n
+                      ? 'bg-red-600 text-white'
+                      : 'bg-zinc-950 text-zinc-400 hover:text-white border border-zinc-800'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+
+            {/* Active Trait Showcase Card */}
+            {selectedTrait && (
+              <div className="bg-zinc-950 border border-red-600/70 p-4 rounded-lg space-y-2.5 animate-in fade-in">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-red-600 text-white font-orbitron font-bold text-xs flex items-center justify-center">
+                      {selectedTrait.d10}
+                    </span>
+                    <h5 className="font-orbitron font-bold text-white text-base">
+                      {selectedTrait.nameRu}
+                    </h5>
+                  </div>
+                  <span className="text-xs font-tech text-zinc-500">{selectedTrait.nameEn}</span>
+                </div>
+
+                <p className="text-zinc-200 text-xs sm:text-sm leading-relaxed">
+                  {selectedTrait.description}
+                </p>
+
+                <div className="p-2.5 bg-zinc-900 rounded border border-amber-800/60 text-xs text-amber-200">
+                  <strong className="block text-[10px] uppercase font-orbitron text-amber-400 mb-0.5">
+                    Совет по отыгрышу для игрока:
+                  </strong>
+                  {selectedTrait.roleplayAdvice}
+                </div>
+              </div>
+            )}
+
+            {/* All 10 Traits Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
+              {PSYCHOPATHY_CHECKLIST.map((trait) => (
+                <div
+                  key={trait.d10}
+                  onClick={() => {
+                    sfx.playClick();
+                    setSelectedTrait(trait);
+                  }}
+                  className={`p-2.5 rounded border text-xs cursor-pointer transition-all ${
+                    selectedTrait?.d10 === trait.d10
+                      ? 'bg-zinc-900 border-red-500 shadow-md'
+                      : 'bg-zinc-950 border-zinc-800/80 hover:border-zinc-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-5 h-5 rounded bg-zinc-800 text-red-400 font-orbitron font-bold text-[10px] flex items-center justify-center">
+                      {trait.d10}
+                    </span>
+                    <strong className="text-white truncate">{trait.nameRu}</strong>
+                  </div>
+                  <p className="text-zinc-400 text-[11px] line-clamp-2">
+                    {trait.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* HUMANITY LOSS & GAIN TABLES */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-4 shadow-md font-tech">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-3">
+              <div>
+                <h4 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-amber-400" />
+                  <span>ТАБЛИЦЫ ПОТЕРИ И ВОССТАНОВЛЕНИЯ ЧЕЛОВЕЧНОСТИ</span>
+                </h4>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Стресс, травмы, окружение Найт-Сити и позитивные события жизни
+                </p>
+              </div>
+
+              {/* Subtabs for Events */}
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { id: 'instant_loss', label: '💥 Потеря: Мгновенная' },
+                  { id: 'longterm_loss', label: '🏙️ Потеря: Ежемесячная' },
+                  { id: 'instant_gain', label: '💖 Восстановление: Мгновенное' },
+                  { id: 'longterm_gain', label: '🧘 Восстановление: Долгосрочное' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      sfx.playClick();
+                      setHumanityEventsTab(tab.id as any);
+                    }}
+                    className={`px-2.5 py-1 text-xs font-tech rounded transition-all ${
+                      humanityEventsTab === tab.id
+                        ? 'bg-amber-600 text-white font-bold'
+                        : 'bg-zinc-950 text-zinc-400 hover:text-white border border-zinc-800'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rolled Result Alert */}
+            {rolledHumanityResult && (
+              <div className={`p-3 rounded-lg border text-xs font-tech animate-in fade-in flex items-center justify-between ${
+                rolledHumanityResult.isGain
+                  ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-200'
+                  : 'bg-red-950/60 border-red-500/80 text-red-200'
+              }`}>
+                <div>
+                  <span className="font-orbitron font-bold text-sm block">
+                    {rolledHumanityResult.isGain ? '+ ВОССТАНОВЛЕНИЕ ЧЕЛОВЕЧНОСТИ' : '- ПОТЕРЯ ЧЕЛОВЕЧНОСТИ'}
+                  </span>
+                  <div className="text-[11px] opacity-90">
+                    Категория: {rolledHumanityResult.tierTitle} • Кубы [{rolledHumanityResult.diceRolls.join(', ')}] = {rolledHumanityResult.total}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="font-orbitron font-black text-xl">
+                    {rolledHumanityResult.isGain ? `+${rolledHumanityResult.total}` : `-${rolledHumanityResult.total}`} ПЧ
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Event List */}
+            <div className="space-y-3">
+              {(humanityEventsTab === 'instant_loss'
+                ? INSTANT_HUMANITY_LOSS
+                : humanityEventsTab === 'longterm_loss'
+                ? LONG_TERM_HUMANITY_LOSS
+                : humanityEventsTab === 'instant_gain'
+                ? INSTANT_HUMANITY_GAIN
+                : LONG_TERM_HUMANITY_GAIN
+              ).map((tier, idx) => {
+                const isGain = humanityEventsTab === 'instant_gain' || humanityEventsTab === 'longterm_gain';
+                return (
+                  <div key={idx} className="bg-zinc-950 border border-zinc-800 rounded-lg p-3.5 space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+                      <div>
+                        <strong className="text-white font-orbitron text-xs">
+                          {tier.description}
+                        </strong>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded font-orbitron font-bold text-xs ${
+                          isGain 
+                            ? 'bg-emerald-950 border border-emerald-700 text-emerald-400' 
+                            : 'bg-red-950 border border-red-700 text-red-400'
+                        }`}>
+                          {isGain ? `+${tier.humanityChange}` : `-${tier.humanityChange}`} ПЧ
+                        </span>
+
+                        <button
+                          onClick={() => handleRollHumanityDice(tier.description, tier.humanityChange, isGain)}
+                          className={`px-3 py-1 rounded font-orbitron font-bold text-[11px] flex items-center gap-1 transition ${
+                            isGain
+                              ? 'bg-emerald-600 hover:bg-emerald-500 text-black'
+                              : 'bg-red-600 hover:bg-red-500 text-white'
+                          }`}
+                        >
+                          <Dices className="w-3.5 h-3.5" />
+                          <span>Бросить {tier.humanityChange}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <ul className="list-disc list-inside space-y-1 text-zinc-300 text-xs leading-relaxed">
+                      {tier.examples.map((ex, i) => (
+                        <li key={i}>{ex}</li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* THERAPY RULES QUICK REFERENCE */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-2 shadow-md font-tech text-xs">
+            <h4 className="font-orbitron font-bold text-white text-xs uppercase flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-400" />
+              <span>ПРАВИЛА ТЕРАПИИ И ВОССТАНОВЛЕНИЯ ЧЕЛОВЕЧНОСТИ (CP:R СТР. 229)</span>
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+              <div className="p-2.5 bg-zinc-950 rounded border border-zinc-800 space-y-1">
+                <strong className="text-emerald-400 block font-orbitron text-[11px]">Стандартная терапия</strong>
+                <p className="text-zinc-300 text-[11px]">
+                  Восстанавливает <strong>2d6 Человечности</strong> за неделю лечения. Стоит 500 eb. Доступна в любой нормальной клинике.
+                </p>
+              </div>
+
+              <div className="p-2.5 bg-zinc-950 rounded border border-zinc-800 space-y-1">
+                <strong className="text-cyan-400 block font-orbitron text-[11px]">Экстремальная терапия</strong>
+                <p className="text-zinc-300 text-[11px]">
+                  Восстанавливает <strong>4d6 Человечности</strong> за неделю лечения. Стоит 1000 eb. Требует элитных специалистов или стационара.
+                </p>
+              </div>
+
+              <div className="p-2.5 bg-zinc-950 rounded border border-zinc-800 space-y-1">
+                <strong className="text-amber-400 block font-orbitron text-[11px]">Иммуноблокаторы & Удаление</strong>
+                <p className="text-zinc-300 text-[11px]">
+                  Удаление киберимпланта возвращает потраченную на него Человечность. Иммуноблокаторы дают экстренные +2d6 ПЧ на 1 месяц.
+                </p>
+              </div>
             </div>
           </div>
         </div>
