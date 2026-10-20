@@ -417,21 +417,31 @@ export const STREET_INCIDENTS_D100: StreetIncidentEvent[] = [
   }
 ];
 
-// Vending Machines & Street Cafe Data
-export interface VendingItem {
-  nameRu: string;
-  costEb: number;
-  category: 'drink' | 'food' | 'misc';
-  effectRu: string;
+// Official Cyberpunk RED Vending Machine Table (1d6 Category + 1d10 Item)
+export interface VendingTableRow {
+  d10: number;
+  food: string;     // 1d6: 1-3 (Еда)
+  personal: string; // 1d6: 4-5 (Личные)
+  cursed: string;   // 1d6: 6   (Что-то очень всратое)
 }
 
-export const VENDING_MACHINE_ITEMS: VendingItem[] = [
-  { nameRu: 'Синт-Кофе «Черный Лёд» (Black Ice Coffee)', costEb: 3, category: 'drink', effectRu: 'Снимает легкую сонливость на 2 часа (+1 к Вниманию)' },
-  { nameRu: 'Газировка Nicola («Попробуй вкус любви!»)', costEb: 2, category: 'drink', effectRu: 'Приторно сладкая шипучка со вкусом синтетической вишни' },
-  { nameRu: 'Банка пива Smash (Ударная доза кармотрина)', costEb: 5, category: 'drink', effectRu: '8 единиц кармотрина. Требуется проверка СЛ 11 от опьянения' },
-  { nameRu: 'Питательный батончик Киббл-Кранч', costEb: 1, category: 'food', effectRu: 'Спрессованный соевый протеин. Утоляет голод на полдня' },
-  { nameRu: 'Уличный бургер Slurry Burst (Разогрев в пачке)', costEb: 4, category: 'food', effectRu: 'Самоподогревающийся бургер из синт-говядины' },
-  { nameRu: 'Бутылка настоящей дистиллированной воды «RealWater»', costEb: 10, category: 'drink', effectRu: 'Редкость в Найт-Сити! Чистая вода без кислотных осадков' },
-  { nameRu: 'Пачка стимуляторов «Dover» (1 доза)', costEb: 20, category: 'misc', effectRu: 'Позволяет не спать еще 12 часов без штрафа к проверкам' },
-  { nameRu: 'Одноразовый пистолет «Budget Arms Slurry 9»', costEb: 50, category: 'misc', effectRu: 'Пластиковый ствол низкого качества (1d6 патронов, заклинивает при броске 1)' }
+export const VENDING_MACHINE_TABLE: VendingTableRow[] = [
+  { d10: 1, food: 'Лапша Рамен', personal: 'Футболка в банке', cursed: 'Парик для Животных' },
+  { d10: 2, food: 'Пицца', personal: 'Секс Игрушка', cursed: 'Еда для жуков' },
+  { d10: 3, food: 'Гамбургер', personal: 'Зонтик', cursed: 'Шарик Салата' },
+  { d10: 4, food: 'Смэш', personal: 'Галстук', cursed: 'Суп из летучей Рыбы' },
+  { d10: 5, food: 'Суши', personal: 'Медицинские маски', cursed: 'Выращенные в чане морепродукты' },
+  { d10: 6, food: 'Горячее Мясо', personal: 'Нижнее бельё', cursed: 'Запах в банке' },
+  { d10: 7, food: '1кг Упаковка Киббла', personal: 'Цветочная композиция', cursed: 'Живые жуки-носороги' },
+  { d10: 8, food: 'Консервированный кофе', personal: 'Пушки и боеприпасы', cursed: 'Бумажные Костюмы для Косплея' },
+  { d10: 9, food: 'Консервированный сок', personal: 'Щепки для Брейнданса', cursed: 'Причудливые игрушки в капсулах' },
+  { d10: 10, food: 'Консервированные безалкогольные напитки', personal: 'Видео Игры', cursed: 'Ношенные Трусы' }
 ];
+
+export interface RolledVendingResult {
+  d6: number;
+  d10: number;
+  category: 'food' | 'personal' | 'cursed';
+  categoryLabel: string;
+  name: string;
+}

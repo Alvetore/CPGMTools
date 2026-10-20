@@ -43,7 +43,9 @@ import {
   TRAPS_CATALOG,
   FLASHBACK_LUCK_TIERS,
   STREET_INCIDENTS_D100,
-  VENDING_MACHINE_ITEMS,
+  VENDING_MACHINE_TABLE,
+  VendingTableRow,
+  RolledVendingResult,
   SituationalModifier,
   StreetIncidentEvent
 } from '../../data/cprExpandedRules';
@@ -89,8 +91,11 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
   const [incidentTimeFilter, setIncidentTimeFilter] = useState<'all' | 'day' | 'evening' | 'night'>('all');
   const [currentIncident, setCurrentIncident] = useState<StreetIncidentEvent | null>(null);
 
-  // 6. Vending Machine Roll
-  const [vendingResult, setVendingResult] = useState<any | null>(null);
+  // 6. Vending Machine State
+  const [vendingResult, setVendingResult] = useState<RolledVendingResult | null>(null);
+  const [showVendingTable, setShowVendingTable] = useState<boolean>(true);
+  const [manualVendingD6, setManualVendingD6] = useState<number>(1);
+  const [manualVendingD10, setManualVendingD10] = useState<number>(1);
 
   // 7. Ambush Step State
   const [ambushAttackerStealth, setAmbushAttackerStealth] = useState<number>(14);
@@ -141,11 +146,75 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
     setCurrentIncident(item);
   };
 
-  // Roll Vending Machine
-  const handleRollVending = () => {
+  // Roll Vending Machine (1d6 category + 1d10 item)
+  const handleRollVending = (categoryOverride?: 'food' | 'personal' | 'cursed') => {
+    sfx.playDiceRoll();
+    let d6 = rollD6();
+    if (categoryOverride === 'food') d6 = Math.floor(Math.random() * 3) + 1; // 1-3
+    else if (categoryOverride === 'personal') d6 = Math.floor(Math.random() * 2) + 4; // 4-5
+    else if (categoryOverride === 'cursed') d6 = 6;
+
+    const d10 = rollD10();
+    const row = VENDING_MACHINE_TABLE.find(r => r.d10 === d10) || VENDING_MACHINE_TABLE[0];
+
+    let category: 'food' | 'personal' | 'cursed' = 'food';
+    let categoryLabel = 'Еда (1d6: 1–3)';
+    let name = row.food;
+
+    if (d6 >= 4 && d6 <= 5) {
+      category = 'personal';
+      categoryLabel = 'Личные (1d6: 4–5)';
+      name = row.personal;
+    } else if (d6 === 6) {
+      category = 'cursed';
+      categoryLabel = 'Что-то очень всратое (1d6: 6)';
+      name = row.cursed;
+    }
+
+    setVendingResult({ d6, d10, category, categoryLabel, name });
+  };
+
+  const handleManualVendingSelect = () => {
     sfx.playClick();
-    const item = VENDING_MACHINE_ITEMS[Math.floor(Math.random() * VENDING_MACHINE_ITEMS.length)];
-    setVendingResult(item);
+    const d6 = Math.max(1, Math.min(6, manualVendingD6));
+    const d10 = Math.max(1, Math.min(10, manualVendingD10));
+    const row = VENDING_MACHINE_TABLE.find(r => r.d10 === d10) || VENDING_MACHINE_TABLE[0];
+
+    let category: 'food' | 'personal' | 'cursed' = 'food';
+    let categoryLabel = 'Еда (1d6: 1–3)';
+    let name = row.food;
+
+    if (d6 >= 4 && d6 <= 5) {
+      category = 'personal';
+      categoryLabel = 'Личные (1d6: 4–5)';
+      name = row.personal;
+    } else if (d6 === 6) {
+      category = 'cursed';
+      categoryLabel = 'Что-то очень всратое (1d6: 6)';
+      name = row.cursed;
+    }
+
+    setVendingResult({ d6, d10, category, categoryLabel, name });
+  };
+
+  const handleSelectVendingCell = (d10: number, cat: 'food' | 'personal' | 'cursed') => {
+    sfx.playClick();
+    const row = VENDING_MACHINE_TABLE.find(r => r.d10 === d10) || VENDING_MACHINE_TABLE[0];
+    let d6 = 1;
+    let categoryLabel = 'Еда (1d6: 1–3)';
+    let name = row.food;
+
+    if (cat === 'personal') {
+      d6 = 4;
+      categoryLabel = 'Личные (1d6: 4–5)';
+      name = row.personal;
+    } else if (cat === 'cursed') {
+      d6 = 6;
+      categoryLabel = 'Что-то очень всратое (1d6: 6)';
+      name = row.cursed;
+    }
+
+    setVendingResult({ d6, d10, category: cat, categoryLabel, name });
   };
 
   // Gig generator
@@ -936,37 +1005,223 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
             )}
           </div>
 
-          {/* Vending Machines & Street Cafe */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3 shadow-md">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Vending Machine (Official Cyberpunk RED Table) */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-4 shadow-md">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-3">
               <div>
                 <h3 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
                   <Coffee className="w-5 h-5 text-amber-400" />
-                  <span>ВЕНДИНГОВЫЙ АВТОМАТ И УЛИЧНОЕ КАФЕ</span>
+                  <span>ВЕНДИНГОВЫЙ АВТОМАТ НАЙТ-СИТИ</span>
                 </h3>
-                <p className="text-xs text-zinc-400 font-tech">
-                  Что герои могут купить на углу в круглосуточном автомате или забегаловке
+                <p className="text-xs text-zinc-400 font-tech mt-0.5">
+                  Официальная таблица: сначала 1d6 определяет категорию, затем 1d10 — выпавший предмет
                 </p>
               </div>
 
-              <button
-                onClick={handleRollVending}
-                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded clip-cyber-btn shadow-md flex items-center gap-1.5"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>БРОСИТЬ ВЕНДИНГ</span>
-              </button>
+              {/* Action buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => handleRollVending()}
+                  className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded clip-cyber-btn shadow-md flex items-center gap-1.5"
+                >
+                  <Dices className="w-3.5 h-3.5" />
+                  <span>СЛУЧАЙНЫЙ (1d6 + 1d10)</span>
+                </button>
+
+                <button
+                  onClick={() => handleRollVending('food')}
+                  className="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-600/70 text-emerald-300 font-orbitron font-bold text-[11px] rounded transition"
+                  title="Бросить только по категории Еда (1d6: 1-3)"
+                >
+                  🍜 Еда (1–3)
+                </button>
+
+                <button
+                  onClick={() => handleRollVending('personal')}
+                  className="px-2.5 py-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-600/70 text-cyan-300 font-orbitron font-bold text-[11px] rounded transition"
+                  title="Бросить только по категории Личные (1d6: 4-5)"
+                >
+                  👔 Личные (4–5)
+                </button>
+
+                <button
+                  onClick={() => handleRollVending('cursed')}
+                  className="px-2.5 py-1 bg-fuchsia-950/80 hover:bg-fuchsia-900 border border-fuchsia-600/70 text-fuchsia-300 font-orbitron font-bold text-[11px] rounded transition"
+                  title="Бросить только по категории Что-то очень всратое (1d6: 6)"
+                >
+                  📦 Всратое (6)
+                </button>
+
+                <button
+                  onClick={() => setShowVendingTable(!showVendingTable)}
+                  className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-tech text-xs rounded border border-zinc-700 transition"
+                >
+                  {showVendingTable ? 'Скрыть таблицу' : 'Показать таблицу'}
+                </button>
+              </div>
             </div>
 
+            {/* Rolled Result Card */}
             {vendingResult && (
-              <div className="p-3 bg-zinc-950 border border-amber-500/70 rounded-lg flex items-center justify-between text-xs font-tech animate-in fade-in">
+              <div className={`p-4 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-tech animate-in fade-in shadow-lg ${
+                vendingResult.category === 'food' 
+                  ? 'bg-emerald-950/50 border-emerald-500 shadow-emerald-950/30' 
+                  : vendingResult.category === 'personal'
+                  ? 'bg-cyan-950/50 border-cyan-500 shadow-cyan-950/30'
+                  : 'bg-fuchsia-950/50 border-fuchsia-500 shadow-fuchsia-950/30'
+              }`}>
                 <div>
-                  <strong className="text-white text-sm block">{vendingResult.nameRu}</strong>
-                  <div className="text-zinc-400">{vendingResult.effectRu}</div>
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <span className="font-orbitron font-bold text-[11px] text-zinc-300 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-700">
+                      Кубы: 1d6: [{vendingResult.d6}] ➔ 1d10: [{vendingResult.d10}]
+                    </span>
+                    <span className={`font-orbitron font-bold text-[11px] px-2.5 py-0.5 rounded border uppercase ${
+                      vendingResult.category === 'food'
+                        ? 'bg-emerald-900/80 text-emerald-300 border-emerald-600'
+                        : vendingResult.category === 'personal'
+                        ? 'bg-cyan-900/80 text-cyan-300 border-cyan-600'
+                        : 'bg-fuchsia-900/80 text-fuchsia-300 border-fuchsia-600'
+                    }`}>
+                      {vendingResult.categoryLabel}
+                    </span>
+                  </div>
+
+                  <div className="font-orbitron font-black text-white text-lg sm:text-xl tracking-wide flex items-center gap-2">
+                    <span>{vendingResult.name}</span>
+                  </div>
+                  <div className="text-zinc-400 text-[11px] mt-0.5">
+                    Товар с грохотом падает в металлический лоток выдачи автомата.
+                  </div>
                 </div>
-                <span className="font-orbitron font-bold text-amber-300 bg-amber-950 px-2.5 py-1 rounded border border-amber-700">
-                  {vendingResult.costEb} eb
-                </span>
+
+                <div className="text-right shrink-0">
+                  <span className="font-orbitron font-bold text-amber-400 bg-zinc-950 px-3 py-1 rounded border border-amber-600/60 text-xs">
+                    Оплата чипом
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Interactive Vending Machine Table */}
+            {showVendingTable && (
+              <div className="space-y-3">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs font-tech border-collapse border border-zinc-800">
+                    <thead>
+                      <tr className="bg-zinc-950 border-b border-red-900/60 text-xs font-orbitron font-bold">
+                        <th className="p-2.5 text-center text-blue-400 border-r border-zinc-800 w-16">
+                          1d10
+                        </th>
+                        <th className="p-2.5 text-emerald-400 border-r border-zinc-800">
+                          Еда (1d6: 1–3)
+                        </th>
+                        <th className="p-2.5 text-cyan-400 border-r border-zinc-800">
+                          Личные (1d6: 4–5)
+                        </th>
+                        <th className="p-2.5 text-fuchsia-400">
+                          Что-то очень всратое (1d6: 6)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800/60">
+                      {VENDING_MACHINE_TABLE.map((row) => {
+                        const isRowRolled = vendingResult?.d10 === row.d10;
+                        const isFoodSelected = isRowRolled && vendingResult?.category === 'food';
+                        const isPersonalSelected = isRowRolled && vendingResult?.category === 'personal';
+                        const isCursedSelected = isRowRolled && vendingResult?.category === 'cursed';
+
+                        return (
+                          <tr key={row.d10} className="hover:bg-zinc-850/40 transition-colors">
+                            {/* d10 column */}
+                            <td className="p-2.5 text-center font-orbitron font-bold text-blue-400 bg-zinc-950/80 border-r border-zinc-800">
+                              {row.d10}
+                            </td>
+
+                            {/* Food column */}
+                            <td 
+                              onClick={() => handleSelectVendingCell(row.d10, 'food')}
+                              title="Кликните, чтобы выбрать этот предмет"
+                              className={`p-2.5 border-r border-zinc-800 cursor-pointer transition-all ${
+                                isFoodSelected
+                                  ? 'bg-emerald-950/90 text-emerald-200 font-bold border-2 border-emerald-500 shadow-[inset_0_0_10px_rgba(16,185,129,0.4)]'
+                                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800/60'
+                              }`}
+                            >
+                              <span className="px-2 py-0.5 rounded bg-zinc-950/70 border border-zinc-800 inline-block">
+                                {row.food}
+                              </span>
+                            </td>
+
+                            {/* Personal column */}
+                            <td 
+                              onClick={() => handleSelectVendingCell(row.d10, 'personal')}
+                              title="Кликните, чтобы выбрать этот предмет"
+                              className={`p-2.5 border-r border-zinc-800 cursor-pointer transition-all ${
+                                isPersonalSelected
+                                  ? 'bg-cyan-950/90 text-cyan-200 font-bold border-2 border-cyan-500 shadow-[inset_0_0_10px_rgba(6,182,212,0.4)]'
+                                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800/60'
+                              }`}
+                            >
+                              <span className="px-2 py-0.5 rounded bg-zinc-950/70 border border-zinc-800 inline-block">
+                                {row.personal}
+                              </span>
+                            </td>
+
+                            {/* Cursed column */}
+                            <td 
+                              onClick={() => handleSelectVendingCell(row.d10, 'cursed')}
+                              title="Кликните, чтобы выбрать этот предмет"
+                              className={`p-2.5 cursor-pointer transition-all ${
+                                isCursedSelected
+                                  ? 'bg-fuchsia-950/90 text-fuchsia-200 font-bold border-2 border-fuchsia-500 shadow-[inset_0_0_10px_rgba(217,70,239,0.4)]'
+                                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800/60'
+                              }`}
+                            >
+                              <span className="px-2 py-0.5 rounded bg-zinc-950/70 border border-zinc-800 inline-block">
+                                {row.cursed}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Manual Tabletop Dice Entry */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 bg-zinc-950 rounded border border-zinc-800 text-xs font-tech">
+                  <div className="text-zinc-400">
+                    💡 <strong className="text-zinc-300">Ручной ввод при игре вживую (ИРЛ):</strong> бросьте кубы за столом и введите значения:
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">1d6:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={6}
+                      value={manualVendingD6}
+                      onChange={e => setManualVendingD6(parseInt(e.target.value) || 1)}
+                      className="w-12 bg-zinc-900 border border-zinc-700 rounded px-1.5 py-0.5 text-center font-orbitron font-bold text-white text-xs"
+                    />
+
+                    <span className="text-zinc-400 ml-1">1d10:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={manualVendingD10}
+                      onChange={e => setManualVendingD10(parseInt(e.target.value) || 1)}
+                      className="w-14 bg-zinc-900 border border-zinc-700 rounded px-1.5 py-0.5 text-center font-orbitron font-bold text-white text-xs"
+                    />
+
+                    <button
+                      onClick={handleManualVendingSelect}
+                      className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded transition ml-1"
+                    >
+                      Выбрать
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
