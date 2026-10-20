@@ -423,10 +423,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-zinc-950 p-1.5 rounded border border-zinc-800 flex items-center justify-between">
+                <div className="bg-zinc-950 p-1.5 rounded border border-zinc-800 flex items-center justify-between" title="Базовое значение навыка «Восприятие» (ИНТ + Навык). Используется ГМом для тайных проверок обнаружения засад, скрытых предметов и слежки.">
                   <span className="text-zinc-500 text-[11px] flex items-center gap-1">
                     <Eye className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Пассивное Восприятие:</span>
+                    <span>База Восприятия:</span>
                   </span>
                   <strong className="text-amber-300 font-orbitron">{member.passivePerception}</strong>
                 </div>
@@ -594,7 +594,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
               </div>
 
               <div>
-                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">Пассивное восприятие (ИНТ + Навык)</label>
+                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">База Восприятия (ИНТ + Навык)</label>
                 <input
                   type="number"
                   value={passivePerception}
