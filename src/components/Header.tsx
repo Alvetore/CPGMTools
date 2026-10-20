@@ -61,35 +61,35 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center justify-between h-16 gap-3">
           
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-red-600 flex items-center justify-center font-orbitron font-black text-black text-xl clip-cyber shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-red-600 flex items-center justify-center font-orbitron font-black text-black text-lg sm:text-xl clip-cyber shadow-[0_0_15px_rgba(239,68,68,0.5)] flex-shrink-0">
               CP
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-orbitron font-black tracking-wider text-white text-base sm:text-lg">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-orbitron font-black tracking-wider text-white text-sm sm:text-lg truncate">
                   CYBERPUNK <span className="text-red-500">RED</span>
                 </span>
-                <span className="text-[10px] font-tech px-1.5 py-0.5 rounded bg-red-950 border border-red-700/60 text-red-400 font-bold tracking-widest uppercase">
+                <span className="hidden sm:inline text-[10px] font-tech px-1.5 py-0.5 rounded bg-red-950 border border-red-700/60 text-red-400 font-bold tracking-widest uppercase flex-shrink-0">
                   GM TOOLS
                 </span>
               </div>
-              <div className="text-[11px] text-zinc-400 font-tech flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>NIGHT CITY OS // GM TERMINAL</span>
+              <div className="text-[10px] sm:text-[11px] text-zinc-400 font-tech flex items-center gap-1.5 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+                <span className="truncate">NIGHT CITY OS // GM TERMINAL</span>
               </div>
             </div>
           </div>
 
           {/* Quick Action Buttons */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <button
               onClick={() => {
                 sfx.playClick();
                 onOpenDiceRoller();
               }}
               title="Встроенный дайсроллер Cyberpunk RED"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-orbitron font-bold text-amber-300 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/60 transition-all rounded clip-cyber-sm"
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-orbitron font-bold text-amber-300 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/60 transition-all rounded clip-cyber-sm"
             >
               <Dices className="w-4 h-4 text-amber-400" />
               <span className="hidden md:inline">ДАЙСРОЛЛЕР</span>
@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={toggleSound}
               title={isMuted ? 'Включить звук' : 'Выключить звук'}
-              className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded transition-colors"
+              className="p-1.5 sm:p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded transition-colors"
             >
               {isMuted ? <VolumeX className="w-4 h-4 text-zinc-500" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
             </button>
@@ -109,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
                 exportEntireGmDatabase();
               }}
               title="Экспорт базы данных ГМа в JSON файл"
-              className="p-2 text-zinc-400 hover:text-emerald-400 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded transition-colors"
+              className="p-1.5 sm:p-2 text-zinc-400 hover:text-emerald-400 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded transition-colors"
             >
               <Download className="w-4 h-4" />
             </button>
@@ -120,7 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onOpenImportModal();
               }}
               title="Импорт базы данных или персонажей из чарника Cyberpunk RED"
-              className="p-2 text-zinc-400 hover:text-cyan-400 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded transition-colors"
+              className="p-1.5 sm:p-2 text-zinc-400 hover:text-cyan-400 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded transition-colors"
             >
               <Upload className="w-4 h-4" />
             </button>
@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex items-center gap-1 overflow-x-auto scrollbar-none py-1.5 -mb-px">
+        <nav className="flex items-center gap-1 overflow-x-auto scrollbar-none py-1.5 -mb-px touch-pan-x">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -138,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
                   sfx.playClick();
                   setActiveTab(item.id);
                 }}
-                className={`flex items-center gap-2 px-3 py-2 text-xs font-orbitron font-bold whitespace-nowrap transition-all rounded-t border-b-2 ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs font-orbitron font-bold whitespace-nowrap flex-shrink-0 transition-all rounded-t border-b-2 ${
                   isActive
                     ? 'border-red-500 text-white bg-gradient-to-t from-red-950/60 to-transparent'
                     : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'

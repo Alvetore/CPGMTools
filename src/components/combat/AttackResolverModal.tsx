@@ -243,11 +243,11 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-zinc-900 border border-red-600/70 rounded-lg max-w-xl w-full max-h-[92vh] overflow-y-auto clip-cyber shadow-[0_0_30px_rgba(239,68,68,0.25)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-zinc-900 border border-red-600/70 rounded-lg max-w-xl w-full max-h-[90dvh] overflow-y-auto clip-cyber shadow-[0_0_30px_rgba(239,68,68,0.25)]">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-950 to-zinc-900 px-5 py-3.5 border-b border-red-800 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-red-950 to-zinc-900 px-4 sm:px-5 py-3 border-b border-red-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Crosshair className="w-5 h-5 text-red-500" />
             <h3 className="font-orbitron font-bold text-white text-base tracking-wide">
@@ -262,7 +262,7 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
           </button>
         </div>
 
-        <div className="p-5 space-y-4 text-sm">
+        <div className="p-3.5 sm:p-5 space-y-3 sm:space-y-4 text-sm">
           {/* Attacker & Target Selection */}
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-center bg-zinc-950 p-3 rounded border border-zinc-800">
             {/* Attacker Box */}

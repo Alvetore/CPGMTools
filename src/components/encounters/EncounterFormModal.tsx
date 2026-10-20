@@ -190,8 +190,8 @@ export const EncounterFormModal: React.FC<EncounterFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in">
-      <div className="bg-zinc-900 border border-red-900/60 rounded-xl max-w-3xl w-full p-4 sm:p-6 space-y-5 my-auto max-h-[90vh] overflow-y-auto shadow-2xl clip-cyber">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in">
+      <div className="bg-zinc-900 border border-red-900/60 rounded-xl max-w-3xl w-full p-3.5 sm:p-6 space-y-4 sm:space-y-5 my-auto max-h-[90dvh] overflow-y-auto shadow-2xl clip-cyber">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 pb-3">

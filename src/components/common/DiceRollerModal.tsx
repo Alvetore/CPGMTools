@@ -81,11 +81,11 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-lg w-full max-h-[92vh] overflow-y-auto clip-cyber shadow-[0_0_30px_rgba(245,158,11,0.25)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-lg w-full max-h-[90dvh] overflow-y-auto clip-cyber shadow-[0_0_30px_rgba(245,158,11,0.25)]">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-950/80 via-zinc-900 to-zinc-900 px-5 py-3.5 border-b border-amber-800 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-amber-950/80 via-zinc-900 to-zinc-900 px-4 sm:px-5 py-3 border-b border-amber-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Dices className="w-5 h-5 text-amber-400" />
             <h3 className="font-orbitron font-bold text-white text-base tracking-wide">
@@ -128,7 +128,7 @@ export const DiceRollerModal: React.FC<DiceRollerModalProps> = ({ onClose }) => 
           </button>
         </div>
 
-        <div className="p-5 space-y-4 text-xs font-tech">
+        <div className="p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 text-xs font-tech">
           
           {/* TAB 1: 1d10 Check */}
           {activeTab === 'check' && (

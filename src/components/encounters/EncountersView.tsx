@@ -123,8 +123,8 @@ export const EncountersView: React.FC<EncountersViewProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-1.5 text-xs text-zinc-300 font-tech cursor-pointer bg-zinc-950 px-3 py-2 rounded border border-zinc-800 hover:border-zinc-700">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full sm:w-auto">
+          <label className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 text-xs text-zinc-300 font-tech cursor-pointer bg-zinc-950 px-3 py-2 rounded border border-zinc-800 hover:border-zinc-700 whitespace-nowrap">
             <input
               type="checkbox"
               checked={includePartyOnStart}
@@ -137,7 +137,7 @@ export const EncountersView: React.FC<EncountersViewProps> = ({
 
           <button
             onClick={handleOpenCreate}
-            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-lg shadow-red-900/30 flex items-center gap-2"
+            className="flex-1 sm:flex-initial px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-lg shadow-red-900/30 flex items-center justify-center gap-2 whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span>СОЗДАТЬ ЭНКАУНТЕР</span>
@@ -159,7 +159,7 @@ export const EncountersView: React.FC<EncountersViewProps> = ({
         </div>
 
         {allTags.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none touch-pan-x pb-1 md:pb-0 -mx-1 px-1">
             <button
               onClick={() => {
                 sfx.playClick();

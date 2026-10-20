@@ -281,11 +281,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0 touch-pan-x w-full sm:w-auto">
           {/* Quick Manual Add Button */}
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md"
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md whitespace-nowrap flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>ДОБАВИТЬ ВРУЧНУЮ</span>
@@ -303,29 +303,29 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md"
+            className="flex items-center gap-1.5 px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md whitespace-nowrap flex-shrink-0"
           >
             <Upload className="w-4 h-4" />
-            <span>ИМПОРТ ИЗ ЧАРНИКА (.JSON)</span>
+            <span>ИМПОРТ (.JSON)</span>
           </button>
 
           <button
             onClick={onAddPartyToCombat}
             disabled={party.length === 0}
-            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md"
+            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md whitespace-nowrap flex-shrink-0"
           >
             <Swords className="w-4 h-4" />
-            <span>ОТПРАВИТЬ ПАРТИЮ В БОЙ</span>
+            <span>ОТПРАВИТЬ В БОЙ</span>
           </button>
 
           <button
             onClick={handleRestParty}
             disabled={party.length === 0}
             title="Естественное исцеление (1 день): +ТЕЛО к HP, восстановление Удачи и ремонт брони"
-            className="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-200 font-tech font-bold text-xs rounded border border-zinc-700 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-200 font-tech font-bold text-xs rounded border border-zinc-700 transition-all whitespace-nowrap flex-shrink-0"
           >
             <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
-            <span>ОТДЫХ И ИСЦЕЛЕНИЕ</span>
+            <span>ОТДЫХ</span>
           </button>
         </div>
       </div>
@@ -536,10 +536,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
       {/* Manual Party Member Form Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <form 
             onSubmit={handleSaveMember}
-            className="bg-zinc-900 border border-emerald-600/70 rounded-lg max-w-lg w-full max-h-[92vh] overflow-y-auto p-5 space-y-4 clip-cyber shadow-2xl text-xs font-tech"
+            className="bg-zinc-900 border border-emerald-600/70 rounded-lg max-w-lg w-full max-h-[90dvh] overflow-y-auto p-4 sm:p-5 space-y-3.5 sm:space-y-4 clip-cyber shadow-2xl text-xs font-tech"
           >
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <h3 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
@@ -795,8 +795,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
       {/* Cyberpsychosis & Mental Trauma Modal */}
       {selectedPsychoMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-zinc-900 border border-rose-600/80 rounded-lg max-w-2xl w-full max-h-[92vh] overflow-y-auto p-5 space-y-4 clip-cyber shadow-2xl text-xs font-tech">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-rose-600/80 rounded-lg max-w-2xl w-full max-h-[90dvh] overflow-y-auto p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 clip-cyber shadow-2xl text-xs font-tech">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div className="flex items-center gap-2">

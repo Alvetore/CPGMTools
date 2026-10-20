@@ -261,10 +261,10 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             <button
               onClick={handleOpenManualBuilder}
-              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md"
             >
               <Plus className="w-4 h-4" />
               <span>СОЗДАТЬ NPC ВРУЧНУЮ</span>
@@ -272,7 +272,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
 
             <button
               onClick={() => setIsGeneratorOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>ГЕНЕРАТОР БАНДИТА</span>
@@ -476,10 +476,10 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
 
       {/* Manual NPC Builder Modal */}
       {isManualBuilderOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <form 
             onSubmit={handleSaveManualNpc}
-            className="bg-zinc-900 border border-emerald-600/70 rounded-lg max-w-lg w-full max-h-[92vh] overflow-y-auto p-5 space-y-4 clip-cyber shadow-2xl text-xs font-tech"
+            className="bg-zinc-900 border border-emerald-600/70 rounded-lg max-w-lg w-full max-h-[90dvh] overflow-y-auto p-3.5 sm:p-5 space-y-4 clip-cyber shadow-2xl text-xs font-tech"
           >
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <h3 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
@@ -689,8 +689,8 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
 
       {/* Procedural Gang NPC Generator Modal */}
       {isGeneratorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-zinc-900 border border-red-600/70 rounded-lg max-w-md w-full p-5 space-y-4 clip-cyber shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-red-600/70 rounded-lg max-w-md w-full max-h-[90dvh] overflow-y-auto p-3.5 sm:p-5 space-y-4 clip-cyber shadow-2xl">
             <h3 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-amber-400" />
               <span>ГЕНЕРАТОР БАНДИТА НАЙТ-СИТИ</span>

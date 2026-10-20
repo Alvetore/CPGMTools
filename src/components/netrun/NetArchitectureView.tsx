@@ -477,7 +477,7 @@ export const NetArchitectureView: React.FC = () => {
                   </div>
 
                   {/* Right: DV and Interaction Buttons */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800">
                     <div className="bg-zinc-950 px-2.5 py-1 rounded border border-zinc-800 text-center font-tech">
                       <div className="text-[9px] text-zinc-500">СЛОЖНОСТЬ</div>
                       <div className="font-orbitron font-bold text-amber-400 text-xs">DV {floor.dv}</div>
@@ -643,8 +643,8 @@ export const NetArchitectureView: React.FC = () => {
 
       {/* Manual / Auto Hack Check Modal */}
       {hackModalFloor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-zinc-900 border border-cyan-600/70 rounded-lg max-w-md w-full p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(6,182,212,0.25)] text-xs font-tech">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-cyan-600/70 rounded-lg max-w-md w-full max-h-[90dvh] overflow-y-auto p-3.5 sm:p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(6,182,212,0.25)] text-xs font-tech">
             <div className="flex items-center justify-between border-b border-cyan-900/60 pb-3">
               <div className="flex items-center gap-2">
                 <Network className="w-5 h-5 text-cyan-400" />

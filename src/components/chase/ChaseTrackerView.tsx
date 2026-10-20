@@ -300,10 +300,10 @@ export const ChaseTrackerView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none touch-pan-x pb-1 -mx-1 px-1">
           <button
             onClick={handleRollAllPositioning}
-            className="flex items-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md"
+            className="flex items-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md whitespace-nowrap flex-shrink-0"
           >
             <FastForward className="w-4 h-4 fill-current" />
             <span>ИТОГ РАУНДА (АВТО)</span>
@@ -320,7 +320,7 @@ export const ChaseTrackerView: React.FC = () => {
               setPositioningDraft(draft);
               setIsRoundPositioningModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-amber-950/60 border border-amber-600/70 hover:bg-amber-900/60 text-amber-300 font-orbitron font-bold text-xs rounded transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 bg-amber-950/60 border border-amber-600/70 hover:bg-amber-900/60 text-amber-300 font-orbitron font-bold text-xs rounded transition-all whitespace-nowrap flex-shrink-0"
           >
             <Edit3 className="w-3.5 h-3.5" />
             <span>✍️ РУЧНОЙ ВВОД РАУНДА</span>
@@ -328,7 +328,7 @@ export const ChaseTrackerView: React.FC = () => {
 
           <button
             onClick={() => setIsAddVehicleOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded clip-cyber-sm transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded clip-cyber-sm transition-all whitespace-nowrap flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>ДОБАВИТЬ ТС</span>
@@ -336,7 +336,7 @@ export const ChaseTrackerView: React.FC = () => {
 
           <button
             onClick={() => setIsRulesModalOpen(true)}
-            className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 transition-colors"
+            className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 transition-colors flex-shrink-0"
             title="Справка по правилам Hot Pursuit"
           >
             <HelpCircle className="w-4 h-4 text-cyan-400" />
@@ -345,13 +345,13 @@ export const ChaseTrackerView: React.FC = () => {
       </div>
 
       {/* Visual Chase Grid (1 to 8 squares) */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3 shadow-lg">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 sm:p-4 space-y-3 shadow-lg">
         <div className="flex items-center justify-between text-xs font-tech">
           <span className="text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
             <Gauge className="w-4 h-4 text-amber-400" />
             <span>Сетка погони (Дистанции между участниками)</span>
           </span>
-          <span className="text-zinc-500">
+          <span className="text-zinc-500 hidden sm:inline">
             Клетка 1 = Рядом бок о бок | Клетка &gt; 8 = Побег
           </span>
         </div>
@@ -364,7 +364,7 @@ export const ChaseTrackerView: React.FC = () => {
             return (
               <div
                 key={band.square}
-                className={`p-2.5 rounded border flex flex-col justify-between min-h-[120px] transition-all ${
+                className={`p-2 sm:p-2.5 rounded border flex flex-col justify-between min-h-[90px] sm:min-h-[120px] transition-all ${
                   vehiclesHere.length > 0
                     ? 'bg-zinc-950 border-amber-500/80 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
                     : 'bg-zinc-950/60 border-zinc-850'
@@ -652,8 +652,8 @@ export const ChaseTrackerView: React.FC = () => {
 
       {/* Add Vehicle Modal */}
       {isAddVehicleOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <form onSubmit={handleAddVehicle} className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-md w-full p-5 space-y-4 clip-cyber shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <form onSubmit={handleAddVehicle} className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-md w-full max-h-[90dvh] overflow-y-auto p-3.5 sm:p-5 space-y-4 clip-cyber shadow-2xl">
             <h3 className="font-orbitron font-bold text-white text-base">ДОБАВИТЬ ТРАНСПОРТ В ПОГОНЮ</h3>
 
             <div>
@@ -776,8 +776,8 @@ export const ChaseTrackerView: React.FC = () => {
 
       {/* Rules Reference Modal */}
       {isRulesModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-lg max-w-xl w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto clip-cyber shadow-2xl text-xs font-tech">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-lg max-w-xl w-full p-3.5 sm:p-5 space-y-4 max-h-[90dvh] overflow-y-auto clip-cyber shadow-2xl text-xs font-tech">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
               <h3 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
                 <Car className="w-5 h-5 text-amber-400" />
@@ -827,8 +827,8 @@ export const ChaseTrackerView: React.FC = () => {
 
       {/* Round Positioning Check Modal (Auto/Manual) */}
       {isRoundPositioningModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-lg w-full max-h-[85vh] overflow-y-auto p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(245,158,11,0.25)] text-xs font-tech">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-lg w-full max-h-[90dvh] overflow-y-auto p-3.5 sm:p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(245,158,11,0.25)] text-xs font-tech">
             <div className="flex items-center justify-between border-b border-amber-900/60 pb-3">
               <div className="flex items-center gap-2">
                 <FastForward className="w-5 h-5 text-amber-400" />
@@ -953,8 +953,8 @@ export const ChaseTrackerView: React.FC = () => {
 
       {/* Maneuver Execution Modal (Auto / Manual) */}
       {activeManeuverModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-zinc-900 border border-cyan-600/70 rounded-lg max-w-md w-full p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(6,182,212,0.25)] text-xs font-tech">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-cyan-600/70 rounded-lg max-w-md w-full max-h-[90dvh] overflow-y-auto p-3.5 sm:p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(6,182,212,0.25)] text-xs font-tech">
             <div className="flex items-center justify-between border-b border-cyan-900/60 pb-3">
               <div className="flex items-center gap-2">
                 <Zap className="w-5 h-5 text-cyan-400" />

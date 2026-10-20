@@ -469,11 +469,11 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
         </div>
 
         {/* Combat Management Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 sm:pb-0 touch-pan-x w-full sm:w-auto">
           {onOpenEncounters && (
             <button
               onClick={onOpenEncounters}
-              className="px-3 py-1.5 text-xs font-orbitron font-bold text-amber-400 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/60 rounded transition-all flex items-center gap-1.5"
+              className="px-2.5 sm:px-3 py-1.5 text-xs font-orbitron font-bold text-amber-400 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/60 rounded transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
               title="Открыть заготовленные энкаунтеры"
             >
               <Swords className="w-3.5 h-3.5" />
@@ -484,7 +484,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
           <button
             onClick={handleRollAllInitiative}
             disabled={combatState.combatants.length === 0}
-            className="px-3 py-1.5 text-xs font-orbitron font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-600/50 hover:bg-cyan-900/60 rounded transition-all"
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-orbitron font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-600/50 hover:bg-cyan-900/60 rounded transition-all whitespace-nowrap flex-shrink-0"
             title="Бросить 1d10 + РЕФ для всех комбатантов"
           >
             БРОСИТЬ ВСЕМ (АВТО)
@@ -493,7 +493,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
           <button
             onClick={handleRollNpcInitiative}
             disabled={combatState.combatants.filter(c => c.type !== 'player').length === 0}
-            className="px-3 py-1.5 text-xs font-orbitron font-bold text-red-400 bg-red-950/40 border border-red-600/50 hover:bg-red-900/60 rounded transition-all flex items-center gap-1.5"
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-orbitron font-bold text-red-400 bg-red-950/40 border border-red-600/50 hover:bg-red-900/60 rounded transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
             title="Бросить 1d10 + РЕФ только для NPC (игроки сохраняют свои значения)"
           >
             <Dices className="w-3.5 h-3.5 text-red-400" />
@@ -510,28 +510,28 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
               setIsInitiativeModalOpen(true);
             }}
             disabled={combatState.combatants.length === 0}
-            className="px-3 py-1.5 text-xs font-orbitron font-bold text-amber-300 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/60 rounded transition-all"
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-orbitron font-bold text-amber-300 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/60 rounded transition-all whitespace-nowrap flex-shrink-0"
           >
             ✍️ ВВОД ИНИЦИАТИВЫ
           </button>
 
           <button
             onClick={onAddPartyToCombat}
-            className="px-3 py-1.5 text-xs font-orbitron font-bold text-emerald-300 bg-emerald-950/40 border border-emerald-600/50 hover:bg-emerald-900/60 rounded transition-all"
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-orbitron font-bold text-emerald-300 bg-emerald-950/40 border border-emerald-600/50 hover:bg-emerald-900/60 rounded transition-all whitespace-nowrap flex-shrink-0"
           >
             + ПАРТИЯ ИГРОКОВ
           </button>
 
           <button
             onClick={onOpenBestiaryModal}
-            className="px-3 py-1.5 text-xs font-orbitron font-bold text-red-300 bg-red-950/40 border border-red-600/50 hover:bg-red-900/60 rounded transition-all"
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-orbitron font-bold text-red-300 bg-red-950/40 border border-red-600/50 hover:bg-red-900/60 rounded transition-all whitespace-nowrap flex-shrink-0"
           >
             + ИЗ БЕСТИАРИЯ
           </button>
 
           <button
             onClick={() => setIsQuickAddOpen(true)}
-            className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded border border-zinc-700 transition-colors"
+            className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded border border-zinc-700 transition-colors flex-shrink-0"
             title="Быстрое добавление комбатанта"
           >
             <Plus className="w-4 h-4" />
@@ -540,7 +540,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
           <button
             onClick={handleClearAllCombatants}
             disabled={combatState.combatants.length === 0}
-            className="px-3 py-1.5 text-xs font-orbitron font-bold text-red-400 bg-red-950/30 hover:bg-red-950/60 border border-red-800/60 rounded transition-all flex items-center gap-1.5 disabled:opacity-40"
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-orbitron font-bold text-red-400 bg-red-950/30 hover:bg-red-950/60 border border-red-800/60 rounded transition-all flex items-center gap-1.5 disabled:opacity-40 whitespace-nowrap flex-shrink-0"
             title="Очистить всех участников боя"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -654,9 +654,9 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                   
                   {/* Left: Initiative, Name, Type, Status */}
-                  <div className="flex items-start gap-3 min-w-[260px]">
+                  <div className="flex items-start gap-3 min-w-0 sm:min-w-[220px] flex-1">
                     {/* Initiative badge */}
-                    <div className="flex flex-col items-center justify-center bg-zinc-950 border border-zinc-800 px-2 py-1.5 rounded min-w-[42px]">
+                    <div className="flex flex-col items-center justify-center bg-zinc-950 border border-zinc-800 px-2 py-1.5 rounded min-w-[42px] flex-shrink-0">
                       <span className="text-[9px] font-tech text-zinc-500 uppercase">ИНИ</span>
                       <input
                         type="number"
@@ -667,9 +667,9 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                     </div>
 
                     {/* Name & badges */}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-orbitron font-bold text-white text-sm sm:text-base">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <span className="font-orbitron font-bold text-white text-sm sm:text-base break-words">
                           {c.name}
                         </span>
                         <span className={`text-[10px] font-tech px-1.5 py-0.2 rounded border font-bold uppercase ${
@@ -707,7 +707,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                   </div>
 
                   {/* Middle: HP Bar and Quick Adjust */}
-                  <div className="flex-1 max-w-sm space-y-1">
+                  <div className="w-full lg:max-w-xs xl:max-w-sm space-y-1">
                     <div className="flex items-center justify-between text-xs font-tech">
                       <span className="text-zinc-400 flex items-center gap-1">
                         <Heart className="w-3.5 h-3.5 text-red-500" />
@@ -747,9 +747,9 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                   </div>
 
                   {/* Right: Head & Body Armor with Ablation */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 flex-wrap sm:flex-nowrap w-full lg:w-auto">
                     {/* Head Armor */}
-                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800 text-center min-w-[90px]">
+                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800 text-center min-w-[75px] sm:min-w-[90px] flex-1 sm:flex-initial">
                       <div className="text-[10px] font-tech text-zinc-500 uppercase">Голова (Head)</div>
                       <div className="font-orbitron font-bold text-sm text-cyan-400">
                         {c.headSp} <span className="text-[10px] text-zinc-500">/{c.headSpMax}</span>
@@ -773,7 +773,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                     </div>
 
                     {/* Body Armor */}
-                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800 text-center min-w-[90px]">
+                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800 text-center min-w-[75px] sm:min-w-[90px] flex-1 sm:flex-initial">
                       <div className="text-[10px] font-tech text-zinc-500 uppercase">Тело (Body)</div>
                       <div className="font-orbitron font-bold text-sm text-cyan-400">
                         {c.bodySp} <span className="text-[10px] text-zinc-500">/{c.bodySpMax}</span>
@@ -797,7 +797,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                     </div>
 
                     {/* Actions: Attack & Delete */}
-                    <div className="flex flex-col gap-1">
+                    <div className="flex sm:flex-col gap-1">
                       <button
                         onClick={() => {
                           if (activeCombatant && activeCombatant.id !== c.id) {
@@ -920,7 +920,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleApplyQuickDirectDamage(c)}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm flex items-center gap-1 shadow"
+                    className="w-full sm:w-auto justify-center px-3 py-1 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm flex items-center gap-1 shadow"
                   >
                     <span>Нанести урон</span>
                   </button>
@@ -1030,8 +1030,8 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
 
       {/* Quick Add Combatant Modal */}
       {isQuickAddOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <form onSubmit={handleAddQuickCombatant} className="bg-zinc-900 border border-zinc-700 rounded-lg max-w-md w-full p-5 space-y-4 clip-cyber shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <form onSubmit={handleAddQuickCombatant} className="bg-zinc-900 border border-zinc-700 rounded-lg max-w-md w-full max-h-[90dvh] overflow-y-auto p-4 sm:p-5 space-y-4 clip-cyber shadow-2xl">
             <h3 className="font-orbitron font-bold text-white text-base">ДОБАВИТЬ УЧАСТНИКА</h3>
             
             <div>
@@ -1123,8 +1123,8 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
 
       {/* Death Save Modal with Manual/Auto input */}
       {deathSaveModalTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-zinc-900 border border-purple-600/70 rounded-lg max-w-md w-full p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(168,85,247,0.25)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-purple-600/70 rounded-lg max-w-md w-full max-h-[90dvh] overflow-y-auto p-4 sm:p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(168,85,247,0.25)]">
             <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
               <div className="flex items-center gap-2">
                 <Skull className="w-5 h-5 text-purple-400" />
@@ -1234,8 +1234,8 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
 
       {/* Bulk/Manual Initiative Modal */}
       {isInitiativeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-lg w-full max-h-[85vh] overflow-y-auto p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(245,158,11,0.25)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-lg w-full max-h-[90dvh] overflow-y-auto p-4 sm:p-5 space-y-4 clip-cyber shadow-[0_0_30px_rgba(245,158,11,0.25)]">
             <div className="flex items-center justify-between border-b border-amber-900/60 pb-3">
               <div className="flex items-center gap-2">
                 <Dices className="w-5 h-5 text-amber-400" />

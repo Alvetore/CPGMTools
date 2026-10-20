@@ -72,8 +72,8 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-lg max-w-lg w-full p-5 space-y-4 clip-cyber shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-lg max-w-lg w-full max-h-[90dvh] overflow-y-auto p-4 sm:p-5 space-y-4 clip-cyber shadow-2xl">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 pb-3">

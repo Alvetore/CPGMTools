@@ -330,7 +330,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-rajdhani selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen min-h-[100dvh] bg-zinc-950 text-zinc-100 flex flex-col font-rajdhani selection:bg-red-600 selection:text-white overflow-x-hidden">
       
       {/* Top Cyberpunk Header */}
       <Header
@@ -344,7 +344,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main App Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 pb-20">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-6 pb-20 pb-safe">
         {activeTab === 'combat' && (
           <CombatTrackerView
             combatState={combatState}
