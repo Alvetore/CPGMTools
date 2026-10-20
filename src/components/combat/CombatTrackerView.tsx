@@ -173,6 +173,38 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
     addLog('Брошена инициатива для всех участников (1d10 + РЕФ).', 'system');
   };
 
+  const handleRollNpcInitiative = () => {
+    sfx.playDiceRoll();
+    const npcs = combatState.combatants.filter(c => c.type !== 'player');
+    if (npcs.length === 0) {
+      alert('В бою нет NPC (врагов, союзников или дронов)!');
+      return;
+    }
+
+    const updated = combatState.combatants.map(c => {
+      if (c.type !== 'player') {
+        const roll = rollD10();
+        const init = roll + c.ref;
+        return { ...c, initiative: init };
+      }
+      return c;
+    });
+
+    // Sort descending by initiative, tie-break by REF
+    updated.sort((a, b) => {
+      if (b.initiative !== a.initiative) return b.initiative - a.initiative;
+      return b.ref - a.ref;
+    });
+
+    setCombatState(prev => ({
+      ...prev,
+      combatants: updated,
+      currentTurnIndex: 0
+    }));
+
+    addLog(`Брошена инициатива только для NPC (${npcs.length} участников). Значения игроков сохранены.`, 'system');
+  };
+
   const handleUpdateCombatant = (id: string, updates: Partial<Combatant>) => {
     setCombatState(prev => ({
       ...prev,
@@ -359,8 +391,19 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
             onClick={handleRollAllInitiative}
             disabled={combatState.combatants.length === 0}
             className="px-3 py-1.5 text-xs font-orbitron font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-600/50 hover:bg-cyan-900/60 rounded transition-all"
+            title="Бросить 1d10 + РЕФ для всех комбатантов"
           >
-            БРОСИТЬ ИНИЦИАТИВУ ВСЕМ (АВТО)
+            БРОСИТЬ ВСЕМ (АВТО)
+          </button>
+
+          <button
+            onClick={handleRollNpcInitiative}
+            disabled={combatState.combatants.filter(c => c.type !== 'player').length === 0}
+            className="px-3 py-1.5 text-xs font-orbitron font-bold text-red-400 bg-red-950/40 border border-red-600/50 hover:bg-red-900/60 rounded transition-all flex items-center gap-1.5"
+            title="Бросить 1d10 + РЕФ только для NPC (игроки сохраняют свои значения)"
+          >
+            <Dices className="w-3.5 h-3.5 text-red-400" />
+            ТОЛЬКО ДЛЯ NPC
           </button>
 
           <button
@@ -971,7 +1014,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
               Введите результат физического кубика 1d10 для каждого участника или бросьте случайно. Инициатива = РЕФ + 1d10.
             </p>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => {
@@ -984,7 +1027,26 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                 className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-300 text-xs font-tech font-bold rounded border border-zinc-700 flex items-center gap-1.5"
               >
                 <Dices className="w-3.5 h-3.5" />
-                Бросить случайные 1d10 для всех
+                Бросить для ВСЕХ
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setInitiativeDraft(prev => {
+                    const nextDraft = { ...prev };
+                    combatState.combatants.forEach(c => {
+                      if (c.type !== 'player') {
+                        nextDraft[c.id] = rollD10();
+                      }
+                    });
+                    return nextDraft;
+                  });
+                }}
+                className="px-3 py-1 bg-red-950/60 hover:bg-red-900/60 text-red-300 text-xs font-tech font-bold rounded border border-red-700 flex items-center gap-1.5"
+              >
+                <Dices className="w-3.5 h-3.5" />
+                Бросить только для NPC
               </button>
             </div>
 
@@ -994,8 +1056,16 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                 const total = c.ref + rolled;
                 return (
                   <div key={c.id} className="flex items-center justify-between bg-zinc-950 p-2.5 rounded border border-zinc-800 text-xs font-tech">
-                    <div>
-                      <span className="font-bold text-white mr-2">{c.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border uppercase ${
+                        c.type === 'player' ? 'bg-emerald-950 border-emerald-700 text-emerald-400' :
+                        c.type === 'enemy' ? 'bg-red-950 border-red-700 text-red-400' :
+                        c.type === 'ally' ? 'bg-cyan-950 border-cyan-700 text-cyan-400' :
+                        'bg-zinc-800 border-zinc-700 text-zinc-400'
+                      }`}>
+                        {c.type === 'player' ? 'Игрок' : 'NPC'}
+                      </span>
+                      <span className="font-bold text-white mr-1">{c.name}</span>
                       <span className="text-zinc-500">РЕФ: {c.ref}</span>
                     </div>
 
