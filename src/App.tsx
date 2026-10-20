@@ -395,7 +395,9 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'reference' && (
-          <GMReferenceView />
+          <GMReferenceView 
+            onAddNpcToCombat={handleAddNpcToCombat}
+          />
         )}
       </main>
 

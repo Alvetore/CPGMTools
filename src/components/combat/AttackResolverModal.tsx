@@ -61,6 +61,8 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
   const [targetLocation, setTargetLocation] = useState<'head' | 'body'>('body');
   const [isMelee, setIsMelee] = useState<boolean>(activeWeapon.category?.toLowerCase().includes('melee') || false);
   const [isApAmmo, setIsApAmmo] = useState<boolean>(false);
+  const [isAmbush, setIsAmbush] = useState<boolean>(false);
+  const [coverHp, setCoverHp] = useState<number>(0);
   const [attackerSkillBase, setAttackerSkillBase] = useState<number>((currentAttacker?.ref || 6) + 4);
   const [luckSpent, setLuckSpent] = useState<number>(0);
 
@@ -115,7 +117,22 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
     sfx.playClick();
     let result: any;
 
-    if (attackMode === 'player_total') {
+    if (isAmbush && isMelee) {
+      result = {
+        baseVal: attackerSkillBase,
+        luckSpent: 0,
+        firstDie: 10,
+        d10Total: 10,
+        grandTotal: attackerSkillBase + 10,
+        targetDv: 0,
+        margin: attackerSkillBase + 10,
+        isSuccess: true,
+        isCritSuccess: true,
+        isCritFail: false,
+        isManualRoll: false,
+        textSummary: '🎯 [ЗАСАДА] Атака ближнего боя / захват автоматически попадает в застигнутую врасплох цель!'
+      };
+    } else if (attackMode === 'player_total') {
       const grandTotal = directPlayerTotal;
       const margin = grandTotal - targetDv;
       const isSuccess = grandTotal > targetDv;
@@ -163,14 +180,21 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
     if (currentTarget) {
       const currentSp = targetLocation === 'head' ? currentTarget.headSp : currentTarget.bodySp;
+      const absorbedByCover = Math.min(coverHp, dResult.totalDamage);
+      const postCoverDamage = Math.max(0, dResult.totalDamage - coverHp);
+
       const resolved = resolveCprDamage({
-        rawDamage: dResult.totalDamage,
+        rawDamage: postCoverDamage,
         location: targetLocation,
         targetSp: currentSp,
         isMelee,
         isApAmmo,
         isCritInjuryRoll: dResult.isCriticalInjury
       });
+
+      if (coverHp > 0) {
+        resolved.logSummary = `[Укрытие поглотило ${absorbedByCover}/${coverHp} HP] ${resolved.logSummary}`;
+      }
       setDamageResolution(resolved);
     }
   };
@@ -184,8 +208,11 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
     if (currentTarget) {
       const currentSp = targetLocation === 'head' ? currentTarget.headSp : currentTarget.bodySp;
+      const absorbedByCover = Math.min(coverHp, dResult.totalDamage);
+      const postCoverDamage = Math.max(0, dResult.totalDamage - coverHp);
+
       const resolved = resolveCprDamage({
-        rawDamage: dResult.totalDamage,
+        rawDamage: postCoverDamage,
         location: targetLocation,
         targetSp: currentSp,
         isMelee,
@@ -193,6 +220,10 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
         isCritInjuryRoll: manualIsCrit,
         manualInjuryId: manualIsCrit && manualInjuryId ? manualInjuryId : undefined
       });
+
+      if (coverHp > 0) {
+        resolved.logSummary = `[Укрытие поглотило ${absorbedByCover}/${coverHp} HP] ${resolved.logSummary}`;
+      }
       setDamageResolution(resolved);
     }
   };
@@ -400,33 +431,69 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
             </div>
           </div>
 
-          {/* Options: Melee & AP Ammo */}
-          <div className="flex flex-wrap items-center gap-4 text-xs font-tech text-zinc-300 bg-zinc-950 p-2.5 rounded border border-zinc-800">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isMelee}
-                onChange={(e) => {
-                  setIsMelee(e.target.checked);
-                  setAttackRoll(null);
-                }}
-                className="accent-red-500"
-              />
-              <span>Холодное оружие / Рукопашная (игнорирует 50% брони)</span>
-            </label>
+          {/* Options: Melee, AP Ammo, Ambush & Cover */}
+          <div className="space-y-2 bg-zinc-950 p-2.5 rounded border border-zinc-800 text-xs font-tech text-zinc-300">
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isMelee}
+                  onChange={(e) => {
+                    setIsMelee(e.target.checked);
+                    setAttackRoll(null);
+                  }}
+                  className="accent-red-500"
+                />
+                <span>Холодное оружие / Рукопашная (игнорирует 50% брони)</span>
+              </label>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isApAmmo}
-                onChange={(e) => {
-                  setIsApAmmo(e.target.checked);
-                  setAttackRoll(null);
-                }}
-                className="accent-red-500"
-              />
-              <span>Бронебойные патроны (AP: -2 ОС стирания)</span>
-            </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isApAmmo}
+                  onChange={(e) => {
+                    setIsApAmmo(e.target.checked);
+                    setAttackRoll(null);
+                  }}
+                  className="accent-red-500"
+                />
+                <span>Бронебойные патроны (AP: -2 ОС стирания)</span>
+              </label>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-zinc-900">
+              <label className="flex items-center gap-2 cursor-pointer text-amber-300 font-bold">
+                <input
+                  type="checkbox"
+                  checked={isAmbush}
+                  onChange={(e) => {
+                    setIsAmbush(e.target.checked);
+                    setAttackRoll(null);
+                  }}
+                  className="accent-amber-500"
+                />
+                <span>🎯 Атака из засады (Мили: автохит; Стрельба: цель не уклоняется)</span>
+              </label>
+
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-400">Укрытие цели:</span>
+                <select
+                  value={coverHp}
+                  onChange={(e) => {
+                    setCoverHp(parseInt(e.target.value) || 0);
+                    setDamageResolution(null);
+                  }}
+                  className="bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5 text-white font-tech text-xs"
+                >
+                  <option value={0}>Без укрытия (0 HP)</option>
+                  <option value={5}>Фанера / Гипсокартон (5 HP)</option>
+                  <option value={10}>Дверь / Мебель (10 HP)</option>
+                  <option value={15}>Капот авто (15 HP)</option>
+                  <option value={25}>Кирпич / Контейнер (25 HP)</option>
+                  <option value={50}>Железобетон (50 HP)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Target DV Info */}
