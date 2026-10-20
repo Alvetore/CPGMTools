@@ -18,11 +18,13 @@ import {
   Sparkles,
   Dices,
   Edit3,
-  X
+  X,
+  Target,
+  Zap
 } from 'lucide-react';
 import { Combatant, ActiveCombatState, CombatLogEntry, Condition } from '../../types/combat';
 import { CriticalInjury, Weapon } from '../../types/character';
-import { getWoundedStatus } from '../../utils/cprCombat';
+import { getWoundedStatus, resolveCprDamage } from '../../utils/cprCombat';
 import { executeDeathSave, rollD10 } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
 import { AttackResolverModal } from './AttackResolverModal';
@@ -41,9 +43,15 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   onOpenBestiaryModal,
   onAddPartyToCombat
 }) => {
-  const [activeAttacker, setActiveAttacker] = useState<Combatant | null>(null);
+  // Attack modal state (explicit attacker and target)
+  const [attackModalData, setAttackModalData] = useState<{ attacker: Combatant; target?: Combatant } | null>(null);
   const [injuryModalCombatant, setInjuryModalCombatant] = useState<Combatant | null>(null);
   const [isLogExpanded, setIsLogExpanded] = useState<boolean>(true);
+
+  // Quick IRL direct damage state per combatant card
+  const [quickDmgMap, setQuickDmgMap] = useState<{
+    [id: string]: { amount: number; location: 'head' | 'body'; isAp: boolean; isMelee: boolean };
+  }>({});
 
   // Death Save manual/auto modal state
   const [deathSaveModalTarget, setDeathSaveModalTarget] = useState<Combatant | null>(null);
@@ -256,6 +264,46 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
     });
 
     addLog(`${c.name}: ОЗ ${delta > 0 ? '+' : ''}${delta} (теперь ${newHp}/${c.hpMax}).`, delta < 0 ? 'damage' : 'heal');
+  };
+
+  const handleApplyQuickDirectDamage = (c: Combatant) => {
+    const state = quickDmgMap[c.id] || { amount: 0, location: 'body', isAp: false, isMelee: false };
+    if (state.amount <= 0) return;
+
+    sfx.playHit();
+    const currentSp = state.location === 'head' ? c.headSp : c.bodySp;
+    const resolution = resolveCprDamage({
+      rawDamage: state.amount,
+      location: state.location,
+      targetSp: currentSp,
+      isMelee: state.isMelee,
+      isApAmmo: state.isAp
+    });
+
+    const nextHp = Math.max(0, c.hpCurrent - resolution.finalHpLoss);
+    const isNowDefeated = nextHp <= 0;
+
+    if (state.location === 'head') {
+      handleUpdateCombatant(c.id, {
+        hpCurrent: nextHp,
+        headSp: resolution.newSp,
+        isDefeated: isNowDefeated
+      });
+    } else {
+      handleUpdateCombatant(c.id, {
+        hpCurrent: nextHp,
+        bodySp: resolution.newSp,
+        isDefeated: isNowDefeated
+      });
+    }
+
+    addLog(`[ИРЛ урон] ${c.name}: ${resolution.logSummary}`, 'damage');
+
+    // Reset damage amount after applying
+    setQuickDmgMap(prev => ({
+      ...prev,
+      [c.id]: { ...state, amount: 0 }
+    }));
   };
 
   const handleDeathSaveRoll = (c: Combatant, manualRoll?: number) => {
@@ -471,7 +519,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setActiveAttacker(activeCombatant)}
+                onClick={() => setAttackModalData({ attacker: activeCombatant })}
                 className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-lg"
               >
                 <Crosshair className="w-4 h-4" />
@@ -670,8 +718,16 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                     {/* Actions: Attack & Delete */}
                     <div className="flex flex-col gap-1">
                       <button
-                        onClick={() => setActiveAttacker(c)}
-                        title="Атаковать из этого участника"
+                        onClick={() => {
+                          if (activeCombatant && activeCombatant.id !== c.id) {
+                            setAttackModalData({ attacker: activeCombatant, target: c });
+                          } else {
+                            setAttackModalData({ attacker: c });
+                          }
+                        }}
+                        title={activeCombatant && activeCombatant.id !== c.id 
+                          ? `Атаковать [${c.name}] активным персонажем [${activeCombatant.name}]` 
+                          : `Атаковать цель этим персонажем (${c.name})`}
                         className="p-2 bg-red-950 hover:bg-red-900 border border-red-700 text-red-400 hover:text-white rounded transition-colors"
                       >
                         <Crosshair className="w-4 h-4" />
@@ -686,6 +742,107 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                       </button>
                     </div>
                   </div>
+                </div>
+
+                {/* Quick IRL Direct Damage Bar (Zero rolls, instant CPR armor/HP calculation) */}
+                <div className="mt-2.5 pt-2 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-2 bg-zinc-950/70 p-2 rounded text-xs font-tech">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold text-red-400 uppercase flex items-center gap-1">
+                      <Zap className="w-3.5 h-3.5 text-red-500" />
+                      Быстрый урон (ИРЛ):
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Урон"
+                      value={quickDmgMap[c.id]?.amount ?? ''}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setQuickDmgMap(prev => ({
+                          ...prev,
+                          [c.id]: { ...(prev[c.id] || { location: 'body', isAp: false, isMelee: false }), amount: val }
+                        }));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleApplyQuickDirectDamage(c);
+                      }}
+                      className="w-16 bg-zinc-900 border border-red-700/60 rounded px-2 py-0.5 text-center font-bold text-white text-xs outline-none focus:border-red-400"
+                    />
+
+                    {/* Location Body / Head */}
+                    <div className="flex items-center bg-zinc-900 rounded border border-zinc-700 p-0.5 text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setQuickDmgMap(prev => ({
+                          ...prev,
+                          [c.id]: { ...(prev[c.id] || { amount: 0, isAp: false, isMelee: false }), location: 'body' }
+                        }))}
+                        className={`px-1.5 py-0.5 rounded transition-colors ${
+                          (quickDmgMap[c.id]?.location || 'body') === 'body'
+                            ? 'bg-zinc-700 text-white font-bold'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        Тело
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setQuickDmgMap(prev => ({
+                          ...prev,
+                          [c.id]: { ...(prev[c.id] || { amount: 0, isAp: false, isMelee: false }), location: 'head' }
+                        }))}
+                        className={`px-1.5 py-0.5 rounded transition-colors ${
+                          quickDmgMap[c.id]?.location === 'head'
+                            ? 'bg-red-900 text-white font-bold'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        Голова (x2)
+                      </button>
+                    </div>
+
+                    {/* AP toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setQuickDmgMap(prev => {
+                        const cur = prev[c.id] || { amount: 0, location: 'body', isAp: false, isMelee: false };
+                        return { ...prev, [c.id]: { ...cur, isAp: !cur.isAp } };
+                      })}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+                        quickDmgMap[c.id]?.isAp
+                          ? 'bg-red-950 border-red-500 text-red-300'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                      }`}
+                      title="Бронебойные патроны (AP): стирают -2 ОС брони вместо -1"
+                    >
+                      AP (-2 ОС)
+                    </button>
+
+                    {/* Melee toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setQuickDmgMap(prev => {
+                        const cur = prev[c.id] || { amount: 0, location: 'body', isAp: false, isMelee: false };
+                        return { ...prev, [c.id]: { ...cur, isMelee: !cur.isMelee } };
+                      })}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+                        quickDmgMap[c.id]?.isMelee
+                          ? 'bg-amber-950 border-amber-500 text-amber-300'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                      }`}
+                      title="Холодное оружие / Рукопашный бой: игнорирует половину ОС брони"
+                    >
+                      Холодное (50% ОС)
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApplyQuickDirectDamage(c)}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm flex items-center gap-1 shadow"
+                  >
+                    <span>Нанести урон</span>
+                  </button>
                 </div>
 
                 {/* Critical Injuries tag list */}
@@ -753,11 +910,12 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
       </div>
 
       {/* Attack Resolver Modal */}
-      {activeAttacker && (
+      {attackModalData && (
         <AttackResolverModal
-          attacker={activeAttacker}
+          initialAttacker={attackModalData.attacker}
+          initialTarget={attackModalData.target}
           combatants={combatState.combatants}
-          onClose={() => setActiveAttacker(null)}
+          onClose={() => setAttackModalData(null)}
           onApplyDamage={(targetId, hpLoss, location, newSp, logText, critInjury) => {
             const target = combatState.combatants.find(c => c.id === targetId);
             if (!target) return;

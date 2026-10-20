@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Crosshair, Shield, Zap, Skull, Check, X, AlertTriangle, Dices, Edit3 } from 'lucide-react';
+import { Crosshair, Shield, Zap, Skull, Check, X, AlertTriangle, Dices, Edit3, ArrowLeftRight, Target } from 'lucide-react';
 import { Combatant } from '../../types/combat';
 import { CPR_RANGE_DV_TABLE, CPR_CRITICAL_INJURIES_HEAD, CPR_CRITICAL_INJURIES_BODY } from '../../data/cprRules';
 import { executeCPRCheck, rollDamageFormula } from '../../utils/dice';
@@ -7,7 +7,9 @@ import { resolveCprDamage } from '../../utils/cprCombat';
 import { sfx } from '../../utils/audio';
 
 interface AttackResolverModalProps {
-  attacker: Combatant;
+  attacker?: Combatant;
+  initialAttacker?: Combatant;
+  initialTarget?: Combatant;
   combatants: Combatant[];
   onClose: () => void;
   onApplyDamage: (
@@ -21,19 +23,31 @@ interface AttackResolverModalProps {
 }
 
 export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
-  attacker,
+  attacker: legacyAttacker,
+  initialAttacker,
+  initialTarget,
   combatants,
   onClose,
   onApplyDamage
 }) => {
-  // Select target
-  const potentialTargets = combatants.filter(c => c.id !== attacker.id && !c.isDefeated);
-  const [targetId, setTargetId] = useState<string>(potentialTargets[0]?.id || '');
-  const target = combatants.find(c => c.id === targetId);
+  const defaultAttacker = initialAttacker || legacyAttacker || combatants[0];
+
+  // Attacker & Target selection
+  const [attackerId, setAttackerId] = useState<string>(defaultAttacker?.id || '');
+  const currentAttacker = combatants.find(c => c.id === attackerId) || defaultAttacker;
+
+  const potentialTargets = combatants.filter(c => c.id !== currentAttacker?.id && !c.isDefeated);
+  const defaultTargetId = initialTarget && initialTarget.id !== currentAttacker?.id
+    ? initialTarget.id
+    : potentialTargets[0]?.id || '';
+
+  const [targetId, setTargetId] = useState<string>(defaultTargetId);
+  const currentTarget = combatants.find(c => c.id === targetId);
 
   // Selected weapon
   const [selectedWeaponIndex, setSelectedWeaponIndex] = useState<number>(0);
-  const activeWeapon = attacker.weapons[selectedWeaponIndex] || {
+  const attackerWeapons = currentAttacker?.weapons || [];
+  const activeWeapon = attackerWeapons[selectedWeaponIndex] || {
     name: 'Тяжёлый пистолет',
     damage: '3d6',
     category: 'Heavy Pistol',
@@ -47,14 +61,15 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
   const [targetLocation, setTargetLocation] = useState<'head' | 'body'>('body');
   const [isMelee, setIsMelee] = useState<boolean>(activeWeapon.category?.toLowerCase().includes('melee') || false);
   const [isApAmmo, setIsApAmmo] = useState<boolean>(false);
-  const [attackerSkillBase, setAttackerSkillBase] = useState<number>(attacker.ref + 4); // Default to REF + 4
+  const [attackerSkillBase, setAttackerSkillBase] = useState<number>((currentAttacker?.ref || 6) + 4);
   const [luckSpent, setLuckSpent] = useState<number>(0);
 
-  // Attack Roll Mode (Auto vs Manual)
-  const [attackMode, setAttackMode] = useState<'auto' | 'manual'>('auto');
+  // Attack Roll Mode (Auto vs Manual vs Direct Player Total)
+  const [attackMode, setAttackMode] = useState<'auto' | 'manual' | 'player_total'>('auto');
   const [manualD10, setManualD10] = useState<number>(5);
   const [manualExploded, setManualExploded] = useState<number>(5);
   const [manualBotch, setManualBotch] = useState<number>(5);
+  const [directPlayerTotal, setDirectPlayerTotal] = useState<number>(18);
 
   // Damage Roll Mode (Auto vs Manual)
   const [damageMode, setDamageMode] = useState<'auto' | 'manual'>('auto');
@@ -67,13 +82,23 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
   const [damageRoll, setDamageRoll] = useState<any | null>(null);
   const [damageResolution, setDamageResolution] = useState<any | null>(null);
 
+  // Swap Attacker & Target
+  const handleSwapAttackerTarget = () => {
+    if (!currentTarget || !currentAttacker) return;
+    const oldAttackerId = attackerId;
+    const oldTargetId = targetId;
+    setAttackerId(oldTargetId);
+    setTargetId(oldAttackerId);
+    setAttackRoll(null);
+    setDamageRoll(null);
+    setDamageResolution(null);
+  };
+
   // Calculate Target DV
-  let targetDv: number | null = 15;
+  let targetDv: number = 15;
   if (isMelee) {
-    // In CPR, Melee is contested by Defender's DEX + Evasion!
-    targetDv = target ? target.dex + 4 : 13;
+    targetDv = currentTarget ? currentTarget.dex + 4 : 13;
   } else {
-    // Find weapon DV from table
     const rangeKey = Object.keys(CPR_RANGE_DV_TABLE).find(k => 
       activeWeapon.category?.toLowerCase().includes(k) || 
       activeWeapon.name?.toLowerCase().includes(k)
@@ -84,21 +109,40 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
   // Aimed shot penalty (-8 in CPR)
   const aimedShotPenalty = targetLocation === 'head' ? -8 : 0;
-
   const injuriesList = targetLocation === 'head' ? CPR_CRITICAL_INJURIES_HEAD : CPR_CRITICAL_INJURIES_BODY;
 
   const handleRollAttack = () => {
     sfx.playClick();
-    let result;
-    if (attackMode === 'manual') {
-      result = executeCPRCheck(attackerSkillBase, aimedShotPenalty, luckSpent, targetDv ?? 15, {
+    let result: any;
+
+    if (attackMode === 'player_total') {
+      const grandTotal = directPlayerTotal;
+      const margin = grandTotal - targetDv;
+      const isSuccess = grandTotal > targetDv;
+      result = {
+        baseVal: 0,
+        luckSpent: 0,
+        firstDie: 0,
+        d10Total: 0,
+        grandTotal,
+        targetDv,
+        margin,
+        isSuccess,
+        isCritSuccess: false,
+        isCritFail: false,
+        isManualRoll: true,
+        textSummary: `Итог броска игрока: ${grandTotal} против СЛ (DV) ${targetDv} ➔ ${isSuccess ? 'УСПЕХ (ПОПАДАНИЕ!)' : 'ПРОВАЛ (ПРОМАХ)'} (перевес: ${margin > 0 ? '+' : ''}${margin})`
+      };
+    } else if (attackMode === 'manual') {
+      result = executeCPRCheck(attackerSkillBase, aimedShotPenalty, luckSpent, targetDv, {
         firstDie: manualD10,
         explodedDie: manualD10 === 10 ? manualExploded : undefined,
         botchDie: manualD10 === 1 ? manualBotch : undefined
       });
     } else {
-      result = executeCPRCheck(attackerSkillBase, aimedShotPenalty, luckSpent, targetDv ?? 15);
+      result = executeCPRCheck(attackerSkillBase, aimedShotPenalty, luckSpent, targetDv);
     }
+
     setAttackRoll(result);
 
     if (result.isSuccess) {
@@ -117,8 +161,8 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
     const dResult = rollDamageFormula(activeWeapon.damage || '3d6');
     setDamageRoll(dResult);
 
-    if (target) {
-      const currentSp = targetLocation === 'head' ? target.headSp : target.bodySp;
+    if (currentTarget) {
+      const currentSp = targetLocation === 'head' ? currentTarget.headSp : currentTarget.bodySp;
       const resolved = resolveCprDamage({
         rawDamage: dResult.totalDamage,
         location: targetLocation,
@@ -138,8 +182,8 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
     });
     setDamageRoll(dResult);
 
-    if (target) {
-      const currentSp = targetLocation === 'head' ? target.headSp : target.bodySp;
+    if (currentTarget) {
+      const currentSp = targetLocation === 'head' ? currentTarget.headSp : currentTarget.bodySp;
       const resolved = resolveCprDamage({
         rawDamage: dResult.totalDamage,
         location: targetLocation,
@@ -154,14 +198,14 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
   };
 
   const handleApply = () => {
-    if (!target || !damageResolution) return;
+    if (!currentTarget || !damageResolution) return;
     sfx.playHit();
     onApplyDamage(
-      target.id,
+      currentTarget.id,
       damageResolution.finalHpLoss,
       targetLocation,
       damageResolution.newSp,
-      `${attacker.name} атакует [${target.name}]: ${damageResolution.logSummary}`,
+      `${currentAttacker.name} атакует [${currentTarget.name}]: ${damageResolution.logSummary}`,
       damageResolution.criticalInjury
     );
     onClose();
@@ -189,17 +233,60 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
         <div className="p-5 space-y-4 text-sm">
           {/* Attacker & Target Selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-zinc-950 p-3 rounded border border-zinc-800">
-              <span className="text-[11px] text-zinc-500 font-tech uppercase block mb-1">Атакующий</span>
-              <div className="font-orbitron font-bold text-cyan-400">{attacker.name}</div>
-              <div className="text-xs text-zinc-400 font-tech">РЕФ {attacker.ref} | ЛОВ {attacker.dex}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-center bg-zinc-950 p-3 rounded border border-zinc-800">
+            {/* Attacker Box */}
+            <div className="space-y-1">
+              <span className="text-[11px] text-cyan-400 font-tech uppercase font-bold flex items-center gap-1">
+                <Crosshair className="w-3.5 h-3.5" />
+                Атакующий (кто бьёт)
+              </span>
+              <select
+                value={attackerId}
+                onChange={(e) => {
+                  const newAttackerId = e.target.value;
+                  setAttackerId(newAttackerId);
+                  const newAttacker = combatants.find(c => c.id === newAttackerId);
+                  if (newAttacker) {
+                    setAttackerSkillBase(newAttacker.ref + 4);
+                  }
+                  if (targetId === newAttackerId) {
+                    const fallback = combatants.find(c => c.id !== newAttackerId && !c.isDefeated);
+                    setTargetId(fallback?.id || '');
+                  }
+                  setAttackRoll(null);
+                  setDamageRoll(null);
+                  setDamageResolution(null);
+                }}
+                className="w-full bg-zinc-900 border border-cyan-700/70 rounded px-2.5 py-1.5 text-white font-bold text-xs outline-none focus:border-cyan-400"
+              >
+                {combatants.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.type === 'player' ? 'Игрок' : 'NPC'} | РЕФ {c.ref})
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="bg-zinc-950 p-3 rounded border border-zinc-800">
-              <span className="text-[11px] text-zinc-500 font-tech uppercase block mb-1">Цель (Защитник)</span>
+            {/* Swap Button */}
+            <div className="flex justify-center pt-2 sm:pt-4">
+              <button
+                type="button"
+                onClick={handleSwapAttackerTarget}
+                title="Поменять местами атакующего и цель"
+                className="p-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white rounded-full transition-all shadow"
+              >
+                <ArrowLeftRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Target Box */}
+            <div className="space-y-1">
+              <span className="text-[11px] text-red-400 font-tech uppercase font-bold flex items-center gap-1">
+                <Target className="w-3.5 h-3.5" />
+                Жертва / Цель (получает урон)
+              </span>
               {potentialTargets.length === 0 ? (
-                <div className="text-xs text-red-400">Нет доступных целей в бою</div>
+                <div className="text-xs text-red-400 py-1">Нет других доступных целей</div>
               ) : (
                 <select
                   value={targetId}
@@ -209,11 +296,11 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
                     setDamageRoll(null);
                     setDamageResolution(null);
                   }}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1 text-white font-medium focus:border-red-500 outline-none"
+                  className="w-full bg-zinc-900 border border-red-700/70 rounded px-2.5 py-1.5 text-white font-bold text-xs outline-none focus:border-red-400"
                 >
                   {potentialTargets.map(t => (
                     <option key={t.id} value={t.id}>
-                      {t.name} (HP {t.hpCurrent}/{t.hpMax} | Голова ОС {t.headSp} | Тело ОС {t.bodySp})
+                      {t.name} (HP {t.hpCurrent}/{t.hpMax} | Голова {t.headSp} | Тело {t.bodySp})
                     </option>
                   ))}
                 </select>
@@ -223,10 +310,12 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
           {/* Weapon Selection */}
           <div>
-            <label className="text-xs font-tech text-zinc-400 block mb-1.5 uppercase">Оружие атакующего</label>
-            {attacker.weapons && attacker.weapons.length > 0 ? (
+            <label className="text-xs font-tech text-zinc-400 block mb-1.5 uppercase">
+              Оружие атакующего ({currentAttacker?.name})
+            </label>
+            {attackerWeapons.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {attacker.weapons.map((w, idx) => (
+                {attackerWeapons.map((w, idx) => (
                   <button
                     key={w.id || idx}
                     type="button"
@@ -340,7 +429,7 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
             </label>
           </div>
 
-          {/* Skill Base & Target DV Info */}
+          {/* Target DV Info */}
           <div className="flex items-center justify-between p-3 bg-zinc-950 rounded border border-zinc-800 text-xs">
             <div>
               <span className="text-zinc-500 font-tech">База навыка стрелка: </span>
@@ -357,19 +446,19 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
             <div className="text-right">
               <span className="text-zinc-500 font-tech">Сложность (Target DV): </span>
-              <strong className="text-white font-orbitron text-sm ml-1">{targetDv ?? '—'}</strong>
+              <strong className="text-white font-orbitron text-sm ml-1">{targetDv}</strong>
             </div>
           </div>
 
           {/* Step 1: Mode Switch & Attack Roll */}
           <div className="bg-zinc-950 p-3 rounded border border-zinc-800 space-y-2.5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-xs font-orbitron font-bold text-white flex items-center gap-1.5">
                 <Crosshair className="w-3.5 h-3.5 text-red-500" />
-                1. БРОСОК АТАКИ (1d10 + База)
+                1. ПРОВЕРКА АТАКИ
               </span>
 
-              <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800 text-[11px] font-tech">
+              <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800 text-[11px] font-tech flex-wrap">
                 <button
                   type="button"
                   onClick={() => setAttackMode('auto')}
@@ -388,10 +477,40 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
                   }`}
                 >
                   <Edit3 className="w-3 h-3" />
-                  Ручной ввод
+                  Кубик 1d10
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttackMode('player_total')}
+                  className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
+                    attackMode === 'player_total' ? 'bg-emerald-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                  }`}
+                  title="Ввести готовый итог атаки, названный игроком за столом"
+                >
+                  <Target className="w-3 h-3" />
+                  Итог игрока (ИРЛ)
                 </button>
               </div>
             </div>
+
+            {/* Direct Player Total Mode (IRL Tabletop) */}
+            {attackMode === 'player_total' && (
+              <div className="p-3 bg-zinc-900/90 rounded border border-emerald-600/50 text-xs font-tech space-y-2 animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <span className="text-emerald-300 font-bold">Итоговый результат атаки игрока (бросок + база):</span>
+                  <input
+                    type="number"
+                    value={directPlayerTotal}
+                    onChange={(e) => setDirectPlayerTotal(parseInt(e.target.value) || 0)}
+                    className="w-20 bg-zinc-950 border border-emerald-500 rounded px-2.5 py-1 text-center font-bold text-white text-base"
+                  />
+                  <span className="text-zinc-400">vs DV {targetDv}</span>
+                </div>
+                <div className="text-[11px] text-zinc-400">
+                  Игрок бросил дайс за столом и назвал число? Просто введите его сюда без лишних вычислений.
+                </div>
+              </div>
+            )}
 
             {/* Manual input controls for 1d10 */}
             {attackMode === 'manual' && (
@@ -444,12 +563,20 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
             <button
               onClick={handleRollAttack}
-              disabled={!target}
+              disabled={!currentTarget}
               className={`w-full py-2 px-4 text-white font-orbitron font-bold text-xs tracking-wider rounded transition-all clip-cyber-btn shadow-lg ${
-                attackMode === 'manual' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-red-600 hover:bg-red-500'
+                attackMode === 'player_total' 
+                  ? 'bg-emerald-600 hover:bg-emerald-500' 
+                  : attackMode === 'manual' 
+                  ? 'bg-amber-600 hover:bg-amber-500' 
+                  : 'bg-red-600 hover:bg-red-500'
               }`}
             >
-              {attackMode === 'manual' ? 'ПРИМЕНИТЬ РУЧНОЙ БРОСОК АТАКИ' : 'БРОСИТЬ АТАКУ (1d10 + База)'}
+              {attackMode === 'player_total'
+                ? `ПРИМЕНИТЬ РЕЗУЛЬТАТ ИГРОКА (${directPlayerTotal} vs DV ${targetDv})`
+                : attackMode === 'manual'
+                ? 'ПРИМЕНИТЬ РУЧНОЙ БРОСОК АТАКИ'
+                : 'БРОСИТЬ АТАКУ (1d10 + База)'}
             </button>
           </div>
 
@@ -533,7 +660,7 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
                         }}
                         className="accent-amber-500"
                       />
-                      <span>Выпало две 6-ки (+5 урона и критическая травма)</span>
+                      <span>Выпало две 6-ки (+5 урона и травма)</span>
                     </label>
                   </div>
 
@@ -586,7 +713,7 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
                 </div>
               )}
 
-              {damageResolution && (
+              {damageResolution && currentTarget && (
                 <>
                   <div className="p-2 bg-zinc-900 rounded border border-zinc-800 text-zinc-200 font-tech">
                     {damageResolution.logSummary}
@@ -599,11 +726,24 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
                     </div>
                   )}
 
+                  {/* Explicit Target Confirmation Box */}
+                  <div className="p-2.5 bg-emerald-950/40 border border-emerald-600/60 rounded text-emerald-200 font-tech space-y-1">
+                    <div className="font-bold text-xs uppercase flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Получатель урона: {currentTarget.name}</span>
+                    </div>
+                    <div className="text-[11px] text-zinc-300">
+                      ОЗ цели: {currentTarget.hpCurrent} ➔ <strong className="text-white">{Math.max(0, currentTarget.hpCurrent - damageResolution.finalHpLoss)}</strong> / {currentTarget.hpMax}
+                      {' | '} 
+                      Броня [{targetLocation === 'head' ? 'Голова' : 'Тело'}]: ОС {targetLocation === 'head' ? currentTarget.headSp : currentTarget.bodySp} ➔ <strong className="text-white">ОС {damageResolution.newSp}</strong>
+                    </div>
+                  </div>
+
                   <button
                     onClick={handleApply}
                     className="w-full mt-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-orbitron font-bold tracking-wider rounded transition-all clip-cyber-btn shadow-lg"
                   >
-                    ПРИМЕНИТЬ УРОН И АБЛЯЦИЮ К ЦЕЛИ
+                    ПРИМЕНИТЬ УРОН К ЦЕЛИ [{currentTarget.name.toUpperCase()}]
                   </button>
                 </>
               )}
