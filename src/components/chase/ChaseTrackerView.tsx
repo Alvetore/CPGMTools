@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Car, 
   Sparkles, 
@@ -28,10 +28,12 @@ import {
 } from '../../types/chase';
 import { executeCPRCheck, rollD10 } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
+import { loadStoredData, saveStoredData, STORAGE_KEYS } from '../../utils/storage';
+import { getEffectiveSpeed, positionVehicle, finishChaseRound, markEscapes } from '../../utils/chase';
 
 export const ChaseTrackerView: React.FC = () => {
-  const [chaseRound, setChaseRound] = useState<number>(1);
-  const [chaseLog, setChaseLog] = useState<string[]>([]);
+  const [chaseRound, setChaseRound] = useState<number>(() => loadStoredData(STORAGE_KEYS.CHASE, { round: 1 }).round);
+  const [chaseLog, setChaseLog] = useState<string[]>(() => loadStoredData(STORAGE_KEYS.CHASE, { log: [] as string[] }).log);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [isRoundPositioningModalOpen, setIsRoundPositioningModalOpen] = useState<boolean>(false);
   const [positioningDraft, setPositioningDraft] = useState<{ [id: string]: number }>({});
@@ -48,9 +50,9 @@ export const ChaseTrackerView: React.FC = () => {
   const [maneuverResult, setManeuverResult] = useState<any | null>(null);
 
   // Initial sample vehicles
-  const [vehicles, setVehicles] = useState<ChaseVehicle[]>([
+  const [vehicles, setVehicles] = useState<ChaseVehicle[]>(() => loadStoredData(STORAGE_KEYS.CHASE, { vehicles: [
     {
-      id: 'v-lead-1',
+      id: 'v-lead-1', side: 'evader',
       name: 'Грузовик беглецов (Armored Van)',
       vehicleType: 'Truck',
       driverName: 'Вор-наёмник',
@@ -68,7 +70,7 @@ export const ChaseTrackerView: React.FC = () => {
       notes: 'Перевозит украденную партию имплантов'
     },
     {
-      id: 'v-team-1',
+      id: 'v-team-1', side: 'pursuer',
       name: 'Машина партии (Quadra Turbo-R)',
       vehicleType: 'Car',
       driverName: 'Водитель команды',
@@ -85,7 +87,11 @@ export const ChaseTrackerView: React.FC = () => {
       isWrecked: false,
       notes: 'Оснащена системой закиси азота (NOS)'
     }
-  ]);
+  ] as ChaseVehicle[] }).vehicles);
+
+  useEffect(() => { saveStoredData(STORAGE_KEYS.CHASE, { round: chaseRound, log: chaseLog, vehicles }); }, [chaseRound, chaseLog, vehicles]);
+  const [maneuverTargetId, setManeuverTargetId] = useState('');
+  const [newVehSide, setNewVehSide] = useState<'pursuer' | 'evader'>('pursuer');
 
   // Quick Add Vehicle Form Modal
   const [isAddVehicleOpen, setIsAddVehicleOpen] = useState<boolean>(false);
@@ -102,153 +108,61 @@ export const ChaseTrackerView: React.FC = () => {
     setChaseLog(prev => [msg, ...prev.slice(0, 39)]);
   };
 
-  // Helper to get effective combat speed taking half-SDP and PIT into account
-  const getEffectiveSpeed = (v: ChaseVehicle): { effectiveSpeed: CombatSpeed | 'crashed'; isHalved: boolean } => {
-    const isHalved = v.sdpCurrent < Math.ceil(v.sdpMax / 2);
-    const speedTiers: CombatSpeed[] = [60, 40, 20, 15, 10, 8];
-    const currentIndex = speedTiers.indexOf(v.speedCombat);
-
-    let dropTiers = 0;
-    if (isHalved) dropTiers += 1;
-    if (v.isPitSuffering) dropTiers += 1;
-
-    const newIndex = currentIndex + dropTiers;
-    if (newIndex >= speedTiers.length) {
-      return { effectiveSpeed: 'crashed', isHalved };
-    }
-    return { effectiveSpeed: speedTiers[newIndex], isHalved };
+  const handleRollPositioningForVehicle = (snapshot: ChaseVehicle, manualD10?: number) => {
+    const v = vehicles.find(v => v.id === snapshot.id);
+    if (!v) return;
+    const result = positionVehicle(v, manualD10 === undefined ? undefined : { firstDie: manualD10 });
+    setVehicles(prev => prev.map(vehicle => vehicle.id === v.id ? result.vehicle : vehicle));
+    if (result.check) addLog(v.name + ': позиционирование ' + result.check.textSummary);
+    return result.check;
   };
 
-  // Positioning check at the end of the round
-  const handleRollPositioningForVehicle = (v: ChaseVehicle, manualD10?: number) => {
-    const { effectiveSpeed, isHalved } = getEffectiveSpeed(v);
-    if (effectiveSpeed === 'crashed') {
-      sfx.playCritFailure();
-      handleUpdateVehicle(v.id, { isWrecked: true });
-      addLog(`💥 ${v.name} (${v.driverName}): потеря управления! Скорость упала ниже 8 СКО — транспорт разбивается!`);
-      return;
-    }
-
-    const dv = SPEED_POSITIONING_DVS[effectiveSpeed];
-    const check = executeCPRCheck(
-      v.driverBase, 
-      0, 
-      0, 
-      dv,
-      manualD10 !== undefined ? { firstDie: manualD10 } : undefined
-    );
-
-    if (check.isSuccess) {
-      sfx.playCritSuccess();
-      const nextSquare = Math.min(10, v.gridSquare + 1);
-      const isNowEscaped = nextSquare > 8;
-      handleUpdateVehicle(v.id, {
-        gridSquare: nextSquare,
-        isEscaped: isNowEscaped,
-        isPitSuffering: false // PIT effect clears after round
-      });
-      addLog(`🚗 ${v.name} (${v.driverName}): Проверка позиционирования УСПЕХ (${check.grandTotal} vs СЛ ${dv}${manualD10 !== undefined ? ', ручной d10: ' + manualD10 : ''}). Продвижение на клетку ${nextSquare}!`);
-    } else {
-      sfx.playCritFailure();
-      handleUpdateVehicle(v.id, { isPitSuffering: false });
-      addLog(`⚠️ ${v.name} (${v.driverName}): Проверка позиционирования ПРОВАЛ (${check.grandTotal} vs СЛ ${dv}${manualD10 !== undefined ? ', ручной d10: ' + manualD10 : ''}). Остаётся на клетке ${v.gridSquare}.`);
-    }
-    return check;
-  };
-
-  const handleRollAllPositioning = () => {
-    sfx.playDiceRoll();
-    vehicles.forEach(v => {
-      if (!v.isWrecked && !v.isEscaped) {
-        handleRollPositioningForVehicle(v);
-      }
+  const finishRound = (manual: Record<string, { firstDie: number }> = {}) => {
+    const result = finishChaseRound(vehicles, manual);
+    setVehicles(result.vehicles);
+    result.outcomes.forEach(({ vehicle, check }) => {
+      if (check) addLog(vehicle.name + ': ' + check.textSummary);
     });
     setChaseRound(r => r + 1);
-    addLog(`--- Конец раунда ${chaseRound}. Начало раунда ${chaseRound + 1} погони ---`);
+    addLog('Конец раунда ' + chaseRound + '. Временные эффекты PIT и Pull in Close сняты.');
   };
-
+  const handleRollAllPositioning = () => finishRound();
   const handleUpdateVehicle = (id: string, updates: Partial<ChaseVehicle>) => {
-    setVehicles(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
+    setVehicles(prev => markEscapes(prev.map(v => v.id === id ? { ...v, ...updates } : v)));
   };
-
   const handleDamageSdp = (id: string, amount: number) => {
-    sfx.playHit();
     const v = vehicles.find(x => x.id === id);
     if (!v) return;
-
-    const nextSdp = Math.max(0, v.sdpCurrent - amount);
-    const isWrecked = nextSdp <= 0;
-    handleUpdateVehicle(id, { sdpCurrent: nextSdp, isWrecked });
-    addLog(`💥 ${v.name}: урон -${amount} ПСП (осталось: ${nextSdp}/${v.sdpMax}). ${isWrecked ? 'ТРАНСПОРТ УНИЧТОЖЕН!' : ''}`);
+    const sdpCurrent = Math.min(v.sdpMax, Math.max(0, v.sdpCurrent - amount));
+    handleUpdateVehicle(id, { sdpCurrent, isWrecked: sdpCurrent === 0 });
+    addLog(v.name + ': SDP ' + sdpCurrent + '/' + v.sdpMax);
   };
 
-  // Maneuver actions
-  const handleExecuteManeuver = (v: ChaseVehicle, mId: string, manualD10?: number) => {
-    sfx.playClick();
-    const manualInput = manualD10 !== undefined ? { firstDie: manualD10 } : undefined;
-    let checkResult = null;
-
-    if (mId === 'm-nos') {
-      const check = executeCPRCheck(v.driverBase, 0, 0, 13, manualInput);
-      checkResult = check;
-      if (check.isSuccess) {
-        sfx.playCritSuccess();
-        const nextSquare = v.gridSquare + 1;
-        handleUpdateVehicle(v.id, { gridSquare: nextSquare, isEscaped: nextSquare > 8 });
-        addLog(`⚡ ${v.name}: манёвр NOS успешен (${check.grandTotal} vs СЛ 13)! Рывок на клетку ${nextSquare}.`);
-      } else {
-        sfx.playCritFailure();
-        addLog(`⚠️ ${v.name}: манёвр NOS провален (${check.grandTotal} vs СЛ 13)! Потеря управления при ускорении.`);
-      }
-    } else if (mId === 'm-pit') {
-      // Find other vehicles in same square
-      const target = vehicles.find(x => x.id !== v.id && x.gridSquare === v.gridSquare && !x.isWrecked);
-      if (!target) {
-        alert('Манёвр PIT можно выполнять только против ТС, находящегося на одной клетке (бок о бок)!');
-        return;
-      }
-      const check = executeCPRCheck(v.driverBase, 0, 0, 15, manualInput);
-      checkResult = check;
-      if (check.isSuccess) {
-        sfx.playCritSuccess();
-        handleUpdateVehicle(target.id, { isPitSuffering: true });
-        addLog(`🚓 ${v.name} применил манёвр PIT к [${target.name}]! (СЛ 15 пройдена). Цель получает штраф скорости в конце раунда.`);
-      } else {
-        sfx.playCritFailure();
-        addLog(`⚠️ ${v.name}: попытка манёвра PIT не удалась (${check.grandTotal} vs СЛ 15).`);
-      }
-    } else if (mId === 'm-overtake') {
-      const target = vehicles.find(x => x.id !== v.id && x.gridSquare === v.gridSquare && !x.isWrecked);
-      if (!target) {
-        alert('Манёвр «Выход вперёд» можно выполнять только против ТС на одной клетке (бок о бок)!');
-        return;
-      }
-      const check = executeCPRCheck(v.driverBase, 0, 0, 17, manualInput);
-      checkResult = check;
-      if (check.isSuccess) {
-        sfx.playCritSuccess();
-        const nextSquare = v.gridSquare + 1;
-        handleUpdateVehicle(v.id, { gridSquare: nextSquare, isEscaped: nextSquare > 8 });
-        addLog(`🏎️ ${v.name} успешно обогнал [${target.name}] и вырвался на клетку ${nextSquare}!`);
-      } else {
-        sfx.playCritFailure();
-        addLog(`⚠️ ${v.name}: провал обгона (${check.grandTotal} vs СЛ 17). Столкновение с препятствием или потеря контроля!`);
-      }
-    } else if (mId === 'm-pull-close') {
-      handleUpdateVehicle(v.id, { isPulledClose: !v.isPulledClose });
-      addLog(`🎯 ${v.name}: смещение к ближнему краю полосы дальности (доступен абордаж и ближний бой).`);
-    } else if (mId === 'm-ram') {
-      const check = executeCPRCheck(v.driverBase, 0, 0, 17, manualInput);
-      checkResult = check;
-      if (check.isSuccess) {
-        sfx.playHit();
-        addLog(`💥 ${v.name} успешно таранит цель на полной скорости! Примените урон ПСП обоим ТС.`);
-      } else {
-        sfx.playCritFailure();
-        addLog(`⚠️ ${v.name}: провал тарана (${check.grandTotal} vs СЛ 17).`);
-      }
+  const handleExecuteManeuver = (snapshot: ChaseVehicle, mId: string, manualD10?: number) => {
+    const v = vehicles.find(x => x.id === snapshot.id);
+    if (!v || v.isWrecked || v.isEscaped || v.needsControlResolution) return;
+    if (v.hasActed) { alert('Стандартное действие водителя уже потрачено в этом раунде.'); return; }
+    if (v.driverBase < 9) { alert('При базе управления ниже 9 стандартное действие уходит на управление.'); return; }
+    if (mId === 'm-nos' && !v.hasNos) { alert('На этом ТС нет NOS.'); return; }
+    const adjacent = vehicles.filter(x => x.id !== v.id && !x.isWrecked && !x.isEscaped && Math.abs(x.gridSquare - v.gridSquare) === 1);
+    const target = maneuverTargetId ? adjacent.find(x => x.id === maneuverTargetId) : adjacent.length === 1 ? adjacent[0] : undefined;
+    if (['m-pit','m-overtake','m-ram'].includes(mId) && !target) { alert('Выберите цель на соседней клетке.'); return; }
+    const dv = mId === 'm-pit' ? 15 : ['m-overtake','m-ram'].includes(mId) ? 17 : 13;
+    const check = executeCPRCheck(v.driverBase, 0, 0, dv, manualD10 === undefined ? undefined : { firstDie: manualD10 });
+    let updated = vehicles.map(x => x.id === v.id ? { ...x, hasActed: true } : x);
+    const update = (id: string, patch: Partial<ChaseVehicle>) => { updated = updated.map(x => x.id === id ? { ...x, ...patch } : x); };
+    if (mId === 'm-nos') update(v.id, { gridSquare: v.gridSquare + 1, needsControlResolution: !check.isSuccess });
+    if (mId === 'm-pit' && check.isSuccess) update(target!.id, { isPitSuffering: true });
+    if (mId === 'm-overtake') {
+      if (check.isSuccess) update(v.id, { gridSquare: target!.gridSquare + 1 });
+      else update(v.id, { needsControlResolution: true });
     }
-    return checkResult;
+    if (mId === 'm-pull-close' && check.isSuccess) update(v.id, { isPulledClose: true });
+    setVehicles(markEscapes(updated));
+    addLog(v.name + ': ' + mId + ' — ' + check.textSummary);
+    if (mId === 'm-ram' && check.isSuccess) addLog('Таран: ГМ применяет урон столкновения к обоим ТС и пассажирам по core p.192.');
+    if (!check.isSuccess && ['m-nos','m-overtake'].includes(mId)) addLog(v.name + ': потеря управления; дальнейшие действия заблокированы до решения ГМа на карточке ТС.');
+    return check;
   };
 
   const handleAddVehicle = (e: React.FormEvent) => {
@@ -267,6 +181,7 @@ export const ChaseTrackerView: React.FC = () => {
       speedCombat: newVehSpeed,
       gridSquare: newVehSquare,
       hasNos: newVehNos,
+      side: newVehSide,
       isPitSuffering: false,
       isPulledClose: false,
       isEscaped: false,
@@ -279,6 +194,11 @@ export const ChaseTrackerView: React.FC = () => {
     sfx.playClick();
     addLog(`В погоню добавлено новое ТС: ${newV.name} (Клетка ${newV.gridSquare}, СКО ${newV.speedCombat}).`);
   };
+
+  const activeSquares = vehicles.filter(v => !v.isEscaped && !v.isWrecked).map(v => v.gridSquare);
+  const firstSquare = Math.min(...activeSquares, Infinity);
+  const trackSquares = [...new Set([...Array.from({ length: 8 }, (_, i) => firstSquare + i), ...activeSquares])]
+    .filter(Number.isFinite).sort((a, b) => a - b);
 
   return (
     <div className="space-y-4">
@@ -352,14 +272,14 @@ export const ChaseTrackerView: React.FC = () => {
             <span>Сетка погони (Дистанции между участниками)</span>
           </span>
           <span className="text-zinc-500 hidden sm:inline">
-            Клетка 1 = Рядом бок о бок | Клетка &gt; 8 = Побег
+            Побег: расстояние до всех преследователей больше 8 клеток
           </span>
         </div>
 
         {/* The 8 Track Bands */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-          {HOT_PURSUIT_RANGE_BANDS.map((band) => {
-            const vehiclesHere = vehicles.filter(v => v.gridSquare === band.square && !v.isWrecked);
+          {trackSquares.map(square => ({ square, range: '', description: 'Относительная координата погони' })).map((band) => {
+            const vehiclesHere = vehicles.filter(v => v.gridSquare === band.square && !v.isWrecked && !v.isEscaped);
 
             return (
               <div
@@ -449,6 +369,14 @@ export const ChaseTrackerView: React.FC = () => {
                 </button>
               </div>
 
+              <label className="text-xs text-zinc-400">Сторона: <select value={v.side ?? 'pursuer'} onChange={e => handleUpdateVehicle(v.id, { side: e.target.value as 'pursuer' | 'evader' })} className="bg-zinc-950 border rounded">
+                <option value="pursuer">Преследователь</option><option value="evader">Уходящий</option>
+              </select></label>
+              {v.needsControlResolution && <div role="alert" className="text-xs text-red-300 border border-red-700 p-2 rounded">Потеря управления. ГМ разрешает последствия по core p.192:
+                <button className="block border px-2 py-1 mt-1" onClick={() => { handleUpdateVehicle(v.id, { needsControlResolution: false, gridSquare: v.gridSquare - 1 }); addLog(v.name + ': ГМ разрешил потерю управления, ТС отстало.'); }}>ГМ: продолжить после разрешения, −1 клетка</button>
+                <button className="block border px-2 py-1 mt-1" onClick={() => { handleUpdateVehicle(v.id, { needsControlResolution: false, isWrecked: true }); addLog(v.name + ': ГМ подтвердил аварию; урон применяется вручную.'); }}>ГМ: авария, вывести из погони</button>
+              </div>}
+              <p className="text-xs text-zinc-500">{v.hasActed ? 'Стандартное действие потрачено' : 'Стандартное действие доступно'}; {v.positioned ? 'позиционирование выполнено' : 'позиционирование в конце раунда'}</p>
               {/* Vehicle Stats Bar */}
               <div className="grid grid-cols-4 gap-2 text-center text-xs font-tech bg-zinc-950 p-2 rounded border border-zinc-800">
                 <div>
@@ -512,7 +440,7 @@ export const ChaseTrackerView: React.FC = () => {
                 <span className="text-zinc-500">Положение на сетке:</span>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => handleUpdateVehicle(v.id, { gridSquare: Math.max(1, v.gridSquare - 1) })}
+                    onClick={() => handleUpdateVehicle(v.id, { gridSquare: v.gridSquare - 1 })}
                     className="px-2 py-0.5 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 rounded font-bold"
                   >
                     -1 назад
@@ -521,7 +449,7 @@ export const ChaseTrackerView: React.FC = () => {
                   <button
                     onClick={() => {
                       const next = v.gridSquare + 1;
-                      handleUpdateVehicle(v.id, { gridSquare: next, isEscaped: next > 8 });
+                      setVehicles(prev => markEscapes(prev.map(x => x.id === v.id ? { ...x, gridSquare: next } : x)));
                     }}
                     className="px-2 py-0.5 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 rounded font-bold"
                   >
@@ -620,7 +548,7 @@ export const ChaseTrackerView: React.FC = () => {
                     💥 Таран (17)
                   </button>
                   <button
-                    onClick={() => handleExecuteManeuver(v, 'm-pull-close')}
+                    onClick={() => { setActiveManeuverModal({ vehicle: v, maneuverId: 'm-pull-close', title: 'Pull in Close (DV13)', dv: 13 }); setManeuverResult(null); }}
                     className="px-2 py-1 bg-zinc-950 border border-zinc-700 hover:bg-zinc-800 text-zinc-300 rounded text-xs font-tech"
                   >
                     🎯 Подтянуться
@@ -655,6 +583,7 @@ export const ChaseTrackerView: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <form onSubmit={handleAddVehicle} className="bg-zinc-900 border border-amber-600/70 rounded-lg max-w-md w-full max-h-[90dvh] overflow-y-auto p-3.5 sm:p-5 space-y-4 clip-cyber shadow-2xl">
             <h3 className="font-orbitron font-bold text-white text-base">ДОБАВИТЬ ТРАНСПОРТ В ПОГОНЮ</h3>
+            <label className="block text-xs">Сторона <select value={newVehSide} onChange={e => setNewVehSide(e.target.value as 'pursuer' | 'evader')} className="bg-zinc-950 border rounded"><option value="pursuer">Преследователь</option><option value="evader">Уходящий</option></select></label>
 
             <div>
               <label className="text-xs font-tech text-zinc-400 block mb-1">Название ТС / Модель</label>
@@ -734,8 +663,6 @@ export const ChaseTrackerView: React.FC = () => {
                 <label className="text-xs font-tech text-zinc-400 block mb-1">Клетка старта</label>
                 <input
                   type="number"
-                  min="1"
-                  max="8"
                   value={newVehSquare}
                   onChange={(e) => setNewVehSquare(parseInt(e.target.value) || 1)}
                   className="w-full bg-zinc-950 border border-zinc-700 rounded px-2.5 py-1.5 text-white outline-none"
@@ -790,7 +717,7 @@ export const ChaseTrackerView: React.FC = () => {
 
             <div className="space-y-3 text-zinc-300">
               <p>
-                <strong>Сетка погони:</strong> состоит из клеток от 1 до 8. Каждая клетка соответствует одной полосе таблицы дальностей (Клетка 1 = 0–6м, Клетка 2 = 7–12м, ..., Клетка 8 = 401–800м). Если отрыв превышает 8 клеток — цель скрывается в городских джунглях (Побег).
+                <strong>Сетка погони:</strong> координаты не ограничены восемью клетками. Расстояние между ТС в клетках задаёт полосу дальности. Уходящий скрывается, когда расстояние до каждого действующего преследователя превышает 8 клеток. Соседство для PIT и Pull Ahead — разница координат 1.
               </p>
 
               <div>
@@ -932,14 +859,7 @@ export const ChaseTrackerView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  vehicles.forEach(v => {
-                    if (!v.isWrecked && !v.isEscaped) {
-                      const rolled = positioningDraft[v.id] ?? 5;
-                      handleRollPositioningForVehicle(v, rolled);
-                    }
-                  });
-                  setChaseRound(r => r + 1);
-                  addLog(`--- Конец раунда ${chaseRound}. Начало раунда ${chaseRound + 1} погони ---`);
+                  finishRound(Object.fromEntries(Object.entries(positioningDraft).map(([id, firstDie]) => [id, { firstDie }])));
                   setIsRoundPositioningModalOpen(false);
                 }}
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded clip-cyber-sm"
@@ -980,6 +900,10 @@ export const ChaseTrackerView: React.FC = () => {
             </div>
 
             {/* Mode switch */}
+            {['m-pit','m-overtake','m-ram'].includes(activeManeuverModal.maneuverId) && <label className="block text-xs">Цель манёвра <select value={maneuverTargetId} onChange={e => setManeuverTargetId(e.target.value)} className="block w-full bg-zinc-950 border rounded p-1">
+              <option value="">Выберите цель (одна соседняя выбирается автоматически)</option>
+              {vehicles.filter(v => v.id !== activeManeuverModal.vehicle.id && !v.isWrecked && !v.isEscaped).map(v => <option key={v.id} value={v.id}>{v.name} — клетка {v.gridSquare}</option>)}
+            </select></label>}
             <div className="flex items-center justify-between bg-zinc-950 p-2 rounded border border-zinc-800">
               <span className="text-zinc-400 font-bold uppercase text-[11px]">Режим проверки:</span>
               <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800">

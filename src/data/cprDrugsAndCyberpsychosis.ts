@@ -172,20 +172,20 @@ export const STREET_DRUGS: StreetDrug[] = [
     nameRu: 'Прайм Тайм',
     nameEn: 'Prime Time',
     duration: '4 часа',
-    primaryEffect: 'Восстанавливает 4d6 Человечности (возвращаются после окончания действия наркотика и не могут поднять выше максимума). ХАР и ВОЛЯ +2. ПЗ не увеличивается. Эмоции сильно притуплены.',
+    primaryEffect: 'При приёме временно теряет 4d6 Человечности (минимум 0); потеря возвращается после окончания основного эффекта. ХАР и ВОЛЯ +2. ПЗ не увеличивается. Эмоции сильно притуплены.',
     secondaryEffect: 'СЛ 17. Персонаж безвозвратно теряет 1 ПЧ. Зависимость: ХАР снижена на 2, если персонаж не под действием наркотика.',
     secondaryDv: 17,
     costEb: 50,
     priceCategory: '50 eb (Ценное)',
-    description: 'Наркотик светских львов, временно заглушающий киберпсихоз и повышающий обаяние.',
+    description: 'Подавляет эмоции и повышает COOL и WILL, временно снижая Humanity.',
     isAddictive: true
   },
   {
     id: 'six-shooter',
     nameRu: 'Шестистволка',
-    nameEn: 'Six-Shooter',
+    nameEn: 'Sixgun',
     duration: '4 часа',
-    primaryEffect: 'СКО и РЕА уменьшаются на 2 (минимум 1). +2 к СКО в СЕТи (Interface/Net actions). Любое небезопасное отключение от СЕТИ, не вызванное софтом, считается безопасным. Раз в ход можно получить 1 ПЧ за 1 дополнительное СЕТевое действие.',
+    primaryEffect: 'СКО и РЕА уменьшаются на 2 (минимум 1). +2 к Speed в СЕТи (не к Interface и не к числу NET Actions). Любое небезопасное отключение от СЕТИ, не вызванное софтом, считается безопасным. Раз в ход можно потерять 1 Человечность, чтобы получить 1 дополнительное NET Action.',
     secondaryEffect: 'СЛ 17. Зависимость: СКО в СЕТи снижена на 2 вне действия Шестистволки.',
     secondaryDv: 17,
     costEb: 100,
@@ -448,7 +448,7 @@ export const CYBERPSYCHOSIS_STAGES: CyberpsychosisStage[] = [
   {
     minEmp: 0,
     maxEmp: 0,
-    minHumanity: 1,
+    minHumanity: 0,
     maxHumanity: 9,
     title: 'КИБЕРПСИХОЗ',
     badgeColor: 'text-red-500 border-red-600/80 bg-red-950/50 animate-pulse',
@@ -465,15 +465,14 @@ export const CYBERPSYCHOSIS_STAGES: CyberpsychosisStage[] = [
     minEmp: 0,
     maxEmp: 0,
     minHumanity: -99,
-    maxHumanity: 0,
+    maxHumanity: -1,
     title: 'ЭКСТРЕМАЛЬНЫЙ КИБЕРПСИХОЗ',
     badgeColor: 'text-purple-400 border-purple-600 bg-purple-950/60 font-black animate-pulse',
     status: 'extreme_cyberpsychosis',
     requiredTraitsCount: 10,
-    description: 'ЧЕЛОВЕЧНОСТЬ 0 ИЛИ МЕНЬШЕ! Персонаж немедленно передаётся под управление Гейм-Мастера (ГМ)!',
+    description: 'ЧЕЛОВЕЧНОСТЬ НИЖЕ 0! Персонаж немедленно передаётся под управление Гейм-Мастера (ГМ)!',
     roleplayTips: [
       'ГМ отыгрывает персонажа в соответствии с его худшими садистскими наклонностями.',
-      'ГМ может давать персонажу бонус +2 к любой проверке за счёт безудержной агрессии.',
       'Персонаж возвращается игроку ТОЛЬКО если его Человечность снова станет положительной (терапия, реабилитация Макс-Так).'
     ]
   }
@@ -681,7 +680,7 @@ export const LONG_TERM_HUMANITY_GAIN: HumanityEvent[] = [
 export function getCyberpsychosisStage(humanity: number, emp?: number): CyberpsychosisStage {
   const calculatedEmp = emp !== undefined ? emp : Math.max(0, Math.floor(humanity / 10));
 
-  if (humanity <= 0) {
+  if (humanity < 0) {
     return CYBERPSYCHOSIS_STAGES.find(s => s.status === 'extreme_cyberpsychosis') || CYBERPSYCHOSIS_STAGES[4];
   }
   if (calculatedEmp === 0) {

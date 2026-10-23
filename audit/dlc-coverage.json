@@ -1,0 +1,456 @@
+{
+  "auditDate": "2026-10-23",
+  "scope": "Inventory from official checklist v1.13 + current RTG Downloads and 2026 release posts. Status measures explicit project support, not line-by-line certification of each entire DLC. Optional/content-only DLC absence is not itself a rules defect.",
+  "records": [
+    {
+      "title": "Old Guns Never Die",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Red Chrome Cargo",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Cyberchairs",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Single Shot Pack",
+      "status": "no_dedicated_support_found",
+      "evidence": "No corresponding official NPC/pregen dataset identified; generic project templates do not prove import of this DLC.",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Elflines Online",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Elflines Online Expansion Pack 1",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Hardened Mooks",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Hardened Lieutenants",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Night City Weather",
+      "status": "partial_support_after_fixes",
+      "evidence": "Acid Rain reference corrected: 1 SP/minute to all worn armor. Weather remains a manual reference.",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Jumpstart Kit Conversion Guide",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Cargo Containers & Cube Hotels",
+      "status": "partial_or_analogous_content",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Night City Tarot",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Daeric Sylar’s Guide to Elflines Online",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "The 12 Days of Gunmas",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Hardened Mini Bosses",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Digital Dating in the Dark Future",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Woodchipper’s Garage",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Salvaging Night City",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Midnight With the Upload",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Must Have Cyberware Deals",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Collecting the Random",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Tales of the RED+",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Elflines Online the TCG",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Spinning Your Wheels",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "The 12 Days of Cybermas",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Hornet’s Pharmacy",
+      "status": "partial_support_after_fixes",
+      "evidence": "Prime Time temporary Humanity loss and Sixgun Humanity cost/Speed corrected. Reference only; no automatic drug lifecycle.",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Black Chrome+",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Listen Up to JonJontheWise",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Achievements and Loot Boxes",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Stickball",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "The Dreaded Punknaught",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Danger Gal Dossier+",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Corporate Conapts & Studio Apartments",
+      "status": "partial_or_analogous_content",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Listen Up to Rob Mulligan",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Halloween Screamsheets",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Night Market Index",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "The Sawtooth",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "The 12 Days of Gearmas",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Breaking Your Stuff",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Chasing the Rabbit",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "All About Agents",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Mixing Drinks * Changing Lives",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Hot Pursuit",
+      "status": "partial_support_after_fixes",
+      "evidence": "Relative escape, simultaneous round positioning, action/adjacency/NOS gates and persistence corrected. Collision damage and control-loss outcomes remain GM-resolved.",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Toggle’s Temple",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Edgerunner Folio",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "CEMK DLC #1",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "No Place Like Home",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "CEMK DLC #2",
+      "status": "partial_text_only_setting_not_selected",
+      "evidence": "Immunoblockers text only; src/data/cprDrugsAndCyberpsychosis.ts:223",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Did Someone Say Murder",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Your New Best Friend",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Screamsheet Generator",
+      "status": "partial_or_analogous_content",
+      "evidence": "src/components/reference/GMReferenceView.tsx:355; own gig generator, not official DLC tables",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "The 12 Days of REDMas",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Night City Atlas",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "100 Logos",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Nomad Presents Radio",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "The 12 Days of Cutiemas",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Elflines Online: Magic Returns",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Rockerboy Index",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Going Quiet",
+      "status": "partial_support_after_fixes",
+      "evidence": "Existing Flash of Luck reference corrected to 2/4/8 Luck, 100/500/1000eb. No campaign ledger, stealth Jack In or Watchers automation.",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "So, You Missed Gen Con",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Single Player Mode+",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Segotari Power",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Cyberpunk RED Checklist",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "The 12 Days of Vehiclemas",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Everyday People",
+      "status": "no_dedicated_support_found",
+      "evidence": "No corresponding official NPC/pregen dataset identified; generic project templates do not prove import of this DLC.",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Seeing Double",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/wp-content/uploads/2026/02/RTG-CPR-DLC-CyberpunkREDChecklistv1.13.pdf"
+    },
+    {
+      "title": "Invented Tech Upgrades",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/downloadable-content/"
+    },
+    {
+      "title": "Cyberpunk RED x Fossilized Violence",
+      "status": "no_dedicated_support_found",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/2026/04/01/april-fools-2026-at-r-talsorian-a-cyberpunk-and-shadow-scar-dlc-day/"
+    },
+    {
+      "title": "Night City Hook Book",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/downloadable-content/"
+    },
+    {
+      "title": "Megatoken Pack",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/downloadable-content/"
+    },
+    {
+      "title": "Con Jobs 2026 Part 1",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/downloadable-content/"
+    },
+    {
+      "title": "Con Jobs 2026 Part 2",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/downloadable-content/"
+    },
+    {
+      "title": "Weapon Rebalance",
+      "status": "update_tracking_absent",
+      "evidence": "No source/version or per-weapon rule registry; not proof of every weapon being out of date",
+      "source": "https://rtalsoriangames.com/downloadable-content/"
+    },
+    {
+      "title": "Night City Gang Guide",
+      "status": "no_dedicated_support_found",
+      "evidence": "No corresponding official NPC/pregen dataset identified; generic project templates do not prove import of this DLC.",
+      "source": "https://rtalsoriangames.com/downloadable-content/"
+    },
+    {
+      "title": "Night City Gang Logos",
+      "status": "content_reference_no_full_import",
+      "evidence": "Full src review; no dedicated module or imported dataset identified",
+      "source": "https://rtalsoriangames.com/downloadable-content/"
+    }
+  ]
+}

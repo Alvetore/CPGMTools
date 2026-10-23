@@ -23,9 +23,17 @@ import {
 } from './utils/storage';
 import { sfx } from './utils/audio';
 import { rollD10 } from './utils/dice';
+import { rollInitiative, sortInitiative, preserveTurn } from './utils/initiative';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('combat');
+  const [storageError, setStorageError] = useState('');
+  const [dataRevision, setDataRevision] = useState(0);
+  useEffect(() => {
+    const handler = (event: Event) => setStorageError((event as CustomEvent<string>).detail);
+    window.addEventListener('cpgm-storage-error', handler);
+    return () => window.removeEventListener('cpgm-storage-error', handler);
+  }, []);
 
   // Party state
   const [party, setParty] = useState<PartyMember[]>(() => 
@@ -76,6 +84,8 @@ export const App: React.FC = () => {
 
   // Reload state after backup restoration
   const reloadData = () => {
+    setStorageError('');
+    setDataRevision(r => r + 1);
     setParty(loadStoredData<PartyMember[]>(STORAGE_KEYS.PARTY, []));
     setCombatState(loadStoredData<ActiveCombatState>(STORAGE_KEYS.COMBAT, {
       isActive: false,
@@ -86,6 +96,18 @@ export const App: React.FC = () => {
     }));
     setCustomBestiary(loadStoredData<NpcTemplate[]>(STORAGE_KEYS.CUSTOM_BESTIARY, []));
     setEncounters(loadStoredData<Encounter[]>(STORAGE_KEYS.ENCOUNTERS, DEFAULT_ENCOUNTERS));
+  };
+
+  const syncCombatToParty = (): PartyMember[] => {
+    const byId = new Map(combatState.combatants.filter(c => c.sourceCharacterId).map(c => [c.sourceCharacterId, c]));
+    const next = party.map(p => {
+      const c = byId.get(p.id);
+      return c ? { ...p, hpCurrent: c.hpCurrent, headSp: c.headSp, bodySp: c.bodySp, weapons: c.weapons,
+        deathSavePenalties: c.deathSavePenalties, criticalInjuries: c.criticalInjuries, isDead: c.isDead,
+        isStabilized: c.isStabilized, luckCurrent: c.luckCurrent ?? p.luckCurrent } : p;
+    });
+    setParty(next);
+    return next;
   };
 
   // Add party to combat
@@ -151,6 +173,7 @@ export const App: React.FC = () => {
         bodySp: npc.bodySp,
         bodySpMax: npc.bodySp,
         weapons: npc.weapons || [],
+        skills: npc.skills,
         conditions: [],
         criticalInjuries: [],
         notes: `${npc.description} | ${npc.tactics || ''}`,
@@ -209,10 +232,11 @@ export const App: React.FC = () => {
   const handleStartCombatFromEncounter = (encounter: Encounter, includeParty: boolean) => {
     sfx.playCritSuccess();
     const combatants: Combatant[] = [];
+    const currentParty = syncCombatToParty();
 
     // 1. Add Party if selected and available
     if (includeParty && party.length > 0) {
-      party.forEach(member => {
+      currentParty.forEach(member => {
         combatants.push(partyMemberToCombatant(member, 0));
       });
     }
@@ -239,6 +263,7 @@ export const App: React.FC = () => {
           bodySp: npc.bodySp,
           bodySpMax: npc.bodySp,
           weapons: npc.weapons || [],
+          skills: npc.skills,
           conditions: [],
           criticalInjuries: [],
           notes: npc.notes || '',
@@ -275,7 +300,7 @@ export const App: React.FC = () => {
     encounter.npcs.forEach(npc => {
       for (let i = 1; i <= npc.count; i++) {
         const displayName = npc.count > 1 ? `${npc.name} #${i}` : npc.name;
-        const initVal = combatState.isActive ? rollD10() + npc.ref : 0;
+        const initVal = combatState.isActive ? rollInitiative({ ref: npc.ref }) : 0;
         newNpcs.push({
           id: `c-reinf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
           name: displayName,
@@ -294,6 +319,7 @@ export const App: React.FC = () => {
           bodySp: npc.bodySp,
           bodySpMax: npc.bodySp,
           weapons: npc.weapons || [],
+          skills: npc.skills,
           conditions: [],
           criticalInjuries: [],
           notes: npc.notes || '',
@@ -303,17 +329,13 @@ export const App: React.FC = () => {
       }
     });
 
-    const updatedCombatants = [...combatState.combatants, ...newNpcs];
-    if (combatState.isActive) {
-      updatedCombatants.sort((a, b) => {
-        if (b.initiative !== a.initiative) return b.initiative - a.initiative;
-        return b.ref - a.ref;
-      });
-    }
+    const combined = [...combatState.combatants, ...newNpcs];
+    const updatedCombatants = combatState.isActive ? sortInitiative(combined) : combined;
 
     setCombatState(prev => ({
       ...prev,
       combatants: updatedCombatants,
+      currentTurnIndex: preserveTurn(prev.combatants, updatedCombatants, prev.currentTurnIndex),
       log: [
         {
           id: `log-${Date.now()}`,
@@ -345,6 +367,7 @@ export const App: React.FC = () => {
 
       {/* Main App Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-6 pb-20 pb-safe">
+        {storageError && <div role="alert" className="p-3 mb-3 border border-red-600 bg-red-950 text-red-200">Сохранение не выполнено: {storageError} Сделайте экспорт данных; не закрывайте вкладку.</div>}
         {activeTab === 'combat' && (
           <CombatTrackerView
             combatState={combatState}
@@ -352,6 +375,7 @@ export const App: React.FC = () => {
             onOpenBestiaryModal={() => setActiveTab('bestiary')}
             onAddPartyToCombat={handleAddPartyToCombat}
             onOpenEncounters={() => setActiveTab('encounters')}
+            onSyncParty={syncCombatToParty}
           />
         )}
 
@@ -371,7 +395,7 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'chase' && (
-          <ChaseTrackerView />
+          <ChaseTrackerView key={dataRevision} />
         )}
 
         {activeTab === 'party' && (
@@ -391,11 +415,12 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'netrunning' && (
-          <NetArchitectureView />
+          <NetArchitectureView key={dataRevision} />
         )}
 
         {activeTab === 'reference' && (
           <GMReferenceView 
+            key={dataRevision}
             onAddNpcToCombat={handleAddNpcToCombat}
           />
         )}

@@ -1,4 +1,4 @@
-import { Character, Weapon } from './character';
+import { Character, Weapon, CriticalInjury } from './character';
 
 export interface PartyMember {
   id: string;
@@ -25,4 +25,12 @@ export interface PartyMember {
   notes?: string;
   avatarUrl?: string;
   sourceCharSheet?: Character;
+  will?: number;
+  armorPenalty?: number;
+  roleRank?: number;
+  skills?: { id?: string; nameRu?: string; base?: number; level?: number; stat?: string }[];
+  deathSavePenalties?: number;
+  criticalInjuries?: CriticalInjury[];
+  isDead?: boolean;
+  isStabilized?: boolean;
 }

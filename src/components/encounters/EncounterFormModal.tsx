@@ -100,6 +100,7 @@ export const EncounterFormModal: React.FC<EncounterFormModalProps> = ({
       move: tpl.stats.MOVE,
       body: tpl.stats.BODY,
       weapons: [...(tpl.weapons || [])],
+      skills: tpl.skills.map(s => ({ ...s })),
       notes: tpl.tactics || tpl.description || ''
     };
 

@@ -23,11 +23,19 @@ export interface Combatant {
   dex: number;
   move: number;
   body: number;
+  skills?: { id?: string; nameRu?: string; base?: number; level?: number; stat?: string }[];
+  armorPenalty?: number;
+  roleRank?: number;
+  initiativeBonus?: number;
+  luckCurrent?: number;
   
   // Health & Death Save
   hpCurrent: number;
   hpMax: number;
-  deathSavePenalties: number; // +1 per round at 0 HP
+  deathSavePenalties: number; // Accumulated from completed saves and hits while mortal; excludes injury modifiers.
+  isDead?: boolean;
+  isStabilized?: boolean;
+  coverHp?: number;
   
   // Armor (Separated Head and Body SP)
   headSp: number;

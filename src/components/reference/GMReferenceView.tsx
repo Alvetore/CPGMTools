@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Sparkles, 
@@ -31,7 +31,7 @@ import {
   FlaskConical
 } from 'lucide-react';
 import { 
-  CPR_RANGE_DV_TABLE, 
+  CPR_RANGE_DV_TABLE, RANGE_BANDS,
   CPR_SKILL_DVS, 
   CPR_CRITICAL_INJURIES_HEAD, 
   CPR_CRITICAL_INJURIES_BODY, 
@@ -74,8 +74,9 @@ import {
 } from '../../data/cprDrugsAndCyberpsychosis';
 import { WEATHER_CONDITIONS, GIG_GENERATOR_DATA, POCKET_JUNK_TABLE } from '../../data/nightCityData';
 import { GeneratedGig, GeneratedWeather, PocketLootItem } from '../../types/generators';
-import { rollD10, rollD6 } from '../../utils/dice';
+import { rollD10, rollD6, executeCPRCheck } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
+import { loadStoredData, saveStoredData, STORAGE_KEYS } from '../../utils/storage';
 
 type ReferenceTab = 
   | 'tables' 
@@ -127,7 +128,8 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
   const [ambushDefenderPerception, setAmbushDefenderPerception] = useState<number>(12);
 
   // 8. Gig Generator State
-  const [generatedGig, setGeneratedGig] = useState<GeneratedGig | null>(null);
+  const [generatedGig, setGeneratedGig] = useState<GeneratedGig | null>(() => loadStoredData<GeneratedGig[]>(STORAGE_KEYS.GIGS, [])[0] ?? null);
+  useEffect(() => { if (generatedGig) saveStoredData(STORAGE_KEYS.GIGS, [generatedGig, ...loadStoredData<GeneratedGig[]>(STORAGE_KEYS.GIGS, []).filter(g => g.id !== generatedGig.id)]); }, [generatedGig]);
 
   // 9. Weather State
   const [currentWeather, setCurrentWeather] = useState<GeneratedWeather>(WEATHER_CONDITIONS[0]);
@@ -172,56 +174,13 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
     setResistTestResult(null);
   };
 
-  const handleRollDrugResist = (targetDv: number, substanceName: string) => {
-    sfx.playDiceRoll();
-    const d10 = rollD10();
-    let total = resistBaseStat + d10;
-    let extraExplode: number | undefined = undefined;
-
-    if (d10 === 10) {
-      const explodeD10 = rollD10();
-      extraExplode = explodeD10;
-      total += explodeD10;
-    } else if (d10 === 1) {
-      const fumbleD10 = rollD10();
-      extraExplode = -fumbleD10;
-      total -= fumbleD10;
-    }
-
-    const isSuccess = total >= targetDv;
-    if (isSuccess) sfx.playCritSuccess();
-    else sfx.playCritFailure();
-
-    setResistTestResult({
-      rolledValue: d10,
-      extraExplode,
-      total,
-      targetDv,
-      isSuccess,
-      isCritSuccess: d10 === 10,
-      isCritFailure: d10 === 1,
-      substanceName
-    });
+  const checkDrugResist = (targetDv: number, substanceName: string, firstDie?: number) => {
+    const check = executeCPRCheck(resistBaseStat, 0, 0, targetDv, firstDie === undefined ? undefined : { firstDie });
+    setResistTestResult({ rolledValue: check.firstDie, extraExplode: check.explodedDie ?? (check.botchDie === undefined ? undefined : -check.botchDie),
+      total: check.grandTotal, targetDv, isSuccess: Boolean(check.isSuccess), isCritSuccess: check.isCritSuccess, isCritFailure: check.isCritFail, substanceName });
   };
-
-  const handleManualDrugResist = (targetDv: number, substanceName: string) => {
-    sfx.playClick();
-    const d10 = Math.max(1, Math.min(10, manualResistRoll));
-    const total = resistBaseStat + d10;
-    const isSuccess = total >= targetDv;
-    if (isSuccess) sfx.playCritSuccess();
-    else sfx.playCritFailure();
-
-    setResistTestResult({
-      rolledValue: d10,
-      total,
-      targetDv,
-      isSuccess,
-      isCritSuccess: d10 === 10,
-      isCritFailure: d10 === 1,
-      substanceName
-    });
-  };
+  const handleRollDrugResist = (targetDv: number, name: string) => checkDrugResist(targetDv, name);
+  const handleManualDrugResist = (targetDv: number, name: string) => checkDrugResist(targetDv, name, manualResistRoll);
 
   const handleRollTrait = (forcedD10?: number) => {
     sfx.playDiceRoll();
@@ -471,11 +430,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
                 <thead>
                   <tr className="bg-zinc-950 border-b border-zinc-800 text-zinc-400 uppercase text-[11px]">
                     <th className="p-2.5">Тип оружия</th>
-                    <th className="p-2.5 text-center">0–6 м</th>
-                    <th className="p-2.5 text-center">7–12 м</th>
-                    <th className="p-2.5 text-center">13–25 м</th>
-                    <th className="p-2.5 text-center">26–50 м</th>
-                    <th className="p-2.5 text-center">51–100 м</th>
+                    {RANGE_BANDS.map(b => <th key={b} className="p-2.5 text-center whitespace-nowrap">{b.replace('m', ' м')}</th>)}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/60">
@@ -485,31 +440,19 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
                         {item.categoryRu}
                         <div className="text-[10px] text-zinc-500 font-normal">{item.categoryEn}</div>
                       </td>
-                      <td className="p-2.5 text-center font-orbitron font-bold text-cyan-400">
-                        {item.dvs['0-6m'] ?? '—'}
-                      </td>
-                      <td className="p-2.5 text-center font-orbitron font-bold text-cyan-400">
-                        {item.dvs['7-12m'] ?? '—'}
-                      </td>
-                      <td className="p-2.5 text-center font-orbitron font-bold text-cyan-400">
-                        {item.dvs['13-25m'] ?? '—'}
-                      </td>
-                      <td className="p-2.5 text-center font-orbitron font-bold text-cyan-400">
-                        {item.dvs['26-50m'] ?? '—'}
-                      </td>
-                      <td className="p-2.5 text-center font-orbitron font-bold text-cyan-400">
-                        {item.dvs['51-100m'] ?? '—'}
-                      </td>
+                      {RANGE_BANDS.map(b => <td key={b} className="p-2.5 text-center font-orbitron font-bold text-cyan-400">{item.dvs[b] ?? '—'}</td>)}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p className="text-[11px] text-zinc-400 font-tech">
-              * При стрельбе очередью (Autofire) урон равен: <strong className="text-amber-300">(Бросок - DV) × 2d6</strong> (максимум множителя: 3 для обычного ПП, 4 для Тяжелого ПП и Штурмовой винтовки).
+              * При стрельбе очередью (Autofire) урон равен: <strong className="text-amber-300">(Бросок - DV) × 2d6</strong> (максимум множителя: 3 для ПП и Тяжёлого ПП, 4 для Штурмовой винтовки).
             </p>
           </div>
 
+          {/* Skill checks */}
+          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded"><h3 className="font-bold mb-2">Сложности навыков: результат должен превысить DV</h3><div className="flex flex-wrap gap-3 text-xs">{CPR_SKILL_DVS.map(v => <span key={v.dv}>{v.levelRu}: <strong>DV{v.dv}</strong></span>)}</div></div>
           {/* Cover Materials & Armor Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Cover HP Table */}
@@ -519,7 +462,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
                 <span>ПРОЧНОСТЬ УКРЫТИЙ (COVER HP)</span>
               </h3>
               <p className="text-xs text-zinc-400 font-tech">
-                Укрытие полностью поглощает пули, пока его HP не упадёт до 0. Избыточный урон пробивает укрытие и попадает в персонажа.
+                Обычная атака повреждает только укрытие: избыточный урон теряется. Следующей атакой можно поразить открытую цель. Взрывчатка разрешается отдельно по правилам области.
               </p>
 
               <div className="space-y-1.5 text-xs font-tech">
@@ -556,7 +499,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
                     <div className="flex items-center gap-3">
                       <span className="text-zinc-500">{arm.costEb} eb</span>
                       <span className="font-orbitron font-black text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-700/60">
-                        ОС {arm.sp}
+                        {arm.isShield ? 'HP' : 'ОС'} {arm.sp}
                       </span>
                     </div>
                   </div>
@@ -575,7 +518,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-tech">
               <div className="space-y-2">
                 <h4 className="font-orbitron font-bold text-red-400 uppercase">Голова (Head)</h4>
-                {CPR_CRITICAL_INJURIES_HEAD.slice(0, 6).map((inj) => (
+                {CPR_CRITICAL_INJURIES_HEAD.map((inj) => (
                   <div key={inj.id} className="bg-zinc-950 p-2 rounded border border-zinc-800">
                     <div className="flex items-center justify-between">
                       <strong className="text-white">{inj.rollNumber}: {inj.nameRu}</strong>
@@ -588,7 +531,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
 
               <div className="space-y-2">
                 <h4 className="font-orbitron font-bold text-cyan-400 uppercase">Тело (Body)</h4>
-                {CPR_CRITICAL_INJURIES_BODY.slice(0, 6).map((inj) => (
+                {CPR_CRITICAL_INJURIES_BODY.map((inj) => (
                   <div key={inj.id} className="bg-zinc-950 p-2 rounded border border-zinc-800">
                     <div className="flex items-center justify-between">
                       <strong className="text-white">{inj.rollNumber}: {inj.nameRu}</strong>
@@ -1055,10 +998,10 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3 shadow-md">
             <h3 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
               <Zap className="w-5 h-5 text-purple-400" />
-              <span>МЕХАНИКА «ВСПЫШКА УДАЧИ» (FLASHBACK LUCK)</span>
+              <span>ВСПЫШКА УДАЧИ (FLASH OF LUCK) — опция Going Quiet</span>
             </h3>
             <p className="text-xs text-zinc-400 font-tech">
-              Официальное правило для ограблений и стелса: игроки не тратят часы на планирование, а тратят очки Удачи (LUCK) на реткон прошлых действий в текущую пользу (максимум 1 раз за сцену и 3 раза за операцию).
+              Going Quiet: опциональный Flash of Luck. Не более 1 раза за Beat и 3 раз за миссию; в бою требуется Standard Action. Оплачиваются предметы и проверки; при неудачной проверке Удача и попытка не возвращаются. Если покупка невозможна, Удача возвращается. ГМ вправе наложить вето.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-tech">

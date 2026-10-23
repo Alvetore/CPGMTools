@@ -21,6 +21,7 @@ import {
 import { PartyMember } from '../../types/party';
 import { Character, Weapon } from '../../types/character';
 import { convertCharSheetToPartyMember } from '../../utils/storage';
+import { validParty } from '../../utils/validation';
 import { 
   getCyberpsychosisStage, 
   PSYCHOPATHY_CHECKLIST, 
@@ -102,7 +103,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setDex(member.dex);
     setMove(member.move);
     setBody(member.body);
-    setWill(6);
+    setWill(member.will ?? member.sourceCharSheet?.stats.WILL ?? 6);
     setEmp(member.emp ?? Math.max(0, Math.floor((member.humanity ?? 50) / 10)));
     setHumanity(member.humanity ?? 50);
     setLuck(member.luckMax);
@@ -150,6 +151,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         dex,
         move,
         body,
+        will,
         emp,
         humanity,
         luckMax: luck,
@@ -161,7 +163,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         bodySp: Math.min(m.bodySp, bodySp),
         bodySpMax: bodySp,
         passivePerception,
-        weapons: weaponsList,
+        weapons: m.weapons.map((w, i) => i === 0 ? { ...w, name: weaponName.trim() || w.name, damage: weaponDamage.trim() || w.damage } : w),
         notes
       } : m));
     } else {
@@ -181,6 +183,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         dex,
         move,
         body,
+        will,
         emp,
         humanity,
         luckMax: luck,
@@ -208,27 +211,15 @@ export const PartyView: React.FC<PartyViewProps> = ({
           const content = event.target?.result as string;
           const parsed = JSON.parse(content);
 
-          if (Array.isArray(parsed)) {
-            const importedMembers = parsed.map((char: Character) => convertCharSheetToPartyMember(char));
-            setParty(prev => [...prev, ...importedMembers]);
-            sfx.playCritSuccess();
-          } else if (parsed && typeof parsed === 'object') {
-            if (parsed.party && Array.isArray(parsed.party)) {
-              setParty(prev => [...prev, ...parsed.party]);
-            } else {
-              const newMember = convertCharSheetToPartyMember(parsed as Character);
-              setParty(prev => {
-                const existingIdx = prev.findIndex(p => p.id === newMember.id || (p.name === newMember.name && p.handle === newMember.handle));
-                if (existingIdx >= 0) {
-                  const copy = [...prev];
-                  copy[existingIdx] = newMember;
-                  return copy;
-                }
-                return [...prev, newMember];
-              });
-            }
-            sfx.playCritSuccess();
-          }
+          const importedMembers: PartyMember[] = parsed?.party !== undefined
+            ? parsed.party : (Array.isArray(parsed) ? parsed : [parsed]).map((char: Character) => convertCharSheetToPartyMember(char));
+          if (!validParty(importedMembers)) throw new Error('Некорректный состав партии. Импорт отменён.');
+          setParty(prev => {
+            const merged = new Map(prev.map(p => [p.id, p]));
+            importedMembers.forEach(p => merged.set(p.id, p));
+            return [...merged.values()];
+          });
+          sfx.playCritSuccess();
         } catch (err) {
           console.error('Ошибка чтения JSON персонажа:', err);
           alert('Не удалось прочитать файл персонажа. Убедитесь, что это корректный JSON лист из Cyberpunk RED CharSheet.');
@@ -251,10 +242,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     sfx.playCritSuccess();
     setParty(prev => prev.map(p => ({
       ...p,
-      hpCurrent: Math.min(p.hpMax, p.hpCurrent + p.body),
-      luckCurrent: p.luckMax,
-      headSp: p.headSpMax,
-      bodySp: p.bodySpMax
+      hpCurrent: p.isStabilized && !p.isDead && p.hpCurrent > 0 ? Math.min(p.hpMax, p.hpCurrent + p.body) : p.hpCurrent
     })));
   };
 
@@ -321,12 +309,13 @@ export const PartyView: React.FC<PartyViewProps> = ({
           <button
             onClick={handleRestParty}
             disabled={party.length === 0}
-            title="Естественное исцеление (1 день): +ТЕЛО к HP, восстановление Удачи и ремонт брони"
+            title="1 день отдыха: +ТЕЛО к HP только стабилизированным живым персонажам. Удача и броня не меняются."
             className="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-200 font-tech font-bold text-xs rounded border border-zinc-700 transition-all whitespace-nowrap flex-shrink-0"
           >
             <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
             <span>ОТДЫХ</span>
           </button>
+          <button onClick={() => setParty(prev => prev.map(p => ({ ...p, luckCurrent: p.luckMax })))} className="px-3 py-2 text-xs border border-zinc-700 rounded">НОВАЯ СЕССИЯ: УДАЧА</button>
         </div>
       </div>
 
@@ -392,6 +381,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
               </div>
 
               {/* Core Stats Bar */}
+              <label className="flex gap-2 text-xs text-zinc-400">
+                <input type="checkbox" checked={member.isStabilized ?? false} disabled={member.hpCurrent <= 0 || member.isDead}
+                  onChange={e => setParty(prev => prev.map(p => p.id === member.id ? { ...p, isStabilized: e.target.checked } : p))} />
+                Стабилизирован (после успешной медицинской проверки)
+              </label>
               <div className="grid grid-cols-6 gap-1 bg-zinc-950 p-2 rounded border border-zinc-800 text-center font-tech text-xs">
                 <div>
                   <div className="text-[10px] text-zinc-500">РЕФ</div>
@@ -432,7 +426,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
                 <div className="w-full bg-zinc-950 rounded-full h-2 overflow-hidden border border-zinc-800">
                   <div
                     className={`h-full ${
-                      member.hpCurrent <= member.hpMax / 2 ? 'bg-amber-500' : 'bg-emerald-500'
+                      member.hpCurrent < Math.ceil(member.hpMax / 2) ? 'bg-amber-500' : 'bg-emerald-500'
                     }`}
                     style={{ width: `${Math.max(0, Math.min(100, (member.hpCurrent / member.hpMax) * 100))}%` }}
                   ></div>

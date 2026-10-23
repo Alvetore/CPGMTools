@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Network, 
   Sparkles, 
@@ -22,9 +22,9 @@ import { NetArchitecture, NetFloor, NetNodeType } from '../../types/netrun';
 import { OFFICIAL_BLACK_ICE, DEMON_PROGRAMS } from '../../data/blackIceData';
 import { executeCPRCheck, rollD6 } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
+import { loadStoredData, saveStoredData, STORAGE_KEYS } from '../../utils/storage';
 
-export const NetArchitectureView: React.FC = () => {
-  const [architectures, setArchitectures] = useState<NetArchitecture[]>([
+const SAMPLE_ARCHITECTURES: NetArchitecture[] = [
     {
       id: 'net-sample-1',
       title: 'Серверная регионального офиса Arasaka',
@@ -39,7 +39,7 @@ export const NetArchitectureView: React.FC = () => {
           type: 'Password',
           dv: 8,
           description: 'Базовый межсетевой экран. Требуется взлом (Backdoor) для прохода дальше.',
-          isUnlocked: true
+          isUnlocked: false
         },
         {
           id: 'f-2',
@@ -67,7 +67,7 @@ export const NetArchitectureView: React.FC = () => {
             def: 2,
             rezCurrent: 20,
             rezMax: 20,
-            effect: '2d6 урона мозгу + поджог нервной системы (1d6 урона каждый ход)',
+            effect: OFFICIAL_BLACK_ICE.find(i => i.nameEn === 'Hellhound')!.effectRu,
             isDerezed: false
           },
           isUnlocked: false
@@ -102,17 +102,25 @@ export const NetArchitectureView: React.FC = () => {
         }
       ]
     }
-  ]);
+  ];
 
-  const [activeArchIndex, setActiveArchIndex] = useState<number>(0);
+export const NetArchitectureView: React.FC = () => {
+  const [architectures, setArchitectures] = useState<NetArchitecture[]>(() => {
+    const stored = loadStoredData<NetArchitecture[]>(STORAGE_KEYS.NETWORKS, SAMPLE_ARCHITECTURES);
+    return stored.length ? stored : SAMPLE_ARCHITECTURES;
+  });
+
+  const [activeArchIndex, setActiveArchIndex] = useState<number>(() => Math.max(0, Math.min(architectures.length - 1, loadStoredData(STORAGE_KEYS.NETRUN, { activeArchIndex: 0 }).activeArchIndex)));
   const activeArch = architectures[activeArchIndex] || architectures[0];
 
   // Runner state
-  const [currentRunnerFloor, setCurrentRunnerFloor] = useState<number>(1);
-  const [netrunnerInterface, setNetrunnerInterface] = useState<number>(6);
-  const [netActionsMax, setNetActionsMax] = useState<number>(3); // Interface 4-6 = 3 actions
-  const [netActionsLeft, setNetActionsLeft] = useState<number>(3);
-  const [runnerLog, setRunnerLog] = useState<string[]>([]);
+  const [currentRunnerFloor, setCurrentRunnerFloor] = useState<number>(() => Math.min(activeArch.floors.length, loadStoredData(STORAGE_KEYS.NETRUN, { currentRunnerFloor: 1 }).currentRunnerFloor));
+  const [netrunnerInterface, setNetrunnerInterface] = useState<number>(() => loadStoredData(STORAGE_KEYS.NETRUN, { netrunnerInterface: 6 }).netrunnerInterface);
+  const [netActionsMax, setNetActionsMax] = useState<number>(() => netrunnerInterface <= 3 ? 2 : netrunnerInterface <= 6 ? 3 : netrunnerInterface <= 9 ? 4 : 5);
+  const [netActionsLeft, setNetActionsLeft] = useState<number>(() => Math.min(netActionsMax, loadStoredData(STORAGE_KEYS.NETRUN, { netActionsLeft: netActionsMax }).netActionsLeft));
+  const [runnerLog, setRunnerLog] = useState<string[]>(() => loadStoredData(STORAGE_KEYS.NETRUN, { runnerLog: [] as string[] }).runnerLog);
+  useEffect(() => { saveStoredData(STORAGE_KEYS.NETWORKS, architectures); }, [architectures]);
+  useEffect(() => { saveStoredData(STORAGE_KEYS.NETRUN, { activeArchIndex, currentRunnerFloor, netrunnerInterface, netActionsLeft, runnerLog }); }, [activeArchIndex, currentRunnerFloor, netrunnerInterface, netActionsLeft, runnerLog]);
 
   // Manual hack check modal states
   const [hackModalFloor, setHackModalFloor] = useState<NetFloor | null>(null);
@@ -158,9 +166,10 @@ export const NetArchitectureView: React.FC = () => {
       type: 'Password',
       dv: baseDv,
       description: 'Точка входа в локальную сеть через точку беспроводного доступа.',
-      isUnlocked: true
+      isUnlocked: false
     });
 
+    let controlNodes = 0;
     for (let f = 2; f <= floorCount; f++) {
       // Pick node type
       const rand = Math.random();
@@ -187,9 +196,11 @@ export const NetArchitectureView: React.FC = () => {
           rezCurrent: randomIce.rezMax,
           rezMax: randomIce.rezMax,
           effect: randomIce.effectRu,
-          isDerezed: false
+          isDerezed: false,
+          per: randomIce.per
         };
-      } else if (rand < 0.70) {
+      } else if (rand < 0.70 && controlNodes < (floorCount <= 6 ? 2 : 3)) {
+        controlNodes++;
         type = 'ControlNode';
         const targets = ['Камеры наблюдения', 'Система вентиляции (газ)', 'Автоматические двери', 'Боевые турели'];
         controlTarget = targets[Math.floor(Math.random() * targets.length)];
@@ -234,6 +245,8 @@ export const NetArchitectureView: React.FC = () => {
     manualD10?: { firstDie: number; explodedDie?: number; botchDie?: number }
   ) => {
     sfx.playClick();
+    if (floor.floorNumber !== currentRunnerFloor) { alert('Сначала перейдите на доступный этаж.'); return; }
+    if (floor.type === 'BlackIce' || floor.type === 'Demon') { alert('Бой и Slide разрешаются отдельно. Используйте трекер REZ и отметку разрешения ГМом.'); return; }
     if (netActionsLeft <= 0) {
       alert('У нетраннера закончились сетевые действия в этом ходу! Нажмите "Новый ход нетраннера".');
       return;
@@ -265,7 +278,7 @@ export const NetArchitectureView: React.FC = () => {
   // Black ICE combat damage
   const handleDamageBlackIce = (floor: NetFloor, dmg: number) => {
     sfx.playHit();
-    if (!floor.blackIce) return;
+    if (!floor.blackIce || !Number.isInteger(dmg) || dmg <= 0) return;
 
     const nextRez = Math.max(0, floor.blackIce.rezCurrent - dmg);
     const isDerezed = nextRez <= 0;
@@ -274,7 +287,7 @@ export const NetArchitectureView: React.FC = () => {
       const copy = [...prev];
       const currentA = { ...copy[activeArchIndex] };
       currentA.floors = currentA.floors.map(f => {
-        if (f.id === floor.id && f.blackIce) {
+          if (f.id === floor.id && f.blackIce) {
           return {
             ...f,
             blackIce: {
@@ -302,6 +315,13 @@ export const NetArchitectureView: React.FC = () => {
   return (
     <div className="space-y-4">
       
+      <label className="block text-sm text-cyan-300">Сохранённая архитектура
+        <select aria-label="Сохранённая архитектура" value={activeArchIndex} onChange={e => {
+          setActiveArchIndex(Number(e.target.value)); setCurrentRunnerFloor(1); setHackModalFloor(null);
+        }} className="ml-2 bg-zinc-900 border border-zinc-700 p-2 rounded">
+          {architectures.map((a, i) => <option key={a.id} value={i}>{a.title}</option>)}
+        </select>
+      </label>
       {/* Top Banner & Generators */}
       <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg space-y-3 shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -344,12 +364,12 @@ export const NetArchitectureView: React.FC = () => {
                 type="number"
                 value={netrunnerInterface}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value) || 1;
+                  const val = Math.max(1, Math.min(10, parseInt(e.target.value) || 1));
                   setNetrunnerInterface(val);
                   // CPR rules: 1-3 = 2 actions, 4-6 = 3 actions, 7-9 = 4 actions, 10 = 5 actions
                   const maxA = val <= 3 ? 2 : val <= 6 ? 3 : val <= 9 ? 4 : 5;
                   setNetActionsMax(maxA);
-                  setNetActionsLeft(maxA);
+                  setNetActionsLeft(prev => Math.min(prev, maxA));
                 }}
                 className="w-12 bg-zinc-900 border border-zinc-700 rounded text-center text-cyan-400 font-bold px-1 py-0.5 ml-1"
               />
@@ -512,7 +532,12 @@ export const NetArchitectureView: React.FC = () => {
                     </div>
 
                     <button
-                      onClick={() => setCurrentRunnerFloor(floor.floorNumber)}
+                      onClick={() => {
+                        const blocked = activeArch.floors.some(f => f.floorNumber < floor.floorNumber && f.floorNumber >= currentRunnerFloor &&
+                          ((f.type === 'Password' && !f.isUnlocked) || (f.type === 'BlackIce' && !f.blackIce?.isDerezed && !f.isUnlocked)));
+                        if (blocked) { alert('Сначала преодолейте пароль или разрешите встречу с ICE на пути.'); return; }
+                        setCurrentRunnerFloor(floor.floorNumber);
+                      }}
                       className={`px-2.5 py-1.5 text-xs font-tech font-bold rounded border transition-all ${
                         isRunnerHere
                           ? 'bg-cyan-950 border-cyan-500 text-cyan-300'
@@ -524,6 +549,11 @@ export const NetArchitectureView: React.FC = () => {
                   </div>
                 </div>
 
+                {(floor.type === 'BlackIce' || floor.type === 'Demon') && <button className="text-xs border border-zinc-700 rounded px-2 py-1 mt-2" onClick={() => {
+                  if (floor.floorNumber !== currentRunnerFloor) { alert('Сначала перейдите на этаж встречи.'); return; }
+                  setArchitectures(prev => prev.map((a, i) => i === activeArchIndex ? { ...a, floors: a.floors.map(f => f.id === floor.id ? { ...f, isUnlocked: true } : f) } : a));
+                  addRunnerLog(`ГМ подтвердил разрешение встречи / Slide: этаж ${floor.floorNumber}.`);
+                }}>ГМ: встреча / Slide разрешены</button>}
                 {/* If Floor has Black ICE: Combat Bar */}
                 {floor.blackIce && (
                   <div className="mt-3 pt-2.5 border-t border-zinc-800/80 bg-zinc-950/80 p-2.5 rounded border border-red-950 space-y-2">

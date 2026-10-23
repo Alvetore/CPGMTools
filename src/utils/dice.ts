@@ -152,12 +152,16 @@ export function rollDamageFormula(
   sfx.playHit();
   
   // match "3d6", "4d6", "5d6" etc.
-  const match = formula.toLowerCase().match(/^(\d+)d6(?:\+(\d+))?$/);
-  const count = match ? parseInt(match[1], 10) : 3;
+  const match = formula.trim().toLowerCase().match(/^(\d+)d6(?:\+(\d+))?$/);
+  if (!match || Number(match[1]) < 1 || Number(match[1]) > 100) throw new Error('Урон: требуется формула от 1d6 до 100d6, возможно +N.');
+  const count = parseInt(match[1], 10);
   const staticBonus = match && match[2] ? parseInt(match[2], 10) : 0;
 
   if (manualDamage) {
-    const isCriticalInjury = manualDamage.isCriticalInjury ?? ((manualDamage.sixesCount ?? 0) >= 2);
+    const sixesCount = manualDamage.diceRolls?.filter(v => v === 6).length ?? manualDamage.sixesCount ?? 0;
+    if (manualDamage.diceRolls?.some(v => !Number.isInteger(v) || v < 1 || v > 6)) throw new Error('Результат d6 должен быть от 1 до 6.');
+    if (manualDamage.totalDamage !== undefined && (!Number.isInteger(manualDamage.totalDamage) || manualDamage.totalDamage < 0)) throw new Error('Урон должен быть целым неотрицательным числом.');
+    const isCriticalInjury = manualDamage.isCriticalInjury ?? (sixesCount >= 2);
     const bonusDamage = isCriticalInjury ? 5 : 0;
     let baseSum = 0;
     let diceRolls: number[] = [];
@@ -166,13 +170,13 @@ export function rollDamageFormula(
       diceRolls = manualDamage.diceRolls;
       baseSum = diceRolls.reduce((a, b) => a + b, 0);
     } else if (manualDamage.totalDamage !== undefined) {
-      baseSum = Math.max(0, manualDamage.totalDamage - staticBonus - bonusDamage);
+      baseSum = Math.max(0, manualDamage.totalDamage - staticBonus);
       diceRolls = [baseSum];
     }
 
     const totalDamage = manualDamage.totalDamage !== undefined
       ? manualDamage.totalDamage
-      : baseSum + staticBonus + bonusDamage;
+      : baseSum + staticBonus;
 
     return {
       formula,
@@ -180,7 +184,7 @@ export function rollDamageFormula(
       baseSum,
       bonusDamage,
       totalDamage,
-      sixesCount: manualDamage.sixesCount ?? (isCriticalInjury ? 2 : 0),
+      sixesCount: sixesCount || (isCriticalInjury ? 2 : 0),
       isCriticalInjury,
       isManualRoll: true
     };
@@ -202,7 +206,8 @@ export function rollDamageFormula(
   // Official CPR rule: Two or more 6's cause +5 bonus damage and a Critical Injury!
   const isCriticalInjury = sixesCount >= 2;
   const bonusDamage = isCriticalInjury ? 5 : 0;
-  const totalDamage = baseSum + staticBonus + bonusDamage;
+  // Bonus Damage is applied directly to HP by the damage resolver, never to armor.
+  const totalDamage = baseSum + staticBonus;
 
   return {
     formula,

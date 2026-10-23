@@ -11,6 +11,7 @@ export interface BlackIceProgram {
   rezMax: number;
   effectRu: string;
   icon?: string;
+  per?: number;
 }
 
 export interface NetFloor {
@@ -31,6 +32,7 @@ export interface NetFloor {
     rezMax: number;
     effect: string;
     isDerezed: boolean;
+    per?: number;
   };
   controlTarget?: string;
   isUnlocked: boolean;

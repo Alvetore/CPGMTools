@@ -25,7 +25,8 @@ import {
 } from 'lucide-react';
 import { Combatant, ActiveCombatState, CombatLogEntry, Condition } from '../../types/combat';
 import { CriticalInjury, Weapon } from '../../types/character';
-import { getWoundedStatus, resolveCprDamage } from '../../utils/cprCombat';
+import { getWoundedStatus, resolveCprDamage, applyCombatDamage, activeInjuries, deathSaveModifier, effectiveMove } from '../../utils/cprCombat';
+import { rollInitiative, sortInitiative, preserveTurn } from '../../utils/initiative';
 import { executeDeathSave, rollD10 } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
 import { AttackResolverModal } from './AttackResolverModal';
@@ -37,6 +38,7 @@ interface CombatTrackerViewProps {
   onOpenBestiaryModal: () => void;
   onAddPartyToCombat: () => void;
   onOpenEncounters?: () => void;
+  onSyncParty?: () => unknown;
 }
 
 export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
@@ -44,7 +46,8 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   setCombatState,
   onOpenBestiaryModal,
   onAddPartyToCombat,
-  onOpenEncounters
+  onOpenEncounters,
+  onSyncParty
 }) => {
   // Attack modal state (explicit attacker and target)
   const [attackModalData, setAttackModalData] = useState<{ attacker: Combatant; target?: Combatant } | null>(null);
@@ -78,14 +81,14 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   // Keyboard shortcut: Space for Next Turn
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && combatState.isActive && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+      if (e.code === 'Space' && combatState.isActive && !attackModalData && !deathSaveModalTarget && !isInitiativeModalOpen && !isQuickAddOpen && !injuryModalCombatant && !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes((e.target as HTMLElement).tagName)) {
         e.preventDefault();
         handleNextTurn();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [combatState]);
+  }, [combatState, attackModalData, deathSaveModalTarget, isInitiativeModalOpen, isQuickAddOpen, injuryModalCombatant]);
 
   const addLog = (message: string, type: CombatLogEntry['type']) => {
     const entry: CombatLogEntry = {
@@ -125,15 +128,9 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
       addLog(`Начался новый раунд ${nextRound}!`, 'system');
     }
 
-    // Tick conditions and death saves for active combatant
+    // Death-save penalties change when the save is actually made, not on navigation.
     const current = combatState.combatants[nextIndex];
-    if (current && current.hpCurrent <= 0) {
-      // Increase death save penalties by 1
-      handleUpdateCombatant(current.id, {
-        deathSavePenalties: (current.deathSavePenalties || 0) + 1
-      });
-      addLog(`${current.name} в смертельном ранении. Штраф к спасброску увеличен до +${(current.deathSavePenalties || 0) + 1}!`, 'deathsave');
-    }
+    if (current?.hpCurrent <= 0 && !current.isDead) addLog(`${current.name}: в начале хода требуется спасбросок смерти (+${deathSaveModifier(current)}).`, 'deathsave');
 
     setCombatState(prev => ({
       ...prev,
@@ -164,20 +161,16 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   const handleRollAllInitiative = () => {
     sfx.playDiceRoll();
     const updated = combatState.combatants.map(c => {
-      const roll = rollD10();
-      const init = roll + c.ref;
+      const init = rollInitiative(c);
       return { ...c, initiative: init };
     });
 
     // Sort descending by initiative, tie-break by REF
-    updated.sort((a, b) => {
-      if (b.initiative !== a.initiative) return b.initiative - a.initiative;
-      return b.ref - a.ref;
-    });
+    const ordered = sortInitiative(updated);
 
     setCombatState(prev => ({
       ...prev,
-      combatants: updated,
+      combatants: ordered,
       currentTurnIndex: 0
     }));
 
@@ -194,22 +187,18 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
 
     const updated = combatState.combatants.map(c => {
       if (c.type !== 'player') {
-        const roll = rollD10();
-        const init = roll + c.ref;
+        const init = rollInitiative(c);
         return { ...c, initiative: init };
       }
       return c;
     });
 
     // Sort descending by initiative, tie-break by REF
-    updated.sort((a, b) => {
-      if (b.initiative !== a.initiative) return b.initiative - a.initiative;
-      return b.ref - a.ref;
-    });
+    const ordered = sortInitiative(updated);
 
     setCombatState(prev => ({
       ...prev,
-      combatants: updated,
+      combatants: ordered,
       currentTurnIndex: 0
     }));
 
@@ -219,6 +208,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   const handleClearAllCombatants = () => {
     if (combatState.combatants.length === 0) return;
     if (window.confirm(`Вы уверены, что хотите полностью очистить список участников (${combatState.combatants.length} комбатантов) и завершить текущий бой?`)) {
+      onSyncParty?.();
       sfx.playClick();
       setCombatState(prev => ({
         ...prev,
@@ -283,11 +273,11 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
 
     const newHp = Math.min(c.hpMax, Math.max(0, c.hpCurrent + delta));
     const wasDefeated = c.isDefeated;
-    const isNowDefeated = newHp <= 0;
 
     handleUpdateCombatant(id, { 
       hpCurrent: newHp,
-      isDefeated: isNowDefeated
+      isStabilized: delta < 0 ? false : c.isStabilized,
+      deathSavePenalties: newHp > 0 && c.hpCurrent <= 0 ? 0 : c.deathSavePenalties
     });
 
     addLog(`${c.name}: ОЗ ${delta > 0 ? '+' : ''}${delta} (теперь ${newHp}/${c.hpMax}).`, delta < 0 ? 'damage' : 'heal');
@@ -305,24 +295,11 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
       targetSp: currentSp,
       isMelee: state.isMelee,
       isApAmmo: state.isAp
+      ,targetHp: c.hpCurrent, existingInjuries: c.criticalInjuries, coverHp: c.coverHp
     });
 
-    const nextHp = Math.max(0, c.hpCurrent - resolution.finalHpLoss);
-    const isNowDefeated = nextHp <= 0;
-
-    if (state.location === 'head') {
-      handleUpdateCombatant(c.id, {
-        hpCurrent: nextHp,
-        headSp: resolution.newSp,
-        isDefeated: isNowDefeated
-      });
-    } else {
-      handleUpdateCombatant(c.id, {
-        hpCurrent: nextHp,
-        bodySp: resolution.newSp,
-        isDefeated: isNowDefeated
-      });
-    }
+    setCombatState(prev => ({ ...prev, combatants: prev.combatants.map(actor => actor.id === c.id
+      ? { ...applyCombatDamage(actor, resolution.finalHpLoss, state.location, resolution.newSp, resolution.criticalInjury), coverHp: resolution.newCoverHp ?? actor.coverHp } : actor) }));
 
     addLog(`[ИРЛ урон] ${c.name}: ${resolution.logSummary}`, 'damage');
 
@@ -334,21 +311,22 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   };
 
   const handleDeathSaveRoll = (c: Combatant, manualRoll?: number) => {
-    const result = executeDeathSave(c.body, c.deathSavePenalties || 0, manualRoll);
+    const latest = combatState.combatants.find(actor => actor.id === c.id) ?? c;
+    if (latest.isDead) return { isSaved: false, message: 'Персонаж уже погиб.' };
+    const result = executeDeathSave(latest.body, deathSaveModifier(latest), manualRoll);
     addLog(`${c.name}: ${result.message}`, 'deathsave');
-    if (!result.isSaved) {
-      handleUpdateCombatant(c.id, { isDefeated: true });
-    }
+    const updates = { deathSavePenalties: latest.deathSavePenalties + 1, isDead: !result.isSaved, isDefeated: !result.isSaved };
+    handleUpdateCombatant(c.id, updates);
+    setDeathSaveModalTarget({ ...latest, ...updates });
     return result;
   };
 
   const handleRemoveCombatant = (id: string) => {
     sfx.playClick();
-    setCombatState(prev => ({
-      ...prev,
-      combatants: prev.combatants.filter(c => c.id !== id),
-      currentTurnIndex: Math.min(prev.currentTurnIndex, Math.max(0, prev.combatants.length - 2))
-    }));
+    setCombatState(prev => {
+      const combatants = prev.combatants.filter(c => c.id !== id);
+      return { ...prev, combatants, currentTurnIndex: preserveTurn(prev.combatants, combatants, prev.currentTurnIndex) };
+    });
   };
 
   const handleAddQuickCombatant = (e: React.FormEvent) => {
@@ -447,6 +425,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                 onClick={() => {
                   if (confirm('Сбросить бой? Раунд вернется к 1.')) {
                     sfx.playClick();
+                    onSyncParty?.();
                     setCombatState(prev => ({ ...prev, isActive: false, round: 1, currentTurnIndex: 0 }));
                     addLog('Бой завершен.', 'system');
                   }
@@ -685,11 +664,11 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                       {/* CPR Wounded Status Badge */}
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         <span className={`text-[10px] font-tech font-bold px-2 py-0.5 rounded border ${wounded.colorClass}`}>
-                          {wounded.labelRu}
+                          {c.isDead ? 'ПОГИБ' : wounded.labelRu}
                         </span>
 
                         {/* Death save button if 0 HP */}
-                        {c.hpCurrent <= 0 && (
+                        {c.hpCurrent <= 0 && !c.isDead && (
                           <button
                             onClick={() => {
                               setDeathSaveModalTarget(c);
@@ -699,13 +678,24 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                             }}
                             className="text-[10px] font-orbitron font-bold px-2 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded animate-pulse"
                           >
-                            Спасбросок смерти (Штраф +{c.deathSavePenalties})
+                            Спасбросок смерти (Штраф +{deathSaveModifier(c)})
                           </button>
                         )}
                       </div>
                     </div>
                   </div>
 
+                  <div className="text-xs text-zinc-400">MOVE: {effectiveMove(c)} (база {c.move}); укрытие {c.coverHp ?? 0} HP
+                    {c.hpCurrent < c.hpMax && !c.isDead && <button className="block text-emerald-400 mt-1 border px-2 py-1 rounded" onClick={() => {
+                      const dv = c.hpCurrent <= 0 ? 15 : getWoundedStatus(c.hpCurrent, c.hpMax).penalty ? 13 : 10;
+                      const input = window.prompt(`Стабилизация: введите итог First Aid/Paramedic с модификаторами. Нужно превысить DV${dv}.`);
+                      if (input === null || input.trim() === '' || !Number.isFinite(Number(input))) return;
+                      if (Number(input) <= dv) { addLog(`${c.name}: стабилизация не удалась (DV${dv}).`, 'heal'); return; }
+                      handleUpdateCombatant(c.id, { isStabilized: true, hpCurrent: Math.max(1, c.hpCurrent), deathSavePenalties: 0,
+                        conditions: c.hpCurrent <= 0 ? [...c.conditions, { id: `unconscious-${Date.now()}`, name: 'Без сознания 1 минуту после стабилизации (20 раундов)', roundsRemaining: 20 }] : c.conditions });
+                      addLog(`${c.name}: стабилизирован.`, 'heal');
+                    }}>СТАБИЛИЗАЦИЯ (ввод проверки)</button>}
+                  </div>
                   {/* Middle: HP Bar and Quick Adjust */}
                   <div className="w-full lg:max-w-xs xl:max-w-sm space-y-1">
                     <div className="flex items-center justify-between text-xs font-tech">
@@ -722,7 +712,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                       <div
                         className={`h-full transition-all duration-300 ${
                           c.hpCurrent <= 0 ? 'bg-zinc-700' :
-                          c.hpCurrent <= c.hpMax / 2 ? 'bg-amber-500' : 'bg-emerald-500'
+                          c.hpCurrent < Math.ceil(c.hpMax / 2) ? 'bg-amber-500' : 'bg-emerald-500'
                         }`}
                         style={{ width: `${Math.max(0, Math.min(100, (c.hpCurrent / c.hpMax) * 100))}%` }}
                       ></div>
@@ -911,7 +901,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                           ? 'bg-amber-950 border-amber-500 text-amber-300'
                           : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
                       }`}
-                      title="Холодное оружие / Рукопашный бой: игнорирует половину ОС брони"
+                      title="Холодное оружие / Martial Arts игнорирует половину SP; для Brawling отключите этот режим"
                     >
                       Холодное (50% ОС)
                     </button>
@@ -930,15 +920,16 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                 {c.criticalInjuries && c.criticalInjuries.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-zinc-800/80 flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] font-tech text-red-400 uppercase">Травмы:</span>
-                    {c.criticalInjuries.map((injury, idx) => (
-                      <span
+                    {activeInjuries(c.criticalInjuries).map((injury, idx) => (
+                      <button
                         key={idx}
                         className="text-[11px] font-tech px-2 py-0.5 rounded bg-red-950/80 border border-red-700 text-red-300 flex items-center gap-1"
                         title={injury.effectRu}
+                        onClick={() => setInjuryModalCombatant(c)}
                       >
                         <AlertTriangle className="w-3 h-3 text-red-400" />
                         <span>{injury.nameRu}</span>
-                      </span>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -990,6 +981,22 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
         )}
       </div>
 
+      {injuryModalCombatant && <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+        <div role="dialog" aria-label="Критические травмы" className="bg-zinc-900 border border-red-700 rounded p-4 max-w-xl max-h-[85vh] overflow-auto space-y-3">
+          <h3 className="text-white font-bold">Травмы: {injuryModalCombatant.name}</h3>
+          <p className="text-xs text-zinc-400">ГМ подтверждает успешное лечение и срок восстановления. Быстрая помощь может лишь временно подавлять эффект; постоянные последствия и повторный урон при движении разрешаются вручную.</p>
+          {activeInjuries(combatState.combatants.find(c => c.id === injuryModalCombatant.id)?.criticalInjuries).map(i => <div key={i.id} className="border border-zinc-700 rounded p-2 text-sm text-zinc-300">
+            <strong>{i.nameRu}</strong><p>{i.effectRu}</p>
+            <p>Быстрая помощь: {i.quickFixTextRu ?? 'Нет'}. Лечение: {i.treatmentTextRu ?? 'см. правила'}.</p>
+            <button className="border px-2 py-1 mt-1" onClick={() => {
+              if (!window.confirm(`ГМ подтверждает: эффект «${i.nameRu}» устранён по правилам лечения? Это не обычная стабилизация.`)) return;
+              setCombatState(prev => ({ ...prev, combatants: prev.combatants.map(c => c.id === injuryModalCombatant.id ? { ...c, criticalInjuries: c.criticalInjuries.map(x => x.id === i.id ? { ...x, isActive: false } : x) } : c) }));
+              addLog(`${injuryModalCombatant.name}: ГМ снял эффект травмы ${i.nameRu}.`, 'heal');
+            }}>ГМ: снять устранённый эффект</button>
+          </div>)}
+          <button className="border px-3 py-2 text-white" onClick={() => setInjuryModalCombatant(null)}>Закрыть травмы</button>
+        </div>
+      </div>}
       {/* Attack Resolver Modal */}
       {attackModalData && (
         <AttackResolverModal
@@ -997,33 +1004,19 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
           initialTarget={attackModalData.target}
           combatants={combatState.combatants}
           onClose={() => setAttackModalData(null)}
-          onApplyDamage={(targetId, hpLoss, location, newSp, logText, critInjury) => {
+          onApplyDamage={(targetId, hpLoss, location, newSp, logText, critInjury, newCoverHp) => {
             const target = combatState.combatants.find(c => c.id === targetId);
             if (!target) return;
 
-            const nextHp = Math.max(0, target.hpCurrent - hpLoss);
-            const isNowDefeated = nextHp <= 0;
-            const updatedInjuries = critInjury 
-              ? [...(target.criticalInjuries || []), critInjury] 
-              : target.criticalInjuries;
-
-            if (location === 'head') {
-              handleUpdateCombatant(targetId, {
-                hpCurrent: nextHp,
-                headSp: newSp,
-                isDefeated: isNowDefeated,
-                criticalInjuries: updatedInjuries
-              });
-            } else {
-              handleUpdateCombatant(targetId, {
-                hpCurrent: nextHp,
-                bodySp: newSp,
-                isDefeated: isNowDefeated,
-                criticalInjuries: updatedInjuries
-              });
-            }
+            setCombatState(prev => ({ ...prev, combatants: prev.combatants.map(c => c.id === targetId ? { ...applyCombatDamage(c, hpLoss, location, newSp, critInjury), coverHp: newCoverHp ?? c.coverHp } : c) }));
 
             addLog(logText, 'damage');
+          }}
+          onSpendResources={(attackerId, weaponIndex, ammo, luck) => {
+            setCombatState(prev => ({ ...prev, combatants: prev.combatants.map(c => c.id === attackerId ? { ...c,
+              weapons: c.weapons.map((w, i) => i === weaponIndex ? { ...w, currentAmmo: Math.max(0, w.currentAmmo - ammo) } : w),
+              luckCurrent: c.luckCurrent === undefined ? undefined : Math.max(0, c.luckCurrent - luck) } : c) }));
+            addLog(`Атака зафиксирована: патронов −${ammo}, Удачи −${luck}.`, 'attack');
           }}
         />
       )}
@@ -1250,7 +1243,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
             </div>
 
             <p className="text-xs font-tech text-zinc-400">
-              Введите результат физического кубика 1d10 для каждого участника или бросьте случайно. Инициатива = РЕФ + 1d10.
+              Введите готовый итог инициативы (РЕФ + 1d10 с дополнительным кубом на 1/10 и бонусами) или бросьте автоматически. Ничьи перебрасываются.
             </p>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -1259,7 +1252,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                 onClick={() => {
                   const draft: { [id: string]: number } = {};
                   combatState.combatants.forEach(c => {
-                    draft[c.id] = rollD10();
+                    draft[c.id] = rollInitiative(c);
                   });
                   setInitiativeDraft(draft);
                 }}
@@ -1276,7 +1269,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                     const nextDraft = { ...prev };
                     combatState.combatants.forEach(c => {
                       if (c.type !== 'player') {
-                        nextDraft[c.id] = rollD10();
+                        nextDraft[c.id] = rollInitiative(c);
                       }
                     });
                     return nextDraft;
@@ -1291,8 +1284,8 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
 
             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
               {combatState.combatants.map(c => {
-                const rolled = initiativeDraft[c.id] ?? 5;
-                const total = c.ref + rolled;
+                const rolled = initiativeDraft[c.id] ?? c.initiative;
+                const total = rolled;
                 return (
                   <div key={c.id} className="flex items-center justify-between bg-zinc-950 p-2.5 rounded border border-zinc-800 text-xs font-tech">
                     <div className="flex items-center gap-2">
@@ -1309,14 +1302,12 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-zinc-400 text-[11px]">1d10:</span>
+                      <span className="text-zinc-400 text-[11px]">Итог:</span>
                       <input
                         type="number"
-                        min="1"
-                        max="10"
                         value={rolled}
                         onChange={(e) => {
-                          const val = Math.min(10, Math.max(1, parseInt(e.target.value) || 1));
+                          const val = parseInt(e.target.value) || 0;
                           setInitiativeDraft(prev => ({ ...prev, [c.id]: val }));
                         }}
                         className="w-12 bg-zinc-900 border border-amber-500/70 rounded px-1.5 py-0.5 text-center font-bold text-amber-300"
@@ -1324,7 +1315,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          setInitiativeDraft(prev => ({ ...prev, [c.id]: rollD10() }));
+                          setInitiativeDraft(prev => ({ ...prev, [c.id]: rollInitiative(c) }));
                         }}
                         title="Бросить 1d10 для этого участника"
                         className="p-1 text-zinc-400 hover:text-white"
@@ -1353,17 +1344,14 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                 onClick={() => {
                   sfx.playDiceRoll();
                   const updated = combatState.combatants.map(c => {
-                    const rolled = initiativeDraft[c.id] ?? 5;
-                    return { ...c, initiative: c.ref + rolled };
+                    const rolled = initiativeDraft[c.id] ?? c.initiative;
+                    return { ...c, initiative: rolled };
                   });
                   // Sort descending by initiative, tie-break by REF
-                  updated.sort((a, b) => {
-                    if (b.initiative !== a.initiative) return b.initiative - a.initiative;
-                    return b.ref - a.ref;
-                  });
+                  const ordered = sortInitiative(updated);
                   setCombatState(prev => ({
                     ...prev,
-                    combatants: updated,
+                    combatants: ordered,
                     currentTurnIndex: 0
                   }));
                   addLog('Инициатива обновлена и отсортирована.', 'system');

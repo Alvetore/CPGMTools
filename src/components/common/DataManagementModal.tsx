@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Download, Upload, X, AlertTriangle, RefreshCw, FileText, CheckCircle } from 'lucide-react';
-import { exportEntireGmDatabase, saveStoredData, STORAGE_KEYS, convertCharSheetToPartyMember } from '../../utils/storage';
+import { exportEntireGmDatabase, saveStoredData, loadStoredData, restoreGmDatabase, clearGmDatabase, STORAGE_KEYS, convertCharSheetToPartyMember } from '../../utils/storage';
 import { PartyMember } from '../../types/party';
 import { Character } from '../../types/character';
 import { sfx } from '../../utils/audio';
@@ -28,12 +28,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
 
         // Check if it's a full backup
         if (data.exportVersion) {
-          if (data.party) saveStoredData(STORAGE_KEYS.PARTY, data.party);
-          if (data.combat) saveStoredData(STORAGE_KEYS.COMBAT, data.combat);
-          if (data.customBestiary) saveStoredData(STORAGE_KEYS.CUSTOM_BESTIARY, data.customBestiary);
-          if (data.encounters) saveStoredData(STORAGE_KEYS.ENCOUNTERS, data.encounters);
-          if (data.networks) saveStoredData(STORAGE_KEYS.NETWORKS, data.networks);
-          if (data.gigs) saveStoredData(STORAGE_KEYS.GIGS, data.gigs);
+          restoreGmDatabase(data);
 
           sfx.playCritSuccess();
           alert('Резервная копия базы ГМа успешно восстановлена!');
@@ -42,9 +37,9 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
         } else if (data.stats && data.armor) {
           // Single character from Cyberpunk RED CharSheet
           const member = convertCharSheetToPartyMember(data as Character);
-          const currentParty = JSON.parse(localStorage.getItem(STORAGE_KEYS.PARTY) || '[]') as PartyMember[];
-          currentParty.push(member);
-          saveStoredData(STORAGE_KEYS.PARTY, currentParty);
+          const currentParty = loadStoredData<PartyMember[]>(STORAGE_KEYS.PARTY, []);
+          const nextParty = [...currentParty.filter(p => p.id !== member.id), member];
+          if (!saveStoredData(STORAGE_KEYS.PARTY, nextParty)) throw new Error('Не удалось сохранить персонажа.');
 
           sfx.playCritSuccess();
           alert(`Персонаж ${member.name} (${member.handle}) успешно импортирован в партию!`);
@@ -55,7 +50,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
         }
       } catch (err) {
         console.error('Ошибка импорта:', err);
-        alert('Ошибка при чтении файла JSON.');
+        alert(err instanceof Error ? err.message : 'Ошибка при чтении файла JSON.');
       }
     };
     reader.readAsText(file);
@@ -63,7 +58,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
 
   const handleResetAllData = () => {
     if (confirm('ВНИМАНИЕ: Это полностью очистит базу данных ГМа (партию, текущий бой, кастомных NPC). Продолжить?')) {
-      localStorage.clear();
+      clearGmDatabase();
       sfx.playClick();
       alert('База данных очищена.');
       onDataRestored();

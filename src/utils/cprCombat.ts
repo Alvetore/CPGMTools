@@ -1,6 +1,65 @@
-import { CriticalInjury } from '../types/character';
+import { CriticalInjury, Weapon } from '../types/character';
 import { CPR_CRITICAL_INJURIES_BODY, CPR_CRITICAL_INJURIES_HEAD } from '../data/cprRules';
 import { rollD6 } from './dice';
+import { Combatant } from '../types/combat';
+
+export function skillBase(c: Combatant | undefined, pattern: RegExp, stat: 'ref' | 'dex'): number | undefined {
+  const skill = c?.skills?.find(s => pattern.test(`${s.id ?? ''} ${s.nameRu ?? ''} ${(s as { name?: string }).name ?? ''}`));
+  return skill?.base ?? (skill?.level !== undefined && c ? c[stat] + skill.level : undefined);
+}
+
+export function attackBase(c: Combatant | undefined, weapon: Pick<Weapon, 'category' | 'skillId'>, melee: boolean): number | undefined {
+  const category = `${weapon.skillId ?? ''} ${weapon.category}`.toLowerCase();
+  const pattern = /autofire/.test(category) ? /autofire|автоогонь|очеред/i : /brawl/.test(category) ? /brawl|драка/i :
+    /martial/.test(category) ? /martial|боев.*искус/i : melee ? /melee|холодное/i :
+    /bow/.test(category) ? /archery|луки|арбалет/i : /launcher/.test(category) ? /heavy.?weapons|тяжёлое оружие|тяжелое оружие/i :
+    /rifle|shotgun/.test(category) ? /shoulder.?arms|длинноствольное/i : /handgun|короткоствольное|стрельба из ПП/i;
+  return skillBase(c, pattern, melee ? 'dex' : 'ref');
+}
+
+export function activeInjuries(injuries: CriticalInjury[] = []): CriticalInjury[] {
+  const canonical = [...CPR_CRITICAL_INJURIES_BODY, ...CPR_CRITICAL_INJURIES_HEAD];
+  return injuries.filter(i => i.isActive).map(i => ({ ...i, ...canonical.find(rule => rule.id === i.id), isActive: true }));
+}
+
+export function rollCriticalInjury(location: 'head' | 'body', existing: CriticalInjury[] = [], manual?: string | number): CriticalInjury | undefined {
+  const pool = location === 'head' ? CPR_CRITICAL_INJURIES_HEAD : CPR_CRITICAL_INJURIES_BODY;
+  const used = new Set(activeInjuries(existing).map(i => i.id));
+  const available = pool.filter(i => !used.has(i.id));
+  const selected = available.find(i => typeof manual === 'string' ? i.id === manual : i.rollNumber === manual);
+  if (selected) return { ...selected, isActive: true };
+  if (!available.length) return undefined;
+  // Equivalent to rerolling used results, without an unbounded rejection loop.
+  const weighted = available.flatMap(i => Array.from({ length: 6 - Math.abs(7 - i.rollNumber) }, () => i));
+  const result = weighted[Math.floor(Math.random() * weighted.length)];
+  return { ...result, isActive: true };
+}
+
+export function deathSaveModifier(c: Pick<Combatant, 'criticalInjuries' | 'deathSavePenalties'>): number {
+  return c.deathSavePenalties + activeInjuries(c.criticalInjuries).reduce((sum, i) => sum + (i.deathSaveModifier ?? 0), 0);
+}
+
+export function actionModifier(c: Combatant, isMelee = false): number {
+  return getWoundedStatus(c.hpCurrent, c.hpMax).penalty + (c.armorPenalty ?? 0) +
+    activeInjuries(c.criticalInjuries).reduce((sum, i) => sum + (i.actionModifier ?? 0) + (isMelee ? i.meleeModifier ?? 0 : i.rangedModifier ?? 0), 0);
+}
+
+export function effectiveMove(c: Combatant): number {
+  return Math.max(1, c.move + (c.armorPenalty ?? 0) + (c.hpCurrent <= 0 ? -6 : 0) +
+    activeInjuries(c.criticalInjuries).reduce((sum, i) => sum + (i.moveModifier ?? 0), 0));
+}
+
+export function applyCombatDamage(c: Combatant, hpLoss: number, location: 'head' | 'body', newSp: number, injury?: CriticalInjury): Combatant {
+  const mortalHit = c.hpCurrent <= 0 && hpLoss > 0 && !c.isDead;
+  let nextInjury = injury;
+  if (injury && activeInjuries(c.criticalInjuries).some(i => i.id === injury.id)) nextInjury = rollCriticalInjury(location, c.criticalInjuries);
+  if (!nextInjury && mortalHit) nextInjury = rollCriticalInjury(location, c.criticalInjuries);
+  return { ...c, hpCurrent: Math.max(0, c.hpCurrent - hpLoss),
+    [location === 'head' ? 'headSp' : 'bodySp']: newSp,
+    criticalInjuries: nextInjury ? [...c.criticalInjuries, nextInjury] : c.criticalInjuries,
+    deathSavePenalties: c.deathSavePenalties + (mortalHit ? 1 : 0),
+    isStabilized: hpLoss > 0 ? false : c.isStabilized };
+}
 
 export interface ApplyDamageParams {
   rawDamage: number;
@@ -11,6 +70,10 @@ export interface ApplyDamageParams {
   isCritInjuryRoll?: boolean; // If two 6s rolled, +5 bonus damage and auto injury
   manualInjuryRoll2d6?: number; // Optional manual 2d6 roll (2-12)
   manualInjuryId?: string; // Optional manual selection of specific injury ID
+  existingInjuries?: CriticalInjury[];
+  targetHp?: number;
+  coverHp?: number;
+  isBrawling?: boolean;
 }
 
 export interface DamageResolutionResult {
@@ -23,6 +86,7 @@ export interface DamageResolutionResult {
   critBonusHp: number;
   criticalInjury?: CriticalInjury;
   logSummary: string;
+  newCoverHp?: number;
 }
 
 export function resolveCprDamage(params: ApplyDamageParams): DamageResolutionResult {
@@ -34,11 +98,20 @@ export function resolveCprDamage(params: ApplyDamageParams): DamageResolutionRes
     isApAmmo = false,
     isCritInjuryRoll = false,
     manualInjuryRoll2d6,
-    manualInjuryId
+    manualInjuryId,
+    existingInjuries = [], targetHp, coverHp = 0, isBrawling = false
   } = params;
 
+  if (![rawDamage, targetSp, coverHp].every(n => Number.isInteger(n) && n >= 0)) throw new Error('Урон, SP и HP укрытия должны быть целыми неотрицательными числами.');
+  if (coverHp > 0) return {
+    effectiveSp: targetSp, penetratingDamage: 0, finalHpLoss: 0, isPenetrated: false,
+    spAblated: 0, newSp: targetSp, critBonusHp: 0, newCoverHp: Math.max(0, coverHp - rawDamage),
+    logSummary: `Атака укрытия: ${rawDamage} урона. HP укрытия ${coverHp} → ${Math.max(0, coverHp - rawDamage)}. Избыточный урон теряется; цель не повреждена.`
+  };
+
   // Melee attacks ignore half armor SP (round down in CPR)
-  const effectiveSp = isMelee ? Math.floor(targetSp / 2) : targetSp;
+  const effectiveSp = isMelee && !isBrawling ? Math.floor(targetSp / 2) : targetSp;
+  const headMultiplier = Math.max(2, ...activeInjuries(existingInjuries).map(i => i.headMultiplier ?? 2));
   const isPenetrated = rawDamage > effectiveSp;
 
   let penetratingDamage = 0;
@@ -49,7 +122,7 @@ export function resolveCprDamage(params: ApplyDamageParams): DamageResolutionRes
   if (isPenetrated) {
     penetratingDamage = rawDamage - effectiveSp;
     // Head shots multiply penetrating damage by 2
-    finalHpLoss = location === 'head' ? penetratingDamage * 2 : penetratingDamage;
+    finalHpLoss = location === 'head' ? penetratingDamage * headMultiplier : penetratingDamage;
 
     // Ablation
     spAblated = isApAmmo ? 2 : 1;
@@ -60,38 +133,23 @@ export function resolveCprDamage(params: ApplyDamageParams): DamageResolutionRes
   let critBonusHp = 0;
   let criticalInjury: CriticalInjury | undefined;
 
-  if (isCritInjuryRoll) {
+  const causesInjury = isCritInjuryRoll || (targetHp !== undefined && targetHp <= 0 && finalHpLoss > 0);
+  if (causesInjury) {
     critBonusHp = 5;
     finalHpLoss += critBonusHp;
 
-    const injuryPool = location === 'head' ? CPR_CRITICAL_INJURIES_HEAD : CPR_CRITICAL_INJURIES_BODY;
-
-    if (manualInjuryId) {
-      const match = injuryPool.find(i => i.id === manualInjuryId);
-      if (match) {
-        criticalInjury = { ...match, isActive: true };
-      }
-    } else {
-      // Roll 2d6 for injury or use manual roll
-      const roll2d6 = manualInjuryRoll2d6 !== undefined 
-        ? Math.min(12, Math.max(2, manualInjuryRoll2d6))
-        : rollD6() + rollD6();
-      const match = injuryPool.find(i => i.rollNumber === roll2d6);
-      if (match) {
-        criticalInjury = { ...match, isActive: true };
-      }
-    }
+    criticalInjury = rollCriticalInjury(location, existingInjuries, manualInjuryId ?? manualInjuryRoll2d6);
   }
 
   // Format log message
   let logSummary = `Урон: ${rawDamage} по [${location === 'head' ? 'ГОЛОВЕ' : 'ТЕЛУ'}]. Броня ОС: ${effectiveSp}. `;
   if (isPenetrated) {
-    logSummary += `ПРОБИТИЕ! Пробивающий урон: ${penetratingDamage}${location === 'head' ? ' x2 (голова) = ' + penetratingDamage * 2 : ''}. Броня стёрта на -${spAblated} (теперь ОС ${newSp}). `;
+    logSummary += `ПРОБИТИЕ! Пробивающий урон: ${penetratingDamage}${location === 'head' ? ' x' + headMultiplier + ' (голова) = ' + penetratingDamage * headMultiplier : ''}. Броня стёрта на -${spAblated} (теперь ОС ${newSp}). `;
   } else {
     logSummary += `Броня отразила атаку! (0 урона). `;
   }
 
-  if (isCritInjuryRoll && criticalInjury) {
+  if (causesInjury && criticalInjury) {
     logSummary += `КРИТИЧЕСКАЯ ТРАВМА: +5 урона и [${criticalInjury.nameRu}]! `;
   }
 
@@ -122,7 +180,7 @@ export function getWoundedStatus(hpCurrent: number, hpMax: number): {
       colorClass: 'text-red-500 bg-red-950/80 border-red-600 animate-pulse'
     };
   }
-  if (hpCurrent <= Math.ceil(hpMax / 2)) {
+  if (hpCurrent < Math.ceil(hpMax / 2)) {
     return {
       labelRu: 'ТЯЖЕЛО РАНЕН (-2)',
       penalty: -2,

@@ -62,6 +62,14 @@ export interface CriticalInjury {
   treatmentTextRu?: string;
   treatmentTextEn?: string;
   isActive: boolean;
+  deathSaveModifier?: number;
+  actionModifier?: number;
+  rangedModifier?: number;
+  meleeModifier?: number;
+  moveModifier?: number;
+  noDodge?: boolean;
+  headMultiplier?: number;
+  recurringDamage?: number;
 }
 
 export interface Character {
@@ -88,4 +96,5 @@ export interface Character {
   weapons: Weapon[];
   cyberware?: any[];
   gear?: any[];
+  criticalInjuries?: CriticalInjury[];
 }

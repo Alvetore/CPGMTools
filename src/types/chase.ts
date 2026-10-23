@@ -10,13 +10,17 @@ export interface ChaseVehicle {
   sdpMax: number;
   armorSp: number; // ОС брони ТС
   speedCombat: CombatSpeed; // 60, 40, 20, 15, 10, 8 СКО
-  gridSquare: number; // 1 to 8 (1 = Lead / 0m, 2 = 7-12m behind, etc. or absolute track square)
+  gridSquare: number; // Unbounded relative coordinate; escape compares distance to pursuers.
   hasNos: boolean;
   isPitSuffering: boolean; // Suffering from PIT maneuver (-1 speed category)
   isPulledClose: boolean; // Pulled closer to target
   isEscaped: boolean;
   isWrecked: boolean;
   notes?: string;
+  side?: 'pursuer' | 'evader';
+  hasActed?: boolean;
+  positioned?: boolean;
+  needsControlResolution?: boolean;
 }
 
 export interface ChaseManeuver {
@@ -66,7 +70,7 @@ export const HOT_PURSUIT_MANEUVERS: ChaseManeuver[] = [
     dv: 15,
     actionType: 'Standard',
     descriptionRu: 'Оператор слегка толкает целевое ТС. В конце раунда цель выполняет проверку позиционирования, как если бы ее боевая скорость была на ступень ниже. Если скорость падает ниже 8 СКО — цель теряет управление и разбивается!',
-    requirementRu: 'Только если оба ТС находятся на одной клетке (бок о бок).'
+    requirementRu: 'ТС находятся на соседних клетках сетки.'
   },
   {
     id: 'm-overtake',
@@ -75,7 +79,7 @@ export const HOT_PURSUIT_MANEUVERS: ChaseManeuver[] = [
     dv: 17,
     actionType: 'Standard',
     descriptionRu: 'Оператор выжимает максимум и обходит целевое ТС, перемещаясь на 1 клетку вперед. При провале ТС теряет контроль или сталкивается со встречным препятствием.',
-    requirementRu: 'Только если оба ТС находятся на одной клетке (бок о бок).'
+    requirementRu: 'ТС находятся на соседних клетках сетки.'
   },
   {
     id: 'm-pull-close',
@@ -84,7 +88,7 @@ export const HOT_PURSUIT_MANEUVERS: ChaseManeuver[] = [
     dv: 13,
     actionType: 'Standard',
     descriptionRu: 'Оператор смещает свое ТС к нижнему краю текущего диапазона (например, 7м вместо 12м) до конца раунда. Это открывает возможность для прыжков на ТС и ближнего боя.',
-    requirementRu: 'Любая дистанция до 25 метров.'
+    requirementRu: 'Сближение с нижним краем текущего диапазона до конца раунда.'
   },
   {
     id: 'm-ram',

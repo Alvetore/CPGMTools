@@ -38,6 +38,7 @@ export interface EncounterNpcItem {
   move?: number;
   body: number;
   weapons: Weapon[];
+  skills?: NpcTemplate['skills'];
   notes?: string;
 }
 
