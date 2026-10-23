@@ -516,7 +516,7 @@ export const NetArchitectureView: React.FC = () => {
                         }}
                         className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-orbitron font-bold text-xs rounded-l transition-all"
                       >
-                        Взлом (Интерфейс)
+                        {floor.type === 'Password' ? 'Backdoor (Интерфейс)' : floor.type === 'File' ? 'Eye-Dee (Интерфейс)' : floor.type === 'ControlNode' ? 'Control (Интерфейс)' : 'Встреча: решение ГМа'}
                       </button>
                       <button
                         onClick={() => {
@@ -646,25 +646,25 @@ export const NetArchitectureView: React.FC = () => {
             
             <div className="space-y-1.5 text-zinc-300">
               <div>
-                <strong className="text-white">Jack In / Jack Out:</strong> Подключение / аварийный выход из сети (1 действие).
+                <strong className="text-white">Jack In / Jack Out:</strong> Подключение / безопасный выход (1 NET Action). Небезопасный разрыв соединения разрешается отдельно с последствиями ICE.
               </div>
               <div>
                 <strong className="text-white">Pathfinder:</strong> Просканировать архитектуру на глубину (Интерфейс против DV).
               </div>
               <div>
-                <strong className="text-white">Backdoor:</strong> Взломать пароль шлюза или файл (Интерфейс против DV этажа).
+                <strong className="text-white">Backdoor:</strong> Преодолеть Password (Интерфейс + 1d10 против DV пароля).
               </div>
               <div>
                 <strong className="text-white">Control:</strong> Перехватить управление турелями, камерами или лифтом (Интерфейс против DV узла).
               </div>
               <div>
-                <strong className="text-white">Eye-Dee:</strong> Изучить файл или узнать статы Чёрного Льда.
+                <strong className="text-white">Eye-Dee:</strong> Определить содержимое и ценность файла (Интерфейс + 1d10 против DV файла).
               </div>
               <div>
                 <strong className="text-white">Slide:</strong> Сбежать от Чёрного Льда на другой этаж.
               </div>
               <div>
-                <strong className="text-white">Virus:</strong> Заложить вирус в систему (требует контроль над узлом).
+                <strong className="text-white">Virus:</strong> Установить вирус на самом нижнем этаже архитектуры. Эффект, DV и число NET Actions назначает ГМ.
               </div>
             </div>
           </div>
