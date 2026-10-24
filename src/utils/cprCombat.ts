@@ -14,7 +14,10 @@ export function attackBase(c: Combatant | undefined, weapon: Pick<Weapon, 'categ
     /martial/.test(category) ? /martial|боев.*искус/i : melee ? /melee|холодное/i :
     /bow/.test(category) ? /archery|луки|арбалет/i : /launcher/.test(category) ? /heavy.?weapons|тяжёлое оружие|тяжелое оружие/i :
     /rifle|shotgun/.test(category) ? /shoulder.?arms|длинноствольное/i : /handgun|короткоствольное|стрельба из ПП/i;
-  return skillBase(c, pattern, melee ? 'dex' : 'ref');
+  const base = skillBase(c, pattern, melee ? 'dex' : 'ref');
+  // Older custom/gang templates use one explicitly supplied Shooting base.
+  return base ?? (!melee && !/autofire/.test(category) && /pistol|rifle|shotgun|smg/.test(category)
+    ? skillBase(c, /^\s*(?:стрельба|shooting)\s*$/i, 'ref') : undefined);
 }
 
 export function activeInjuries(injuries: CriticalInjury[] = []): CriticalInjury[] {

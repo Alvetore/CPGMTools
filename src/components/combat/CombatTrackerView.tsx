@@ -916,6 +916,12 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                   </button>
                 </div>
 
+                {c.type !== 'player' && c.skills && c.skills.length > 0 && <details className="mt-2 text-xs text-zinc-300">
+                  <summary className="cursor-pointer text-emerald-400">Навыки NPC (база STAT + навык)</summary>
+                  <div className="flex flex-wrap gap-1 mt-1">{c.skills.map((s, i) => <span key={i} className="px-2 py-1 bg-zinc-950 border border-zinc-800 rounded">
+                    {s.nameRu ?? s.id}: <strong>{s.base ?? 'см. лист'}</strong>
+                  </span>)}</div>
+                </details>}
                 {/* Critical Injuries tag list */}
                 {c.criticalInjuries && c.criticalInjuries.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-zinc-800/80 flex flex-wrap items-center gap-1.5">

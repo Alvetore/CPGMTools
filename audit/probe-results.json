@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-23T12:03:57.855Z",
+  "generatedAt": "2026-10-24T16:30:57.746Z",
   "method": "actual TS/TSX functions and synchronous component-handler/effect harness; no browser or real storage",
-  "passed": 67,
+  "passed": 76,
   "failed": 0,
   "harnessErrors": 0,
   "results": [
@@ -512,6 +512,120 @@
       "passed": true,
       "expected": true,
       "actual": true
+    },
+    {
+      "id": "NPC: manual skills preserve exact bases, zero and additional skills through save and combat",
+      "passed": true,
+      "expected": [
+        17,
+        0,
+        15,
+        17
+      ],
+      "actual": [
+        17,
+        0,
+        15,
+        17
+      ]
+    },
+    {
+      "id": "NPC: editing skills preserves weapons, other stats, gear and unknown fields without duplicating NPC",
+      "passed": true,
+      "expected": [
+        1,
+        true,
+        true,
+        true,
+        true,
+        19
+      ],
+      "actual": [
+        1,
+        true,
+        true,
+        true,
+        true,
+        19
+      ]
+    },
+    {
+      "id": "NPC: copying an official template creates a separate custom NPC",
+      "passed": true,
+      "expected": [
+        true,
+        true,
+        18
+      ],
+      "actual": [
+        true,
+        true,
+        18
+      ]
+    },
+    {
+      "id": "NPC: invalid skill base NaN cannot save",
+      "passed": true,
+      "expected": 0,
+      "actual": 0
+    },
+    {
+      "id": "NPC: invalid skill base -1 cannot save",
+      "passed": true,
+      "expected": 0,
+      "actual": 0
+    },
+    {
+      "id": "NPC: invalid skill base 1.5 cannot save",
+      "passed": true,
+      "expected": 0,
+      "actual": 0
+    },
+    {
+      "id": "NPC: skill editor adds, edits and removes rows while preserving zero",
+      "passed": true,
+      "expected": [
+        {
+          "nameRu": "Восприятие",
+          "base": 0
+        }
+      ],
+      "actual": [
+        {
+          "nameRu": "Восприятие",
+          "base": 0
+        }
+      ]
+    },
+    {
+      "id": "NPC: legacy Shooting base is used, specific weapon skill takes priority",
+      "passed": true,
+      "expected": [
+        18,
+        14,
+        null
+      ],
+      "actual": [
+        18,
+        14,
+        null
+      ]
+    },
+    {
+      "id": "NPC: individual encounter skills stay separate from template and other NPCs, then reach combat",
+      "passed": true,
+      "expected": [
+        20,
+        10,
+        10,
+        20
+      ],
+      "actual": [
+        20,
+        10,
+        10,
+        20
+      ]
     }
   ]
 }

@@ -434,6 +434,79 @@ check('netrun: negative damage cannot heal Black ICE', true, () => {
   if (!b) throw Error('Black ICE custom damage control absent'); b.props.onClick(); o.render();
   return before===JSON.stringify(o.get('architectures'));
 });
+function npcBuilder(initial = []) {
+  let saved = initial;
+  const o = mount('src/components/bestiary/BestiaryView.tsx', 'BestiaryView', {
+    customBestiary: initial, setCustomBestiary: update => { saved = typeof update === 'function' ? update(saved) : update; }, onAddNpcToCombat() {},
+  });
+  o.saved = () => saved;
+  o.submit = () => nodes(o.tree, n => n.type === 'form')[0].props.onSubmit({preventDefault(){}});
+  return o;
+}
+function sameJsonData(a, b) {
+  const sort = value => Array.isArray(value) ? value.map(sort) : value && typeof value === 'object'
+    ? Object.fromEntries(Object.keys(value).sort().map(key => [key, sort(value[key])])) : value;
+  return JSON.stringify(sort(a)) === JSON.stringify(sort(b));
+}
+check('NPC: manual skills preserve exact bases, zero and additional skills through save and combat', [17,0,15,17], () => {
+  const o = npcBuilder(); click(o,'СОЗДАТЬ NPC ВРУЧНУЮ'); o.set('npcName','Scout');
+  nodes(o.tree,n=>n.type?.name==='NpcSkillsEditor')[0].props.onChange([
+    {nameRu:'Короткоствольное (Handgun)',base:17},{nameRu:'Уклонение',base:0},{nameRu:'Восприятие',base:15}]);
+  o.set('npcRef',8); o.render(); o.submit();
+  if (!persist.saveStoredData('cpgm_custom_bestiary',o.saved())) throw Error('NPC not persisted');
+  const loaded = persist.loadStoredData('cpgm_custom_bestiary',[])[0];
+  const app = mount('src/App.tsx','App');
+  nodes(app.tree,n=>n.type?.name==='Header')[0].props.setActiveTab('bestiary'); app.render();
+  nodes(app.tree,n=>n.type?.name==='BestiaryView')[0].props.onAddNpcToCombat(loaded,1); app.render();
+  const c = app.get('combatState').combatants[0];
+  return [...c.skills.map(s=>s.base),combat.attackBase(c,c.weapons[0],false)];
+});
+check('NPC: editing skills preserves weapons, other stats, gear and unknown fields without duplicating NPC', [1,true,true,true,true,19], () => {
+  const source = JSON.parse(JSON.stringify(bestiary.OFFICIAL_CPR_BESTIARY[0]));
+  Object.assign(source,{id:'custom-preserve',isCustom:true,extra:{zero:0,no:false}});
+  const original = JSON.stringify(source), o=npcBuilder([source]); click(o,'Редактировать NPC');
+  nodes(o.tree,n=>n.type?.name==='NpcSkillsEditor')[0].props.onChange([...source.skills,{nameRu:'Электроника',base:19}]);
+  o.render(); o.submit(); const saved=o.saved()[0];
+  return [o.saved().length, JSON.stringify(source)===original,sameJsonData(saved.weapons,source.weapons),
+    sameJsonData(saved.stats,source.stats),sameJsonData(saved.extra,source.extra)&&sameJsonData(saved.gear,source.gear),saved.skills.at(-1).base];
+});
+check('NPC: copying an official template creates a separate custom NPC', [true,true,18], () => {
+  const before=JSON.stringify(bestiary.OFFICIAL_CPR_BESTIARY[0]),o=npcBuilder(); click(o,'Создать копию NPC');
+  o.set('npcSkills',[{nameRu:'Уклонение',base:18}]); o.render(); o.submit(); const saved=o.saved()[0];
+  return [saved.id!==bestiary.OFFICIAL_CPR_BESTIARY[0].id&&saved.isCustom,JSON.stringify(bestiary.OFFICIAL_CPR_BESTIARY[0])===before,saved.skills[0].base];
+});
+for (const base of [NaN,-1,1.5]) check(`NPC: invalid skill base ${base} cannot save`, 0, () => {
+  const o=npcBuilder(); click(o,'СОЗДАТЬ NPC ВРУЧНУЮ'); o.set('npcName','Invalid'); o.set('npcSkills',[{nameRu:'Уклонение',base}]); o.render(); o.submit(); return o.saved().length;
+});
+check('NPC: skill editor adds, edits and removes rows while preserving zero', [{nameRu:'Восприятие',base:0}], () => {
+  let skills=[];
+  const o=mount('src/components/bestiary/NpcSkillsEditor.tsx','NpcSkillsEditor',{skills,onChange:value=>{skills=value;o.props.skills=value;}});
+  click(o,'Добавить навык');
+  nodes(o.tree,n=>n.type==='input'&&n.props['aria-label']==='Название навыка 1')[0].props.onChange({target:{value:'Восприятие'}});o.render();
+  click(o,'Добавить навык');
+  nodes(o.tree,n=>n.type==='button'&&n.props['aria-label']==='Удалить навык 2')[0].props.onClick();o.render();return skills;
+});
+check('NPC: legacy Shooting base is used, specific weapon skill takes priority', [18,14,undefined], () => {
+  const c=actor('shoot',{skills:[{nameRu:'Стрельба',base:18}]});
+  const generic=combat.attackBase(c,weapon(),false);
+  c.skills.push({nameRu:'Короткоствольное оружие',base:14});
+  return [generic,combat.attackBase(c,weapon(),false),combat.attackBase(c,weapon('Autofire Assault Rifle'),false)];
+});
+check('NPC: individual encounter skills stay separate from template and other NPCs, then reach combat', [20,10,10,20], () => {
+  const template=JSON.parse(JSON.stringify(bestiary.OFFICIAL_CPR_BESTIARY[0])); template.skills=[{nameRu:'Уклонение',base:10}];
+  let saved;
+  const o=mount('src/components/encounters/EncounterFormModal.tsx','EncounterFormModal',{isOpen:true,onClose(){},onSave:e=>saved=e,templates:[template]});
+  o.set('title','Skills test');o.render();click(o,'Из бестиария');click(o,'+ Свой NPC');
+  nodes(o.tree,n=>n.type?.name==='NpcSkillsEditor')[1].props.onChange([{nameRu:'Уклонение',base:10}]);o.render();
+  nodes(o.tree,n=>n.type?.name==='NpcSkillsEditor')[0].props.onChange([{nameRu:'Уклонение',base:20}]);o.render();
+  nodes(o.tree,n=>n.type==='form')[0].props.onSubmit({preventDefault(){}});
+  persist.saveStoredData('cpgm_encounters',[saved]);
+  const loaded=persist.loadStoredData('cpgm_encounters',[])[0];
+  const app=mount('src/App.tsx','App');nodes(app.tree,n=>n.type?.name==='Header')[0].props.setActiveTab('encounters');app.render();
+  nodes(app.tree,n=>n.type?.name==='EncountersView')[0].props.onStartCombat(loaded,false);app.render();
+  const first=app.get('combatState').combatants[0];
+  return [loaded.npcs[0].skills[0].base,template.skills[0].base,loaded.npcs[1].skills[0].base,combat.skillBase(first,/уклонение/i,'dex')];
+});
 const errors = results.filter(r => r.error);
 const output = { generatedAt: new Date().toISOString(), method: 'actual TS/TSX functions and synchronous component-handler/effect harness; no browser or real storage',
   passed: results.filter(r => r.passed).length, failed: results.filter(r => !r.passed).length, harnessErrors: errors.length, results };

@@ -19,6 +19,8 @@ import { Combatant } from '../../types/combat';
 import { OFFICIAL_CPR_BESTIARY } from '../../data/bestiaryData';
 import { NIGHT_CITY_GANGS, POCKET_JUNK_TABLE } from '../../data/nightCityData';
 import { sfx } from '../../utils/audio';
+import { NpcSkillsEditor } from './NpcSkillsEditor';
+import { validateStored } from '../../utils/validation';
 
 interface BestiaryViewProps {
   customBestiary: NpcTemplate[];
@@ -58,6 +60,9 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
   const [npcWeaponName, setNpcWeaponName] = useState<string>('Тяжёлый пистолет');
   const [npcWeaponDamage, setNpcWeaponDamage] = useState<string>('3d6');
   const [npcTactics, setNpcTactics] = useState<string>('');
+  const [npcSkills, setNpcSkills] = useState<NpcTemplate['skills']>([]);
+  const [npcSource, setNpcSource] = useState<NpcTemplate | null>(null);
+  const [npcError, setNpcError] = useState('');
 
   const allNpcs = [...OFFICIAL_CPR_BESTIARY, ...customBestiary];
 
@@ -79,76 +84,85 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
     setAddCounts(prev => ({ ...prev, [id]: Math.max(1, count) }));
   };
 
-  const handleOpenManualBuilder = () => {
-    setNpcName('');
-    setNpcFaction('Уличная банда');
-    setNpcThreat('Mook');
-    setNpcDesc('');
-    setNpcRef(6);
-    setNpcDex(6);
-    setNpcMove(5);
-    setNpcBody(6);
-    setNpcInt(4);
-    setNpcHp(35);
-    setNpcHeadSp(11);
-    setNpcBodySp(11);
-    setNpcWeaponName('Тяжёлый пистолет');
-    setNpcWeaponDamage('3d6');
-    setNpcTactics('');
+  const handleOpenManualBuilder = (source?: NpcTemplate) => {
+    setNpcSource(source ?? null);
+    setNpcError('');
+    setNpcName(source?.nameRu ?? '');
+    setNpcFaction(source?.faction ?? 'Уличная банда');
+    setNpcThreat(source?.threatLevel ?? 'Mook');
+    setNpcDesc(source?.description ?? '');
+    setNpcRef(source?.stats.REF ?? 6);
+    setNpcDex(source?.stats.DEX ?? 6);
+    setNpcMove(source?.stats.MOVE ?? 5);
+    setNpcBody(source?.stats.BODY ?? 6);
+    setNpcInt(source?.stats.INT ?? 4);
+    setNpcHp(source?.hpMax ?? 35);
+    setNpcHeadSp(source?.headSp ?? 11);
+    setNpcBodySp(source?.bodySp ?? 11);
+    setNpcWeaponName(source ? source.weapons[0]?.name ?? '' : 'Тяжёлый пистолет');
+    setNpcWeaponDamage(source?.weapons[0]?.damage ?? '3d6');
+    setNpcTactics(source?.tactics ?? '');
+    setNpcSkills(source ? source.skills.map(s => ({ ...s })) : [
+      { nameRu: 'Короткоствольное (Handgun)', base: 10 },
+      { nameRu: 'Уклонение', base: 9 },
+      { nameRu: 'Драка', base: 10 }
+    ]);
     setIsManualBuilderOpen(true);
   };
 
   const handleSaveManualNpc = (e: React.FormEvent) => {
     e.preventDefault();
     if (!npcName.trim()) return;
+    if (npcSkills.some(s => !s.nameRu.trim() || !Number.isInteger(s.base) || s.base < 0)) {
+      setNpcError('У каждого навыка должны быть название и целая неотрицательная база.');
+      return;
+    }
 
     const newNpc: NpcTemplate = {
-      id: `custom-npc-${Date.now()}`,
+      ...npcSource,
+      id: npcSource?.isCustom ? npcSource.id : `custom-npc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       nameRu: npcName.trim(),
-      nameEn: npcName.trim(),
+      nameEn: npcSource?.nameEn ?? npcName.trim(),
       threatLevel: npcThreat,
       faction: npcFaction.trim() || 'Независимый',
       description: npcDesc.trim() || 'Созданный мастером противник',
       stats: {
+        TECH: 3, COOL: 4, WILL: 4, LUCK: npcThreat === 'Boss' ? 4 : 0, EMP: 3,
+        ...npcSource?.stats,
         INT: npcInt,
         REF: npcRef,
         DEX: npcDex,
-        TECH: 3,
-        COOL: 4,
-        WILL: 4,
-        LUCK: npcThreat === 'Boss' ? 4 : 0,
         MOVE: npcMove,
-        BODY: npcBody,
-        EMP: 3
+        BODY: npcBody
       },
       hpMax: npcHp,
       headSp: npcHeadSp,
       bodySp: npcBodySp,
-      armorName: `ОС ${npcHeadSp}/${npcBodySp}`,
-      weapons: [
+      armorName: npcSource && npcSource.headSp === npcHeadSp && npcSource.bodySp === npcBodySp ? npcSource.armorName : `ОС ${npcHeadSp}/${npcBodySp}`,
+      weapons: npcSource && !npcSource.weapons.length && !npcWeaponName.trim() ? [] : [
         {
           id: `w-c-${Date.now()}`,
-          name: npcWeaponName.trim() || 'Оружие',
           category: 'Heavy Pistol',
-          damage: npcWeaponDamage.trim() || '3d6',
           standardRof: 1,
           magCapacity: 8,
           currentAmmo: 8,
-          ammoType: 'Стандартные'
-        }
+          ammoType: 'Стандартные',
+          ...npcSource?.weapons[0],
+          name: npcWeaponName.trim() || 'Оружие',
+          damage: npcWeaponDamage.trim() || '3d6'
+        },
+        ...(npcSource?.weapons.slice(1) ?? [])
       ],
-      skills: [
-        { nameRu: 'Стрельба', base: npcRef + 4 },
-        { nameRu: 'Уклонение', base: npcDex + 3 },
-        { nameRu: 'Драка', base: npcDex + 4 }
-      ],
-      cyberware: [],
-      gear: [],
+      skills: npcSkills.map(s => ({ ...s, nameRu: s.nameRu.trim() })),
+      cyberware: npcSource?.cyberware ?? [],
+      gear: npcSource?.gear ?? [],
       tactics: npcTactics.trim() || 'Атакует из укрытий',
       isCustom: true
     };
 
-    setCustomBestiary(prev => [newNpc, ...prev]);
+    try { validateStored('cpgm_custom_bestiary', [newNpc]); }
+    catch { setNpcError('Проверьте характеристики, HP, броню и формулу урона (например, 3d6). NPC не сохранён.'); return; }
+    setCustomBestiary(prev => npcSource?.isCustom ? prev.map(n => n.id === newNpc.id ? newNpc : n) : [newNpc, ...prev]);
     sfx.playCritSuccess();
     setIsManualBuilderOpen(false);
   };
@@ -263,7 +277,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
 
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
             <button
-              onClick={handleOpenManualBuilder}
+              onClick={() => handleOpenManualBuilder()}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-orbitron font-bold text-xs rounded transition-all clip-cyber-sm shadow-md"
             >
               <Plus className="w-4 h-4" />
@@ -436,7 +450,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
               {/* Skills preview */}
               {npc.skills && npc.skills.length > 0 && (
                 <div className="flex flex-wrap gap-1 text-[11px] font-tech">
-                  {npc.skills.slice(0, 4).map((s, idx) => (
+                  {npc.skills.map((s, idx) => (
                     <span key={idx} className="px-1.5 py-0.2 rounded bg-zinc-950 border border-zinc-800 text-zinc-400">
                       {s.nameRu}: <strong className="text-white">{s.base}</strong>
                     </span>
@@ -446,6 +460,9 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
             </div>
 
             {/* Bottom Add to Combat Bar */}
+            <button onClick={() => handleOpenManualBuilder(npc)} className="text-xs text-emerald-400 border border-zinc-700 rounded px-2 py-1.5">
+              {npc.isCustom ? 'Редактировать NPC' : 'Создать копию NPC'}
+            </button>
             <div className="pt-2 border-t border-zinc-800 flex items-center gap-2">
               <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded px-2 py-1">
                 <span className="text-[10px] font-tech text-zinc-500 mr-1.5 uppercase">Кол-во:</span>
@@ -484,7 +501,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <h3 className="font-orbitron font-bold text-white text-base flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-emerald-400" />
-                <span>СОЗДАТЬ NPC ВРУЧНУЮ</span>
+                <span>{npcSource?.isCustom ? 'РЕДАКТИРОВАТЬ NPC' : npcSource ? 'СОЗДАТЬ КОПИЮ NPC' : 'СОЗДАТЬ NPC ВРУЧНУЮ'}</span>
               </h3>
               <button 
                 type="button" 
@@ -495,6 +512,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
               </button>
             </div>
 
+            {npcError && <p role="alert" className="text-red-400">{npcError}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
                 <label className="text-zinc-400 block mb-1 uppercase text-[10px]">Имя / Название противника *</label>
@@ -600,6 +618,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
             </div>
 
             {/* Health & Armor */}
+            <NpcSkillsEditor skills={npcSkills} onChange={setNpcSkills} />
             <div className="grid grid-cols-3 gap-2 bg-zinc-950 p-3 rounded border border-zinc-800">
               <div>
                 <label className="text-zinc-400 block mb-1 uppercase text-[10px]">HP (ПЗ)</label>

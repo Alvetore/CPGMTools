@@ -15,6 +15,7 @@ import {
 import { Encounter, EncounterNpcItem, NpcTemplate, ThreatLevel } from '../../types/bestiary';
 import { CombatantType } from '../../types/combat';
 import { sfx } from '../../utils/audio';
+import { NpcSkillsEditor } from '../bestiary/NpcSkillsEditor';
 
 interface EncounterFormModalProps {
   isOpen: boolean;
@@ -79,9 +80,7 @@ export const EncounterFormModal: React.FC<EncounterFormModalProps> = ({
     // Check if already in list
     const existingIndex = npcs.findIndex(n => n.templateId === tpl.id);
     if (existingIndex !== -1) {
-      const updated = [...npcs];
-      updated[existingIndex].count += 1;
-      setNpcs(updated);
+      setNpcs(prev => prev.map((n, i) => i === existingIndex ? { ...n, count: n.count + 1 } : n));
       return;
     }
 
@@ -170,6 +169,10 @@ export const EncounterFormModal: React.FC<EncounterFormModalProps> = ({
     }
     if (npcs.length === 0) {
       setError('Добавьте хотя бы одного NPC или противника в энкаунтер!');
+      return;
+    }
+    if (npcs.some(n => n.skills?.some(s => !s.nameRu.trim() || !Number.isInteger(s.base) || s.base < 0))) {
+      setError('У каждого навыка NPC должны быть название и целая неотрицательная база.');
       return;
     }
 
@@ -421,6 +424,7 @@ export const EncounterFormModal: React.FC<EncounterFormModalProps> = ({
                         <span>ДЕЛ: <strong className="text-amber-400">{npc.dex}</strong></span>
                         <span>ТЕЛО: <strong className="text-amber-400">{npc.body}</strong></span>
                       </div>
+                      <NpcSkillsEditor skills={npc.skills ?? []} onChange={skills => handleUpdateNpc(npc.id, { skills })} />
                     </div>
 
                     {/* Count & Remove */}
