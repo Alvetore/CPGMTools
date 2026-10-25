@@ -35,6 +35,8 @@ export interface Weapon {
   notes?: string;
   quality?: 'Poor' | 'Standard' | 'Excellent';
   skillId?: string;
+  isEquipped?: boolean;
+  consumable?: boolean;
   damageProfiles?: ({ name: string; damage: string } & Partial<Pick<Weapon, 'category' | 'skillId' | 'standardRof' | 'magCapacity' | 'ammoType' | 'quality' | 'armorPenetration' | 'canCrit' | 'bodyRequirement' | 'autofireLimit' | 'attackRequiresRoll'>>)[];
   selectedProfile?: number;
   profileAmmo?: Record<string, number>;

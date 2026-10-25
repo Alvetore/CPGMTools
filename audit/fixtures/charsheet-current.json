@@ -1,0 +1,1365 @@
+{
+  "automaticCyberwareEffects": true,
+  "id": "compat-current",
+  "name": "QA Backpack Sync",
+  "handle": "InventorySync",
+  "role": "Solo",
+  "roleRank": 4,
+  "avatarUrl": "",
+  "notes": "Synthetic fixture for current export",
+  "stats": {
+    "INT": 6,
+    "REF": 7,
+    "DEX": 6,
+    "TECH": 5,
+    "COOL": 6,
+    "WILL": 6,
+    "LUCK": 6,
+    "MOVE": 6,
+    "BODY": 6,
+    "EMP": 6
+  },
+  "statMods": {
+    "INT": 0,
+    "REF": 0,
+    "DEX": 0,
+    "TECH": 0,
+    "COOL": 0,
+    "WILL": 0,
+    "LUCK": 0,
+    "MOVE": 0,
+    "BODY": 0,
+    "EMP": 0
+  },
+  "hpCurrent": 40,
+  "humanityCurrent": 46,
+  "luckCurrent": 6,
+  "deathSavePenalties": 0,
+  "armor": {
+    "head": {
+      "id": "armor-head-1",
+      "name": "Лёгкий арморджек (Light Armorjack)",
+      "location": "head",
+      "spMax": 11,
+      "spCurrent": 11,
+      "penalty": 0
+    },
+    "body": {
+      "id": "armor-body-1",
+      "name": "Лёгкий арморджек (Light Armorjack)",
+      "location": "body",
+      "spMax": 11,
+      "spCurrent": 11,
+      "penalty": 0
+    }
+  },
+  "skills": [
+    {
+      "id": "perception",
+      "nameRu": "Восприятие",
+      "nameEn": "Perception",
+      "stat": "INT",
+      "category": "Awareness",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "tracking",
+      "nameRu": "Выслеживание",
+      "nameEn": "Tracking",
+      "stat": "INT",
+      "category": "Awareness",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "concentration",
+      "nameRu": "Концентрация",
+      "nameEn": "Concentration",
+      "stat": "WILL",
+      "category": "Awareness",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "conceal_reveal",
+      "nameRu": "Скрытие/обнаружение объекта",
+      "nameEn": "Conceal/Reveal Object",
+      "stat": "INT",
+      "category": "Awareness",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "lip_reading",
+      "nameRu": "Чтение по губам",
+      "nameEn": "Lip Reading",
+      "stat": "INT",
+      "category": "Awareness",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "contortionist",
+      "nameRu": "Акробатика",
+      "nameEn": "Contortionist",
+      "stat": "DEX",
+      "category": "Body",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "athletics",
+      "nameRu": "Атлетика",
+      "nameEn": "Athletics",
+      "stat": "DEX",
+      "category": "Body",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "endurance",
+      "nameRu": "Выносливость",
+      "nameEn": "Endurance",
+      "stat": "WILL",
+      "category": "Body",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "stealth",
+      "nameRu": "Скрытность",
+      "nameEn": "Stealth",
+      "stat": "DEX",
+      "category": "Body",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "resist_torture",
+      "nameRu": "Сопротивление пыткам/наркотикам",
+      "nameEn": "Resist Torture/Drugs",
+      "stat": "WILL",
+      "category": "Body",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "dance",
+      "nameRu": "Танец",
+      "nameEn": "Dance",
+      "stat": "DEX",
+      "category": "Body",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "riding",
+      "nameRu": "Верховая езда",
+      "nameEn": "Riding",
+      "stat": "REF",
+      "category": "Control",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "drive_land",
+      "nameRu": "Вождение",
+      "nameEn": "Drive Land Vehicle",
+      "stat": "REF",
+      "category": "Control",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "pilot_air",
+      "nameRu": "Пилотирование",
+      "nameEn": "Pilot Air Vehicle",
+      "stat": "REF",
+      "category": "Control",
+      "multiplier": 2,
+      "level": 0
+    },
+    {
+      "id": "pilot_sea",
+      "nameRu": "Судовождение",
+      "nameEn": "Pilot Sea Vehicle",
+      "stat": "REF",
+      "category": "Control",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "gamble",
+      "nameRu": "Азартные игры",
+      "nameEn": "Gamble",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "business",
+      "nameRu": "Бизнес",
+      "nameEn": "Business",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "accounting",
+      "nameRu": "Бухгалтерия",
+      "nameEn": "Accounting",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "bureaucracy",
+      "nameRu": "Бюрократия",
+      "nameEn": "Bureaucracy",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "wilderness_survival",
+      "nameRu": "Выживание в дикой местности",
+      "nameEn": "Wilderness Survival",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "deduction",
+      "nameRu": "Дедукция",
+      "nameEn": "Deduction",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "local_expert",
+      "nameRu": "Знание района (Твой дом)",
+      "nameEn": "Local Expert (Home District)",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "composition",
+      "nameRu": "Композиция",
+      "nameEn": "Composition",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "criminology",
+      "nameRu": "Криминология",
+      "nameEn": "Criminology",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "cryptography",
+      "nameRu": "Криптография",
+      "nameEn": "Cryptography",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "science",
+      "nameRu": "Наука",
+      "nameEn": "Science",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "education",
+      "nameRu": "Образование",
+      "nameEn": "Education",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "animal_handling",
+      "nameRu": "Обращение с животными",
+      "nameEn": "Animal Handling",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "library_search",
+      "nameRu": "Поиск информации",
+      "nameEn": "Library Search",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "tactics",
+      "nameRu": "Тактика",
+      "nameEn": "Tactics",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "language_streetslang",
+      "nameRu": "Язык: Уличный слэнг",
+      "nameEn": "Language (Streetslang)",
+      "stat": "INT",
+      "category": "Education",
+      "multiplier": 1,
+      "level": 4
+    },
+    {
+      "id": "martial_arts",
+      "nameRu": "Боевые искусства",
+      "nameEn": "Martial Arts",
+      "stat": "DEX",
+      "category": "Fighting",
+      "multiplier": 2,
+      "level": 0
+    },
+    {
+      "id": "brawling",
+      "nameRu": "Драка",
+      "nameEn": "Brawling",
+      "stat": "DEX",
+      "category": "Fighting",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "evasion",
+      "nameRu": "Уклонение",
+      "nameEn": "Evasion",
+      "stat": "DEX",
+      "category": "Fighting",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "melee_weapon",
+      "nameRu": "Холодное оружие",
+      "nameEn": "Melee Weapon",
+      "stat": "DEX",
+      "category": "Fighting",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "acting",
+      "nameRu": "Актёрское мастерство",
+      "nameEn": "Acting",
+      "stat": "COOL",
+      "category": "Performance",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "play_instrument",
+      "nameRu": "Игра на инструменте",
+      "nameEn": "Play Instrument",
+      "stat": "TECH",
+      "category": "Performance",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "autofire",
+      "nameRu": "Автоогонь",
+      "nameEn": "Autofire",
+      "stat": "REF",
+      "category": "Ranged",
+      "multiplier": 2,
+      "level": 0
+    },
+    {
+      "id": "shoulder_arms",
+      "nameRu": "Длинноствольное оружие",
+      "nameEn": "Shoulder Arms",
+      "stat": "REF",
+      "category": "Ranged",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "handgun",
+      "nameRu": "Короткоствольное оружие",
+      "nameEn": "Handgun",
+      "stat": "REF",
+      "category": "Ranged",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "archery",
+      "nameRu": "Луки и арбалеты",
+      "nameEn": "Archery",
+      "stat": "REF",
+      "category": "Ranged",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "heavy_weapons",
+      "nameRu": "Тяжёлое оружие",
+      "nameEn": "Heavy Weapons",
+      "stat": "REF",
+      "category": "Ranged",
+      "multiplier": 2,
+      "level": 0
+    },
+    {
+      "id": "bribery",
+      "nameRu": "Взяточничество",
+      "nameEn": "Bribery",
+      "stat": "COOL",
+      "category": "Social",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "wardrobe_style",
+      "nameRu": "Гардероб и стиль",
+      "nameEn": "Wardrobe & Style",
+      "stat": "COOL",
+      "category": "Social",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "interrogation",
+      "nameRu": "Допрос",
+      "nameEn": "Interrogation",
+      "stat": "COOL",
+      "category": "Social",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "conversation",
+      "nameRu": "Общение",
+      "nameEn": "Conversation",
+      "stat": "EMP",
+      "category": "Social",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "streetwise",
+      "nameRu": "Опыт на улицах",
+      "nameEn": "Streetwise",
+      "stat": "COOL",
+      "category": "Social",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "human_perception",
+      "nameRu": "Проницательность",
+      "nameEn": "Human Perception",
+      "stat": "EMP",
+      "category": "Social",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "trading",
+      "nameRu": "Торговля",
+      "nameEn": "Trading",
+      "stat": "COOL",
+      "category": "Social",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "persuasion",
+      "nameRu": "Убеждение",
+      "nameEn": "Persuasion",
+      "stat": "COOL",
+      "category": "Social",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "personal_grooming",
+      "nameRu": "Уход за собой",
+      "nameEn": "Personal Grooming",
+      "stat": "COOL",
+      "category": "Social",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "air_vehicle_tech",
+      "nameRu": "Авиатехника",
+      "nameEn": "Air Vehicle Tech",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "land_vehicle_tech",
+      "nameRu": "Автомеханика",
+      "nameEn": "Land Vehicle Tech",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "pick_lock",
+      "nameRu": "Взлом замков",
+      "nameEn": "Pick Lock",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "demolitions",
+      "nameRu": "Взрывотехника",
+      "nameEn": "Demolitions",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 2,
+      "level": 0
+    },
+    {
+      "id": "paint_draw_sculpt",
+      "nameRu": "Живопись/рис./скульптура",
+      "nameEn": "Paint/Draw/Sculpt",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "pick_pocket",
+      "nameRu": "Карманная кража",
+      "nameEn": "Pick Pocket",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "cybertech",
+      "nameRu": "Кибертехника",
+      "nameEn": "Cybertech",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "weaponstech",
+      "nameRu": "Оружейная техника",
+      "nameEn": "Weaponstech",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "basic_tech",
+      "nameRu": "Основы техники",
+      "nameEn": "Basic Tech",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "paramedic",
+      "nameRu": "Парамедицина",
+      "nameEn": "Paramedic",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 2,
+      "level": 0
+    },
+    {
+      "id": "first_aid",
+      "nameRu": "Первая помощь",
+      "nameEn": "First Aid",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "sea_vehicle_tech",
+      "nameRu": "Судоремонт",
+      "nameEn": "Sea Vehicle Tech",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "forgery",
+      "nameRu": "Фальсификация",
+      "nameEn": "Forgery",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "photography_film",
+      "nameRu": "Фотография/видео",
+      "nameEn": "Photography/Film",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "electronics_security",
+      "nameRu": "Электр./безопасность",
+      "nameEn": "Electronics/Security Tech",
+      "stat": "TECH",
+      "category": "Technique",
+      "multiplier": 2,
+      "level": 0
+    }
+  ],
+  "weapons": [
+    {
+      "id": "stowed-pistol",
+      "name": "Тяжелый Пистолет",
+      "category": "Heavy Pistol",
+      "damage": "3d6",
+      "standardRof": 2,
+      "magCapacity": 8,
+      "currentAmmo": 2,
+      "ammoType": "8 Т.Пистолет",
+      "concealable": true,
+      "costEb": 0,
+      "notes": "Synthetic item",
+      "quality": "Standard",
+      "skillId": "handgun",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/equipment/weapons/#weapons-odb-common",
+      "catalogId": "cat-weap-2",
+      "isEquipped": false,
+      "custom": {
+        "zero": 0,
+        "flag": false,
+        "nullable": null
+      }
+    },
+    {
+      "id": "ready-pistol",
+      "name": "Тяжелый Пистолет",
+      "category": "Heavy Pistol",
+      "damage": "3d6",
+      "standardRof": 2,
+      "magCapacity": 8,
+      "currentAmmo": 3,
+      "ammoType": "8 Т.Пистолет",
+      "concealable": true,
+      "costEb": 0,
+      "notes": "Synthetic item",
+      "quality": "Standard",
+      "skillId": "handgun",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/equipment/weapons/#weapons-odb-common",
+      "catalogId": "cat-weap-2",
+      "isEquipped": true
+    },
+    {
+      "id": "ready-grenade",
+      "name": "Бронебойная граната",
+      "category": "Thrown Grenade",
+      "damage": "6d6",
+      "standardRof": 1,
+      "magCapacity": 1,
+      "currentAmmo": 1,
+      "ammoType": "Grenade",
+      "concealable": true,
+      "notes": "Synthetic item",
+      "quality": "Standard",
+      "skillId": "athletics",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/equipment/weapons/#explosives",
+      "armorPenetration": "none",
+      "canCrit": true,
+      "attackRequiresRoll": true,
+      "consumable": true,
+      "costEb": 0,
+      "catalogId": "grenade-fcddf7b2ad092179",
+      "isEquipped": true
+    }
+  ],
+  "cyberware": [
+    {
+      "id": "inventory-cyberarm",
+      "catalogId": "cat-cyber-96",
+      "name": "Киберрука",
+      "category": "Cyberlimb",
+      "kind": "implant",
+      "installLocation": "arm-site",
+      "installationFacility": "Госпиталь",
+      "humanityCost": 7,
+      "humanityCostKnown": true,
+      "humanityCostFormula": "2d6",
+      "costEb": 0,
+      "description": "Synthetic implant",
+      "sourceBook": "“КорБук”",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#arm",
+      "installRule": {
+        "allowedHosts": [
+          "arm-site"
+        ],
+        "slots": 1,
+        "provides": [
+          {
+            "type": "arm",
+            "capacity": 4
+          }
+        ],
+        "repeatHumanityFree": true
+      },
+      "isInstalled": false
+    }
+  ],
+  "criticalInjuries": [
+    {
+      "rollNumber": 2,
+      "location": "head",
+      "nameRu": "Потеря глаза",
+      "nameEn": "Lost Eye",
+      "effectRu": "–4 к дальнобойным атакам и проверкам восприятия, связанным со зрением. Штраф к спасброску от смерти +1.",
+      "effectEn": "-4 to all Ranged Attacks and sight-based Perception checks. Death Save Penalty +1. Blinded if both lost.",
+      "quickFixDv": 0,
+      "treatmentDv": 17,
+      "quickFixTextRu": "–",
+      "quickFixTextEn": "–",
+      "treatmentTextRu": "Хирургия СЛ17",
+      "treatmentTextEn": "Surgery DV17",
+      "id": "inj-head-2",
+      "isActive": false
+    },
+    {
+      "rollNumber": 3,
+      "location": "head",
+      "nameRu": "Травма мозга",
+      "nameEn": "Brain Injury",
+      "effectRu": "–2 ко всем действиям. Штраф к спасброску от смерти +1.",
+      "effectEn": "-2 to all Actions. Death Save Penalty +1.",
+      "quickFixDv": 0,
+      "treatmentDv": 17,
+      "quickFixTextRu": "–",
+      "quickFixTextEn": "–",
+      "treatmentTextRu": "Хирургия СЛ17",
+      "treatmentTextEn": "Surgery DV17",
+      "id": "inj-head-3",
+      "isActive": false
+    },
+    {
+      "rollNumber": 4,
+      "location": "head",
+      "nameRu": "Повреждение глаза",
+      "nameEn": "Damaged Eye",
+      "effectRu": "–4 к дальнобойным атакам и проверкам восприятия, связанным со зрением. Штраф к спасброску от смерти +1.",
+      "effectEn": "-4 to all Ranged Attacks and sight-based Perception checks. Death Save Penalty +1.",
+      "quickFixDv": 15,
+      "treatmentDv": 13,
+      "quickFixTextRu": "Парамедицина СЛ15",
+      "quickFixTextEn": "Paramedic DV15",
+      "treatmentTextRu": "Хирургия СЛ13",
+      "treatmentTextEn": "Surgery DV13",
+      "id": "inj-head-4",
+      "isActive": false
+    },
+    {
+      "rollNumber": 5,
+      "location": "head",
+      "nameRu": "Сотрясение",
+      "nameEn": "Concussion",
+      "effectRu": "–2 ко всем действиям.",
+      "effectEn": "-2 to all Actions.",
+      "quickFixDv": 13,
+      "treatmentDv": 13,
+      "quickFixTextRu": "Первая помощь или Парамедицина СЛ13",
+      "quickFixTextEn": "First Aid or Paramedic DV13",
+      "treatmentTextRu": "Быстрая помощь лечит",
+      "treatmentTextEn": "Quick Fix treats",
+      "id": "inj-head-5",
+      "isActive": false
+    },
+    {
+      "rollNumber": 6,
+      "location": "head",
+      "nameRu": "Перелом челюсти",
+      "nameEn": "Broken Jaw",
+      "effectRu": "–4 ко всем действиям, связанным с речью.",
+      "effectEn": "-4 to all Actions involving speech.",
+      "quickFixDv": 13,
+      "treatmentDv": 13,
+      "quickFixTextRu": "Парамедицина СЛ13",
+      "quickFixTextEn": "Paramedic DV13",
+      "treatmentTextRu": "Парамедицина или Хирургия СЛ13",
+      "treatmentTextEn": "Paramedic or Surgery DV13",
+      "id": "inj-head-6",
+      "isActive": false
+    },
+    {
+      "rollNumber": 7,
+      "location": "head",
+      "nameRu": "Инородное тело",
+      "nameEn": "Foreign Object (Head)",
+      "effectRu": "В конце каждого хода, если двигаешься дальше 4 м пешком — снова получаешь бонусный урон от этой критической травмы напрямую по ПЗ.",
+      "effectEn": "At end of each turn moving >4m on foot, take the Critical Injury bonus damage again directly to HP.",
+      "quickFixDv": 13,
+      "treatmentDv": 13,
+      "quickFixTextRu": "Первая помощь или Парамедицина СЛ13",
+      "quickFixTextEn": "First Aid or Paramedic DV13",
+      "treatmentTextRu": "Быстрая помощь лечит",
+      "treatmentTextEn": "Quick Fix treats",
+      "id": "inj-head-7",
+      "isActive": false
+    },
+    {
+      "rollNumber": 8,
+      "location": "head",
+      "nameRu": "Хлыстовая травма",
+      "nameEn": "Whiplash",
+      "effectRu": "Штраф к спасброску от смерти +1.",
+      "effectEn": "Death Save Penalty +1.",
+      "quickFixDv": 13,
+      "treatmentDv": 13,
+      "quickFixTextRu": "Парамедицина СЛ13",
+      "quickFixTextEn": "Paramedic DV13",
+      "treatmentTextRu": "Парамедицина или Хирургия СЛ13",
+      "treatmentTextEn": "Paramedic or Surgery DV13",
+      "id": "inj-head-8",
+      "isActive": false
+    },
+    {
+      "rollNumber": 9,
+      "location": "head",
+      "nameRu": "Трещина черепа",
+      "nameEn": "Cracked Skull",
+      "effectRu": "Урон от прицельных выстрелов в голову увеличивается до х3. Штраф к спасброску от смерти +1.",
+      "effectEn": "Aimed Shots to the head multiply damage by 3 instead of 2. Death Save Penalty +1.",
+      "quickFixDv": 15,
+      "treatmentDv": 15,
+      "quickFixTextRu": "Парамедицина СЛ15",
+      "quickFixTextEn": "Paramedic DV15",
+      "treatmentTextRu": "Парамедицина или Хирургия СЛ15",
+      "treatmentTextEn": "Paramedic or Surgery DV15",
+      "id": "inj-head-9",
+      "isActive": false
+    },
+    {
+      "rollNumber": 10,
+      "location": "head",
+      "nameRu": "Повреждение уха",
+      "nameEn": "Damaged Ear",
+      "effectRu": "В конце каждого хода, если двигаешься дальше 4 м пешком — снова получаешь бонусный урон от этой критической травмы напрямую по ПЗ.",
+      "effectEn": "At end of each turn moving >4m on foot, take the Critical Injury bonus damage again directly to HP.",
+      "quickFixDv": 13,
+      "treatmentDv": 13,
+      "quickFixTextRu": "Парамедицина СЛ13",
+      "quickFixTextEn": "Paramedic DV13",
+      "treatmentTextRu": "Хирургия СЛ13",
+      "treatmentTextEn": "Surgery DV13",
+      "id": "inj-head-10",
+      "isActive": false
+    },
+    {
+      "rollNumber": 11,
+      "location": "head",
+      "nameRu": "Раздавленная трахея",
+      "nameEn": "Crushed Windpipe",
+      "effectRu": "Ты не можешь говорить. Штраф к спасброску от смерти +1.",
+      "effectEn": "You cannot speak. Death Save Penalty +1.",
+      "quickFixDv": 0,
+      "treatmentDv": 15,
+      "quickFixTextRu": "–",
+      "quickFixTextEn": "–",
+      "treatmentTextRu": "Хирургия СЛ15",
+      "treatmentTextEn": "Surgery DV15",
+      "id": "inj-head-11",
+      "isActive": false
+    },
+    {
+      "rollNumber": 12,
+      "location": "head",
+      "nameRu": "Потеря уха",
+      "nameEn": "Lost Ear",
+      "effectRu": "–4 к проверкам восприятия, связанным со слухом. Штраф к спасброску от смерти +1. Если потеряны оба уха — глухота.",
+      "effectEn": "-4 to hearing-based Perception checks. Death Save Penalty +1. Deafened if both lost.",
+      "quickFixDv": 0,
+      "treatmentDv": 17,
+      "quickFixTextRu": "–",
+      "quickFixTextEn": "–",
+      "treatmentTextRu": "Хирургия СЛ17",
+      "treatmentTextEn": "Surgery DV17",
+      "id": "inj-head-12",
+      "isActive": false
+    },
+    {
+      "rollNumber": 2,
+      "location": "body",
+      "nameRu": "Оторванная рука",
+      "nameEn": "Dismembered Arm",
+      "effectRu": "Предметы в руке падают. Рука потеряна. Штраф к спасброску от смерти +1.",
+      "effectEn": "Objects in hand are dropped. Arm is lost. Death Save Penalty +1.",
+      "quickFixDv": 0,
+      "treatmentDv": 17,
+      "quickFixTextRu": "–",
+      "quickFixTextEn": "–",
+      "treatmentTextRu": "Хирургия СЛ17",
+      "treatmentTextEn": "Surgery DV17",
+      "id": "inj-body-2",
+      "isActive": false
+    },
+    {
+      "rollNumber": 3,
+      "location": "body",
+      "nameRu": "Оторванная кисть",
+      "nameEn": "Dismembered Hand",
+      "effectRu": "Предметы в руке падают. Кисть потеряна. Штраф к спасброску от смерти +1.",
+      "effectEn": "Objects in hand are dropped. Hand is lost. Death Save Penalty +1.",
+      "quickFixDv": 0,
+      "treatmentDv": 17,
+      "quickFixTextRu": "–",
+      "quickFixTextEn": "–",
+      "treatmentTextRu": "Хирургия СЛ17",
+      "treatmentTextEn": "Surgery DV17",
+      "id": "inj-body-3",
+      "isActive": false
+    },
+    {
+      "rollNumber": 4,
+      "location": "body",
+      "nameRu": "Разрыв лёгкого",
+      "nameEn": "Collapsed Lung",
+      "effectRu": "–2 к СКО (мин. 1). Штраф к спасброску от смерти +1.",
+      "effectEn": "-2 to MOVE (minimum 1). Death Save Penalty +1.",
+      "quickFixDv": 15,
+      "treatmentDv": 15,
+      "quickFixTextRu": "Парамедицина СЛ15",
+      "quickFixTextEn": "Paramedic DV15",
+      "treatmentTextRu": "Хирургия СЛ15",
+      "treatmentTextEn": "Surgery DV15",
+      "id": "inj-body-4",
+      "isActive": false
+    },
+    {
+      "rollNumber": 5,
+      "location": "body",
+      "nameRu": "Перелом рёбер",
+      "nameEn": "Broken Ribs",
+      "effectRu": "В конце каждого хода, если двигаешься дальше 4 м пешком — снова получаешь бонусный урон от этой критической травмы напрямую по ПЗ.",
+      "effectEn": "At end of each turn moving >4m on foot, take the Critical Injury bonus damage again directly to HP.",
+      "quickFixDv": 13,
+      "treatmentDv": 15,
+      "quickFixTextRu": "Парамедицина СЛ13",
+      "quickFixTextEn": "Paramedic DV13",
+      "treatmentTextRu": "Парамедицина СЛ15 или Хирургия СЛ17",
+      "treatmentTextEn": "Paramedic DV15 or Surgery DV17",
+      "id": "inj-body-5",
+      "isActive": false
+    },
+    {
+      "rollNumber": 6,
+      "location": "body",
+      "nameRu": "Перелом руки",
+      "nameEn": "Broken Arm",
+      "effectRu": "Сломанная рука бесполезна. Всё, что в этой руке, немедленно выпадает из рук.",
+      "effectEn": "Broken arm is useless. Everything in that hand immediately drops.",
+      "quickFixDv": 13,
+      "treatmentDv": 15,
+      "quickFixTextRu": "Парамедицина СЛ13",
+      "quickFixTextEn": "Paramedic DV13",
+      "treatmentTextRu": "Парамедицина СЛ15 или Хирургия СЛ17",
+      "treatmentTextEn": "Paramedic DV15 or Surgery DV17",
+      "id": "inj-body-6",
+      "isActive": false
+    },
+    {
+      "rollNumber": 7,
+      "location": "body",
+      "nameRu": "Инородное тело",
+      "nameEn": "Foreign Object (Body)",
+      "effectRu": "В конце каждого хода, если двигаешься дальше 4 м пешком — снова получаешь бонусный урон от этой критической травмы напрямую по ПЗ.",
+      "effectEn": "At end of each turn moving >4m on foot, take the Critical Injury bonus damage again directly to HP.",
+      "quickFixDv": 13,
+      "treatmentDv": 13,
+      "quickFixTextRu": "Первая помощь или Парамедицина СЛ13",
+      "quickFixTextEn": "First Aid or Paramedic DV13",
+      "treatmentTextRu": "Быстрая помощь лечит",
+      "treatmentTextEn": "Quick Fix treats",
+      "id": "inj-body-7",
+      "isActive": false
+    },
+    {
+      "rollNumber": 8,
+      "location": "body",
+      "nameRu": "Перелом ноги",
+      "nameEn": "Broken Leg",
+      "effectRu": "–4 к СКО (мин. 1).",
+      "effectEn": "-4 to MOVE (minimum 1).",
+      "quickFixDv": 13,
+      "treatmentDv": 15,
+      "quickFixTextRu": "Парамедицина СЛ13",
+      "quickFixTextEn": "Paramedic DV13",
+      "treatmentTextRu": "Парамедицина СЛ15 или Хирургия СЛ17",
+      "treatmentTextEn": "Paramedic DV15 or Surgery DV17",
+      "id": "inj-body-8",
+      "isActive": false
+    },
+    {
+      "rollNumber": 9,
+      "location": "body",
+      "nameRu": "Разрыв мышц",
+      "nameEn": "Torn Muscle",
+      "effectRu": "–2 к атакам в рукопашном бою.",
+      "effectEn": "-2 to Melee Attacks.",
+      "quickFixDv": 13,
+      "treatmentDv": 13,
+      "quickFixTextRu": "Первая помощь или Парамедицина СЛ13",
+      "quickFixTextEn": "First Aid or Paramedic DV13",
+      "treatmentTextRu": "Быстрая помощь лечит",
+      "treatmentTextEn": "Quick Fix treats",
+      "id": "inj-body-9",
+      "isActive": false
+    },
+    {
+      "rollNumber": 10,
+      "location": "body",
+      "nameRu": "Травма позвоночника",
+      "nameEn": "Spinal Injury",
+      "effectRu": "В следующий ход можно делать только действие перемещения. Базовый штраф к спасброску от смерти +1.",
+      "effectEn": "Next turn, you can only take a Move Action. Base Death Save Penalty +1.",
+      "quickFixDv": 15,
+      "treatmentDv": 15,
+      "quickFixTextRu": "Парамедицина СЛ15",
+      "quickFixTextEn": "Paramedic DV15",
+      "treatmentTextRu": "Хирургия СЛ15",
+      "treatmentTextEn": "Surgery DV15",
+      "id": "inj-body-10",
+      "isActive": false
+    },
+    {
+      "rollNumber": 11,
+      "location": "body",
+      "nameRu": "Раздробленные пальцы",
+      "nameEn": "Crushed Fingers",
+      "effectRu": "–4 ко всем действиям, связанным с этой рукой.",
+      "effectEn": "-4 to all Actions involving this hand.",
+      "quickFixDv": 13,
+      "treatmentDv": 15,
+      "quickFixTextRu": "Парамедицина СЛ13",
+      "quickFixTextEn": "Paramedic DV13",
+      "treatmentTextRu": "Хирургия СЛ15",
+      "treatmentTextEn": "Surgery DV15",
+      "id": "inj-body-11",
+      "isActive": false
+    },
+    {
+      "rollNumber": 12,
+      "location": "body",
+      "nameRu": "Оторванная нога",
+      "nameEn": "Dismembered Leg",
+      "effectRu": "–6 к СКО (мин. 1). Нельзя уклоняться от атак. Штраф к спасброску от смерти +1.",
+      "effectEn": "-6 to MOVE (minimum 1). Cannot dodge attacks. Death Save Penalty +1.",
+      "quickFixDv": 0,
+      "treatmentDv": 15,
+      "quickFixTextRu": "–",
+      "quickFixTextEn": "–",
+      "treatmentTextRu": "Хирургия СЛ15",
+      "treatmentTextEn": "Surgery DV15",
+      "id": "inj-body-12",
+      "isActive": false
+    }
+  ],
+  "cyberdeck": {
+    "slotsMax": 7,
+    "name": "Kirama Cyberdeck",
+    "hardwareSlotsMax": 3,
+    "hardwareSlotsUsed": 1,
+    "programSlotsMax": 5,
+    "installedHardware": [
+      "Backup Drive (+1 slot)"
+    ]
+  },
+  "programs": [
+    {
+      "id": "prog-eraser",
+      "name": "Eraser",
+      "category": "Booster",
+      "atkBonus": 0,
+      "defBonus": 0,
+      "rezMax": 7,
+      "rezCurrent": 7,
+      "effect": "+2 к проверкам Cloak для маскировки следов",
+      "isInstalled": true
+    },
+    {
+      "id": "prog-seeya",
+      "name": "SeeYa",
+      "category": "Booster",
+      "atkBonus": 0,
+      "defBonus": 0,
+      "rezMax": 7,
+      "rezCurrent": 7,
+      "effect": "+2 к Pathfinder для обнаружения скрытых объектов",
+      "isInstalled": true
+    },
+    {
+      "id": "prog-speedy",
+      "name": "Speedy Gonzalvez",
+      "category": "Booster",
+      "atkBonus": 0,
+      "defBonus": 0,
+      "rezMax": 7,
+      "rezCurrent": 7,
+      "effect": "+2 к проверкам Speed при столкновении с Black ICE",
+      "isInstalled": false
+    },
+    {
+      "id": "prog-armor",
+      "name": "Armor",
+      "category": "Defender",
+      "atkBonus": 0,
+      "defBonus": 0,
+      "rezMax": 7,
+      "rezCurrent": 7,
+      "effect": "Снижает урон мозгу персонажа от Black ICE на 4",
+      "isInstalled": true
+    },
+    {
+      "id": "prog-shield",
+      "name": "Shield",
+      "category": "Defender",
+      "atkBonus": 0,
+      "defBonus": 0,
+      "rezMax": 7,
+      "rezCurrent": 7,
+      "effect": "Останавливает первую успешную атаку против вас",
+      "isInstalled": false
+    },
+    {
+      "id": "prog-sword",
+      "name": "Sword",
+      "category": "Attacker",
+      "atkBonus": 1,
+      "defBonus": 0,
+      "rezMax": 0,
+      "rezCurrent": 0,
+      "effect": "3d6 REZ против Black ICE, 2d6 REZ против обычной программы. После атаки деактивируется.",
+      "isInstalled": true
+    },
+    {
+      "id": "prog-deckkrash",
+      "name": "DeckKRASH",
+      "category": "Attacker",
+      "atkBonus": 0,
+      "defBonus": 0,
+      "rezMax": 0,
+      "rezCurrent": 0,
+      "effect": "Принудительно разрывает джек-ин нетраннера цели",
+      "isInstalled": false
+    },
+    {
+      "id": "prog-hellhound",
+      "name": "Hellhound",
+      "category": "Black ICE",
+      "perception": 6,
+      "speed": 6,
+      "atkBonus": 6,
+      "defBonus": 2,
+      "rezMax": 20,
+      "rezCurrent": 20,
+      "effect": "2d6 direct brain damage; sets the Netrunner on fire (2 HP at end of each turn until extinguished with an action).",
+      "isInstalled": false
+    }
+  ],
+  "gear": [
+    {
+      "id": "gear-subscription",
+      "name": "Synthetic subscription",
+      "category": "software",
+      "quantity": 2,
+      "costEb": 0,
+      "notes": "Synthetic",
+      "catalogId": "catalog-gear",
+      "sourceUrl": "https://example.com/gear",
+      "priceLabel": "0 eb / month",
+      "billingPeriod": "monthly",
+      "custom": {
+        "zero": 0,
+        "flag": false,
+        "nullable": null
+      }
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "owned-car",
+      "catalogId": "veh-ground-1",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/workshop/garage/#type-ground",
+      "priceLabel": "20,000еЬ (Супер Роскошь)",
+      "nomadRankLabel": "",
+      "name": "Synthetic vehicle",
+      "model": "Дорожный Мотоцикл",
+      "category": "Ground",
+      "sdpMax": 35,
+      "sdpCurrent": 5,
+      "armorSp": 0,
+      "seats": "2 + 1",
+      "speedCombat": "20 СКО",
+      "speedNarrative": "161 Км/ч",
+      "costEb": 20000,
+      "notes": "Synthetic",
+      "nomadRankReq": 0,
+      "upgrades": [
+        "Synthetic upgrade"
+      ],
+      "custom": {
+        "flag": false
+      }
+    }
+  ],
+  "lifepath": {
+    "culturalOrigin": "Северная Америка (Английский, Уличный сленг)",
+    "languages": "Streetslang, English",
+    "personality": "Холодный профессионал с ледяным взглядом",
+    "clothingStyle": "Милитари / Тактика (Tactical: разгрузки, кевларовые вставки)",
+    "hairstyle": "Короткий армейский ёжик",
+    "affectation": "Темные зеркальные очки даже в темных закоулках",
+    "valueMost": "Собственная свобода и независимость",
+    "feelingsAboutPeople": "Я верен только тем, кто доказал свою преданность в бою",
+    "valuedPerson": "Боевой напарник, спасший жизнь в перестрелке",
+    "valuedPossession": "Отцовский модифицированный кольт",
+    "familyBackground": "Семья наемников или соло-ветеранов Четвертой корпоративной",
+    "childhoodEnv": "В темном подвале, прячась от перестрелок банд",
+    "familyCrisis": "Родители погибли во время налета банды Арасаки",
+    "lifeGoals": "Стать живой легендой Посмертия (Afterlife)",
+    "friends": "Фиксер из Маленького Китая",
+    "tragicLoveAffairs": "Любимый человек погиб в результате предательства",
+    "enemies": "Капитан охраны Arasaka Security (Личная вендетта)",
+    "roleLifepathNotes": "Специализация: штурм и скрытное проникновение.",
+    "friendEntries": [
+      "Friend one",
+      "Friend two"
+    ],
+    "loveAffairEntries": [
+      "Legacy detail"
+    ],
+    "enemyEntries": [
+      {
+        "who": "Enemy",
+        "why": "Reason",
+        "resources": "Resources",
+        "response": "Response"
+      }
+    ]
+  },
+  "roleAbilities": {
+    "solo": {
+      "threatDetection": 1,
+      "initiativeReaction": 1,
+      "precisionAttack": 1,
+      "spotWeakness": 1,
+      "damageAbsorb": 0
+    },
+    "netrunner": {
+      "interfaceRank": 4
+    },
+    "tech": {
+      "makerRank": 4,
+      "fieldExpertise": 2,
+      "upgrade": 2,
+      "fabrication": 2,
+      "invention": 2
+    },
+    "medtech": {
+      "medicineRank": 4,
+      "surgery": 2,
+      "medicalTech": 1,
+      "pharmaceuticals": 1,
+      "speedhealDoses": 2,
+      "cryopumpDoses": 1
+    },
+    "generic": {
+      "rank": 4,
+      "details": "Способность роли ранга 4."
+    }
+  },
+  "cashEb": 500,
+  "bankEb": 1200,
+  "lifestyle": "Good Prepak (Качественные полуфабрикаты - 600 eb/мес)",
+  "housing": "Studio Apartment (Квартира-студия в Хейвуде - 1000 eb/мес)",
+  "rentDueEb": 1000,
+  "createdAt": 1792919118990,
+  "updatedAt": 1792919118990,
+  "spareArmor": [
+    {
+      "id": "spare-body",
+      "name": "Средний Бронекостюм",
+      "location": "body",
+      "spMax": 12,
+      "spCurrent": 5,
+      "penalty": -2,
+      "costEb": 0,
+      "notes": "Synthetic item",
+      "catalogId": "cat-armor-5",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/equipment/armor/",
+      "custom": [
+        0,
+        false,
+        null
+      ]
+    },
+    {
+      "id": "spare-shield",
+      "name": "Synthetic shield",
+      "location": "shield",
+      "spMax": 10,
+      "spCurrent": 3,
+      "penalty": 0,
+      "costEb": 0,
+      "notes": "Synthetic item",
+      "catalogId": "synthetic-shield",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/equipment/armor/"
+    }
+  ],
+  "futureField": {
+    "zero": 0,
+    "flag": false,
+    "nested": [
+      null,
+      {
+        "preserved": true
+      }
+    ]
+  }
+}

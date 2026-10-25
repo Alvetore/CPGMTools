@@ -515,7 +515,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
                   <div className="space-y-1">
                     {member.weapons.map(selectedWeaponProfile).map((w, i) => (
                       <div key={i} className="text-[11px] font-tech text-zinc-300 flex items-center justify-between bg-zinc-950 px-2 py-0.5 rounded">
-                        <span>{w.name}</span>
+                        <span>{w.name}{w.isEquipped === false ? ' · В рюкзаке' : ''}</span>
                         <strong className="text-amber-400">{w.damage || 'Спецэффект — вручную'}</strong>
                       </div>
                     ))}

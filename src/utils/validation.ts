@@ -16,7 +16,8 @@ const damage = (v: unknown) => string(v) && (v === '' || /^(?:[1-9]\d?|100)d6(?:
 const weaponOptions = (v: Obj): boolean => optional(v.category,string) && optional(v.skillId,string) &&
   optional(v.quality,q => ['Poor','Standard','Excellent'].includes(q)) && optional(v.ammoType,string) &&
   ['standardRof','magCapacity','bodyRequirement','autofireLimit'].every(k => optional(v[k],nonnegative)) &&
-  optional(v.armorPenetration,p => ['none','half','ignore'].includes(p)) && optional(v.canCrit,bool) && optional(v.attackRequiresRoll,bool);
+  optional(v.armorPenetration,p => ['none','half','ignore'].includes(p)) && optional(v.canCrit,bool) && optional(v.attackRequiresRoll,bool) &&
+  optional(v.isEquipped,bool) && optional(v.consumable,bool);
 export const validWeapon = (v: unknown): boolean => isObject(v) && string(v.id) && string(v.name) && string(v.category) &&
   damage(v.damage) && numericFields(v, ['standardRof','magCapacity','currentAmmo']) && weaponOptions(v) && optional(v.sourceCyberwareId,string) &&
   optional(v.damageProfiles,p => list(p,o => isObject(o) && string(o.name) && damage(o.damage) && weaponOptions(o))) &&

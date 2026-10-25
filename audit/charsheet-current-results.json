@@ -1,0 +1,54 @@
+{
+  "sourceRevision": "0432a4addc80e585cdb8dfa01a1b1db8ff9e59cc",
+  "method": "real current factory, source validation and single/batch exporters; synthetic isolated records, GM import, storage, combat weapon equality and backup restore; does not validate all legal implant combinations",
+  "results": [
+    {
+      "id": "live sheet: ready weapons including grenades",
+      "passed": true,
+      "expected": 218,
+      "actual": 218
+    },
+    {
+      "id": "live sheet: backpack weapons",
+      "passed": true,
+      "expected": 218,
+      "actual": 218
+    },
+    {
+      "id": "live sheet: spare armor",
+      "passed": true,
+      "expected": 35,
+      "actual": 35
+    },
+    {
+      "id": "live sheet: uninstalled cyberware",
+      "passed": true,
+      "expected": 173,
+      "actual": 173
+    },
+    {
+      "id": "live sheet: legacy cyberware with linked weapons",
+      "passed": true,
+      "expected": 173,
+      "actual": 173
+    },
+    {
+      "id": "live sheet: gear",
+      "passed": true,
+      "expected": 261,
+      "actual": 261
+    },
+    {
+      "id": "live sheet: vehicles",
+      "passed": true,
+      "expected": 59,
+      "actual": 59
+    },
+    {
+      "id": "live sheet: current fixture accepted and Export All preserves the same payload",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    }
+  ]
+}

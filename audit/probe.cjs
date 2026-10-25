@@ -37,6 +37,7 @@ const react = {
 };
 const globals = {
   console, Math: Object.create(Math), Date, Blob,
+  crypto: require('node:crypto').webcrypto,
   setTimeout: () => 0,
   alert: () => {}, confirm: () => true,
   window: { confirm: () => true, prompt: () => null, addEventListener() {}, removeEventListener() {} },
@@ -609,6 +610,131 @@ check('charsheet: party card shows the selected profile and explicit special-eff
   return [nodes(o.tree,n=>n.type==='strong'&&textOf(n)==='6d6').length===1,
     nodes(o.tree,n=>n.type==='strong'&&textOf(n)==='Спецэффект — вручную').length,party[0].emp];
 });
+
+const currentSheet = JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/charsheet-current.json'),'utf8'));
+check('current sheet: backpack, spare armor, vehicles and relationships survive both import entry points and backup restore', true, () => {
+  let party=[];
+  const o=mount('src/components/party/PartyView.tsx','PartyView',{party,setParty:f=>party=f(party)});
+  nodes(o.tree,n=>n.type==='input'&&n.props.type==='file')[0].props.onChange({target:{files:[{text:JSON.stringify(currentSheet)}]}});
+  if(JSON.stringify(party[0].sourceCharSheet)!==JSON.stringify(currentSheet))return false;
+  const manager=mount('src/components/common/DataManagementModal.tsx','DataManagementModal',{onClose(){},onDataRestored(){}});
+  nodes(manager.tree,n=>n.type==='input'&&n.props.type==='file')[0].props.onChange({target:{files:[{text:JSON.stringify([currentSheet])}]}});
+  const members=persist.loadStoredData('cpgm_party',[]);
+  const backup=JSON.parse(JSON.stringify({exportVersion:'2.0.0',party:members}));
+  persist.clearGmDatabase();persist.restoreGmDatabase(backup);
+  return JSON.stringify(persist.loadStoredData('cpgm_party',[])[0].sourceCharSheet)===JSON.stringify(currentSheet);
+});
+check('current sheet: stowed weapons stay owned but are absent from attack choices', [1,true,true,3], () => {
+  const [member]=persist.importPartyMembers(currentSheet);
+  const o=attack(persist.partyMemberToCombatant(member));
+  const weaponButtons=nodes(o.tree,n=>n.type==='button'&&textOf(n).includes('СКОР:'));
+  return [o.get('selectedWeaponIndex'),!weaponButtons.some(n=>n.props.key==='stowed-pistol'),
+    weaponButtons.some(n=>n.props.key==='ready-pistol'),member.weapons.length];
+});
+check('current sheet: combat consumes the original ready weapon index and sync preserves backpack and source', [2,2,true,3], () => {
+  const [member]=persist.importPartyMembers(currentSheet);
+  const fighter=persist.partyMemberToCombatant(member);const target=actor('target',{bodySp:0});
+  let state={isActive:false,round:1,currentTurnIndex:0,combatants:[fighter,target],log:[]};
+  const tracker=mount('src/components/combat/CombatTrackerView.tsx','CombatTrackerView',{combatState:state,setCombatState:f=>state=f(state)});
+  tracker.set('attackModalData',{attacker:fighter,target});tracker.render();
+  const props=nodes(tracker.tree,n=>n.type?.name==='AttackResolverModal')[0].props;
+  const resolver=mount('src/components/combat/AttackResolverModal.tsx','AttackResolverModal',props);
+  resolver.set('attackMode','player_total');resolver.set('directPlayerTotal',30);resolver.render();rollAttack(resolver);
+  click(resolver,'ПРИМЕНИТЬ УРОН К ЦЕЛИ');
+  persist.saveStoredData('cpgm_party',[member]);persist.saveStoredData('cpgm_combat',state);
+  const app=mount('src/App.tsx','App');
+  const synced=nodes(app.tree,n=>n.type?.name==='CombatTrackerView')[0].props.onSyncParty()[0];
+  return [synced.weapons[0].currentAmmo,synced.weapons[1].currentAmmo,
+    JSON.stringify(synced.sourceCharSheet)===JSON.stringify(currentSheet),synced.weapons.length];
+});
+check('current sheet: only stowed weapons fall back to Brawling without spending inventory ammo', [-1,14,2,2], () => {
+  const o=attack({weapons:[currentSheet.weapons[0]],skills:[{id:'brawling',base:14}]});
+  o.set('isAmbush',true);o.render();rollAttack(o);
+  return [o.get('selectedWeaponIndex'),o.get('attackRoll').baseVal,o.get('damageRoll').diceRolls.length,
+    weaponsUtil.spendWeaponAmmo(currentSheet.weapons[0],1).currentAmmo];
+});
+check('current sheet: manually selecting a stowed weapon cannot bypass readiness', [null,true], () => {
+  const o=attack({weapons:currentSheet.weapons});o.set('selectedWeaponIndex',0);o.render();rollAttack(o);
+  return [o.get('attackRoll'),o.get('attackError').includes('рюкзаке')];
+});
+check('current sheet: swapping and selecting attackers preserves ready indexes and unarmed bases', [-1,true,19,1,false,12], () => {
+  const o=attack({weapons:currentSheet.weapons,skills:[{id:'handgun',base:12}]},
+    {weapons:[currentSheet.weapons[0]],skills:[{id:'brawling',base:19}]});
+  nodes(o.tree,n=>n.type==='button'&&n.props.title==='Поменять местами атакующего и цель')[0].props.onClick();o.render();
+  const swapped=[o.get('selectedWeaponIndex'),o.get('isMelee'),o.get('attackerSkillBase')];
+  nodes(o.tree,n=>n.type==='select'&&n.props.value==='b')[0].props.onChange({target:{value:'a'}});o.render();
+  return [...swapped,o.get('selectedWeaponIndex'),o.get('isMelee'),o.get('attackerSkillBase')];
+});
+check('current sheet: grenades remain manual and never spend resources through the single-target resolver', [null,null,true], () => {
+  const o=attack({weapons:[currentSheet.weapons[2]]});rollAttack(o);
+  return [o.get('attackRoll'),o.get('damageRoll'),o.get('attackError').includes('вручную')];
+});
+check('current sheet: readiness and consumable flags validate before replacing party', [true,true], () => {
+  const valid=load('src/utils/validation.ts').validWeapon;
+  return [!valid({...currentSheet.weapons[0],isEquipped:'false'}),!valid({...currentSheet.weapons[2],consumable:1})];
+});
+check('current sheet: a profile cannot override ownership, backpack state or consumability', ['owned',false,true,'implant'], () => {
+  const selected=weaponsUtil.selectedWeaponProfile({...currentSheet.weapons[0],id:'owned',isEquipped:false,consumable:true,sourceCyberwareId:'implant',
+    damageProfiles:[{name:'mode',damage:'3d6',id:'other',isEquipped:true,consumable:false,sourceCyberwareId:'other-implant'}]});
+  return [selected.id,selected.isEquipped,selected.consumable,selected.sourceCyberwareId];
+});
+
+// Optional contract check against a real current checkout; CI retains the pinned
+// fixtures above and does not need access to a second repository or the network.
+// node audit/probe.cjs --charsheet C:/path/to/CyberpunkREDCharSheet
+const sheetArgument=process.argv.indexOf('--charsheet');
+if(sheetArgument!==-1){
+  if(!process.argv[sheetArgument+1])throw Error('--charsheet requires a checkout path');
+  const sheetRoot=path.resolve(process.argv[sheetArgument+1]);
+  const sourceLoad=file=>load(path.join(sheetRoot,file));
+  const sourceRevision=require('node:child_process').execFileSync('git',['-C',sheetRoot,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
+  const catalog=sourceLoad('src/data/datapoolCatalog.ts');
+  const factory=sourceLoad('src/data/initialData.ts').createEmptyCharacter;
+  const exporter=sourceLoad('src/utils/storage.ts');
+  const sourceValid=sourceLoad('src/utils/characterValidation.ts').isCharacter;
+  const sourceCyberware=sourceLoad('src/utils/cyberware.ts');
+  const base=()=>({...factory('Synthetic compatibility check','Solo'),id:'live-compat',weapons:[],cyberware:[],gear:[],vehicles:[],spareArmor:[]});
+  const originalGlobals={Blob:globals.Blob,URL:globals.URL,document:globals.document};
+  let exportedText;
+  globals.Blob=class{constructor(parts){exportedText=parts.join('');}};
+  globals.URL={createObjectURL:()=> 'blob:compat',revokeObjectURL(){}};
+  globals.document={createElement:()=>({click(){}}),body:{appendChild(){},removeChild(){}}};
+  const roundTrip=character=>{
+    if(!sourceValid(character))throw Error('Synthetic character rejected by source sheet');
+    exporter.exportSingleCharacter(character);
+    const exported=JSON.parse(exportedText),[member]=persist.importPartyMembers(exported);
+    if(!persist.saveStoredData('cpgm_party',[member]))throw Error('GM save failed');
+    const loaded=persist.loadStoredData('cpgm_party',[])[0];
+    const fighter=persist.partyMemberToCombatant(loaded);
+    const backup=JSON.parse(JSON.stringify({exportVersion:'2.0.0',party:[loaded]}));
+    persist.clearGmDatabase();persist.restoreGmDatabase(backup);
+    if(JSON.stringify(persist.loadStoredData('cpgm_party',[])[0].sourceCharSheet)!==JSON.stringify(exported)||
+      JSON.stringify(fighter.weapons)!==JSON.stringify(exported.weapons))throw Error('Data changed during import/combat/restore');
+  };
+  const runCatalog=(name,entries,build)=>check('live sheet: '+name,entries.length,()=>{
+    for(const entry of entries){try{roundTrip(build(entry));}catch(e){throw Error(`${name} ${entry.id}: ${e.message}`);}}
+    return entries.length;
+  });
+  const firstResult=results.length;
+  try{
+    runCatalog('ready weapons including grenades',catalog.DATAPOOL_WEAPONS,w=>({...base(),weapons:[{...w,isEquipped:true}]}));
+    runCatalog('backpack weapons',catalog.DATAPOOL_WEAPONS,w=>({...base(),weapons:[{...w,isEquipped:false}]}));
+    runCatalog('spare armor',catalog.DATAPOOL_ARMORS,a=>({...base(),spareArmor:[{...a,id:'spare-'+a.id}]}));
+    runCatalog('uninstalled cyberware',catalog.DATAPOOL_CYBERWARE,c=>({...base(),cyberware:[{...c,isInstalled:false}]}));
+    runCatalog('legacy cyberware with linked weapons',catalog.DATAPOOL_CYBERWARE,c=>sourceCyberware.syncCyberwareWeapons({...base(),cyberware:[{...c,isInstalled:undefined}]}));
+    runCatalog('gear',sourceLoad('src/data/gearCatalog.ts').GEAR_CATALOG,g=>({...base(),gear:[{...g,quantity:2}]}));
+    const vehicleFromCatalog=sourceLoad('src/utils/vehicles.ts').vehicleFromCatalog;
+    runCatalog('vehicles',sourceLoad('src/data/vehicleCatalog.ts').VEHICLE_CATALOG,v=>({...base(),vehicles:[{...vehicleFromCatalog(v,'ru'),id:'owned-'+v.id}]}));
+    check('live sheet: current fixture accepted and Export All preserves the same payload',true,()=>{
+      if(!sourceValid(currentSheet))return false;
+      exporter.exportAllCharacters([currentSheet,{...currentSheet,id:'batch-second'}]);
+      const data=JSON.parse(exportedText);return JSON.stringify(persist.importPartyMembers(data).map(m=>m.sourceCharSheet))===JSON.stringify(data);
+    });
+  }finally{Object.assign(globals,originalGlobals);}
+  fs.writeFileSync(path.join(__dirname,'charsheet-current-results.json'),JSON.stringify({sourceRevision,
+    method:'real current factory, source validation and single/batch exporters; synthetic isolated records, GM import, storage, combat weapon equality and backup restore; does not validate all legal implant combinations',
+    results:results.slice(firstResult)},null,2)+'\n');
+}
 
 const errors = results.filter(r => r.error);
 const output = { generatedAt: new Date().toISOString(), method: 'actual TS/TSX functions and synchronous component-handler/effect harness; no browser or real storage',

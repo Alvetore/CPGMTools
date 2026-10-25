@@ -6,10 +6,16 @@ import { CPR_RANGE_DV_TABLE, CPR_CRITICAL_INJURIES_HEAD, CPR_CRITICAL_INJURIES_B
 import { executeCPRCheck, rollDamageFormula } from '../../utils/dice';
 import { resolveCprDamage, actionModifier, activeInjuries, skillBase, attackBase, getWoundedStatus } from '../../utils/cprCombat';
 import { sfx } from '../../utils/audio';
-import { selectedWeaponProfile } from '../../utils/weapons';
+import { selectedWeaponProfile, firstReadyWeaponIndex, manualWeaponReason } from '../../utils/weapons';
 
 function getDefenseModifier(c: Combatant): number {
   return getWoundedStatus(c.hpCurrent, c.hpMax).penalty + (c.armorPenalty ?? 0) + activeInjuries(c.criticalInjuries).reduce((n, i) => n + (i.actionModifier ?? 0), 0);
+}
+
+function activeUnarmedWeapon(body: number): Weapon {
+  return { id: 'unarmed', name: 'Без оружия (Brawling)', category: 'Brawling',
+    damage: `${body < 5 ? 1 : body < 7 ? 2 : body < 11 ? 3 : 4}d6`,
+    standardRof: 2, currentAmmo: 0, magCapacity: 0, ammoType: '' };
 }
 
 interface AttackResolverModalProps {
@@ -54,17 +60,9 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
   const currentTarget = combatants.find(c => c.id === targetId);
 
   // Selected weapon
-  const [selectedWeaponIndex, setSelectedWeaponIndex] = useState<number>(0);
+  const [selectedWeaponIndex, setSelectedWeaponIndex] = useState<number>(() => firstReadyWeaponIndex(defaultAttacker?.weapons ?? []));
   const attackerWeapons = (currentAttacker?.weapons || []).map(selectedWeaponProfile);
-  const activeWeapon: Weapon = attackerWeapons[selectedWeaponIndex] || {
-    id: 'unarmed', ammoType: '',
-    name: 'Без оружия (Brawling)',
-    damage: `${(currentAttacker?.body ?? 6) < 5 ? 1 : (currentAttacker?.body ?? 6) < 7 ? 2 : (currentAttacker?.body ?? 6) < 11 ? 3 : 4}d6`,
-    category: 'Brawling',
-    standardRof: 2,
-    currentAmmo: 0,
-    magCapacity: 0
-  };
+  const activeWeapon: Weapon = (attackerWeapons[selectedWeaponIndex]?.isEquipped === false ? undefined : attackerWeapons[selectedWeaponIndex]) || activeUnarmedWeapon(currentAttacker?.body ?? 6);
 
   // Attack parameters
   const [selectedRange, setSelectedRange] = useState<RangeBand>('7-12m');
@@ -73,7 +71,7 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
   const [isApAmmo, setIsApAmmo] = useState<boolean>(false);
   const [isAmbush, setIsAmbush] = useState<boolean>(false);
   const [coverHp, setCoverHp] = useState<number>(currentTarget?.coverHp ?? 0);
-  const [attackerSkillBase, setAttackerSkillBase] = useState<number>(attackBase(currentAttacker, activeWeapon, isMelee) ?? (currentAttacker?.ref ?? 6) + 4);
+  const [attackerSkillBase, setAttackerSkillBase] = useState<number>(attackBase(currentAttacker, activeWeapon, isMelee) ?? (isMelee ? currentAttacker?.dex ?? 6 : currentAttacker?.ref ?? 6) + 4);
   const [luckSpent, setLuckSpent] = useState<number>(0);
 
   // Attack Roll Mode (Auto vs Manual vs Direct Player Total)
@@ -119,11 +117,12 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
     const oldTargetId = targetId;
     setAttackerId(oldTargetId);
     setTargetId(oldAttackerId);
-    setSelectedWeaponIndex(0);
-    const weapon = currentTarget.weapons[0] && selectedWeaponProfile(currentTarget.weapons[0]);
+    const readyIndex = firstReadyWeaponIndex(currentTarget.weapons);
+    setSelectedWeaponIndex(readyIndex);
+    const weapon = readyIndex >= 0 ? selectedWeaponProfile(currentTarget.weapons[readyIndex]) : activeUnarmedWeapon(currentTarget.body);
     const melee = /melee|brawl|martial/i.test(weapon?.category ?? '');
     setIsMelee(melee);
-    setAttackerSkillBase(attackBase(currentTarget, weapon ?? { category: 'Heavy Pistol' }, melee) ?? currentTarget.ref + 4);
+    setAttackerSkillBase(attackBase(currentTarget, weapon, melee) ?? (melee ? currentTarget.dex : currentTarget.ref) + 4);
     setDefenseBase(skillBase(currentAttacker, /evasion|уклонение/i, 'dex') ?? '');
     setDefenseTotal('');
     setAutofire(false);
@@ -147,7 +146,9 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
     sfx.playClick();
     setAttackError('');
     if (!currentTarget || !currentAttacker || currentAttacker.isDead) return;
-    if (activeWeapon.attackRequiresRoll === false || !activeWeapon.damage) { setAttackError('Спецэффект импланта разрешается вручную по описанию в чарнике. Обычный бросок атаки и урон не подставляются.'); return; }
+    if (attackerWeapons[selectedWeaponIndex]?.isEquipped === false) { setAttackError('Оружие находится в рюкзаке. Экипируйте его в чарнике и повторите импорт.'); return; }
+    const manualReason = manualWeaponReason(activeWeapon);
+    if (manualReason) { setAttackError(manualReason); return; }
     if (activeWeapon.bodyRequirement !== undefined && currentAttacker.body < activeWeapon.bodyRequirement) { setAttackError(`Для этого профиля требуется BODY ${activeWeapon.bodyRequirement}.`); return; }
     if (defenseRequired && defenseTotal === '') { setAttackError('Введите итог уклонения цели или бросьте её Evasion перед атакой.'); return; }
     if (!isMelee && (targetDv === null || targetDv === undefined)) { setAttackError('Для этого оружия и дистанции нет допустимой сложности.'); return; }
@@ -328,11 +329,12 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
                   setAttackerId(newAttackerId);
                   const newAttacker = combatants.find(c => c.id === newAttackerId);
                   if (newAttacker) {
-                    setSelectedWeaponIndex(0);
-                    const w = newAttacker.weapons[0] && selectedWeaponProfile(newAttacker.weapons[0]);
+                    const readyIndex = firstReadyWeaponIndex(newAttacker.weapons);
+                    setSelectedWeaponIndex(readyIndex);
+                    const w = readyIndex >= 0 ? selectedWeaponProfile(newAttacker.weapons[readyIndex]) : activeUnarmedWeapon(newAttacker.body);
                     const melee = /melee|brawl|martial/i.test(w?.category ?? '');
                     setIsMelee(melee);
-                    setAttackerSkillBase(attackBase(newAttacker, w ?? { category: 'Heavy Pistol' }, melee) ?? newAttacker.ref + 4);
+                    setAttackerSkillBase(attackBase(newAttacker, w, melee) ?? (melee ? newAttacker.dex : newAttacker.ref) + 4);
                     setAutofire(false);
                   }
                   if (targetId === newAttackerId) {
@@ -406,9 +408,9 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
             <label className="text-xs font-tech text-zinc-400 block mb-1.5 uppercase">
               Оружие атакующего ({currentAttacker?.name})
             </label>
-            {attackerWeapons.length > 0 ? (
+            {firstReadyWeaponIndex(attackerWeapons) >= 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {attackerWeapons.map((w, idx) => (
+                {attackerWeapons.map((w, idx) => w.isEquipped === false ? null : (
                   <button
                     key={w.id || idx}
                     type="button"
@@ -437,14 +439,14 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
               </div>
             ) : (
               <div className="p-2.5 bg-zinc-950 rounded border border-zinc-800 text-xs text-zinc-400">
-                Тяжёлый пистолет (3d6, СКОР 2)
+                Без оружия (Brawling): {activeWeapon.damage}, СКОР 2. Оружие в рюкзаке недоступно для атаки.
               </div>
             )}
           </div>
 
           {/* Attack Setup: Range & Location */}
-          {(activeWeapon.attackRequiresRoll === false || !activeWeapon.damage) && <p role="note" className="text-xs text-amber-300 whitespace-pre-wrap">
-            Спецэффект разрешается вручную по описанию. {activeWeapon.notes}
+          {manualWeaponReason(activeWeapon) && <p role="note" className="text-xs text-amber-300 whitespace-pre-wrap">
+            {manualWeaponReason(activeWeapon)} {activeWeapon.notes}
           </p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
