@@ -603,6 +603,12 @@ check('charsheet: increased implant HP imports without discarding current health
   const [member]=persist.importPartyMembers({...cyberSheet,hpCurrent:60});
   return [member.hpCurrent,member.hpMax,!!persist.charSheetImportWarning(member)];
 });
+check('charsheet: party card shows the selected profile and explicit special-effect labels', [true,2,4], () => {
+  const party=persist.importPartyMembers(cyberSheet);
+  const o=mount('src/components/party/PartyView.tsx','PartyView',{party,setParty(){}});
+  return [nodes(o.tree,n=>n.type==='strong'&&textOf(n)==='6d6').length===1,
+    nodes(o.tree,n=>n.type==='strong'&&textOf(n)==='Спецэффект — вручную').length,party[0].emp];
+});
 
 const errors = results.filter(r => r.error);
 const output = { generatedAt: new Date().toISOString(), method: 'actual TS/TSX functions and synchronous component-handler/effect harness; no browser or real storage',

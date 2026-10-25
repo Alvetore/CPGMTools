@@ -162,7 +162,7 @@ export function convertCharSheetToPartyMember(char: Character): PartyMember {
     dex: stat('DEX'),
     move: stat('MOVE', 5),
     body: body,
-    emp: char.stats?.EMP ?? 5,
+    emp: Math.max(0, Math.floor((char.humanityCurrent ?? (char.stats.EMP ?? 5) * 10) / 10) + (char.statMods?.EMP ?? 0)),
     humanity: char.humanityCurrent ?? 50,
     luckMax: char.stats?.LUCK ?? 5,
     luckCurrent: char.luckCurrent ?? char.stats?.LUCK ?? 5,

@@ -21,6 +21,7 @@ import {
 import { PartyMember } from '../../types/party';
 import { Weapon } from '../../types/character';
 import { importPartyMembers, charSheetImportWarning } from '../../utils/storage';
+import { selectedWeaponProfile } from '../../utils/weapons';
 import { 
   getCyberpsychosisStage, 
   PSYCHOPATHY_CHECKLIST, 
@@ -512,10 +513,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
                 <div className="pt-1 border-t border-zinc-800/80">
                   <div className="text-[10px] font-tech text-zinc-500 uppercase mb-1">Вооружение:</div>
                   <div className="space-y-1">
-                    {member.weapons.map((w, i) => (
+                    {member.weapons.map(selectedWeaponProfile).map((w, i) => (
                       <div key={i} className="text-[11px] font-tech text-zinc-300 flex items-center justify-between bg-zinc-950 px-2 py-0.5 rounded">
                         <span>{w.name}</span>
-                        <strong className="text-amber-400">{w.damage}</strong>
+                        <strong className="text-amber-400">{w.damage || 'Спецэффект — вручную'}</strong>
                       </div>
                     ))}
                   </div>
