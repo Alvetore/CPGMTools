@@ -1,0 +1,536 @@
+{
+  "automaticCyberwareEffects": true,
+  "id": "compat-cyberware",
+  "name": "Compatibility cyberware export",
+  "handle": "Compat",
+  "role": "Solo",
+  "roleRank": 4,
+  "avatarUrl": "",
+  "notes": "Synthetic compatibility fixture",
+  "stats": {
+    "INT": 6,
+    "REF": 7,
+    "DEX": 6,
+    "TECH": 5,
+    "COOL": 6,
+    "WILL": 6,
+    "LUCK": 6,
+    "MOVE": 6,
+    "BODY": 6,
+    "EMP": 6
+  },
+  "statMods": {
+    "INT": 0,
+    "REF": 0,
+    "DEX": 0,
+    "TECH": 0,
+    "COOL": 0,
+    "WILL": 0,
+    "LUCK": 0,
+    "MOVE": 0,
+    "BODY": 0,
+    "EMP": 0
+  },
+  "hpCurrent": 40,
+  "humanityCurrent": 46,
+  "luckCurrent": 6,
+  "deathSavePenalties": 0,
+  "armor": {
+    "head": {
+      "id": "armor-head-1",
+      "name": "Лёгкий арморджек (Light Armorjack)",
+      "location": "head",
+      "spMax": 11,
+      "spCurrent": 11,
+      "penalty": 0
+    },
+    "body": {
+      "id": "armor-body-1",
+      "name": "Лёгкий арморджек (Light Armorjack)",
+      "location": "body",
+      "spMax": 11,
+      "spCurrent": 11,
+      "penalty": 0
+    }
+  },
+  "skills": [
+    {
+      "id": "perception",
+      "nameRu": "Восприятие",
+      "nameEn": "Perception",
+      "stat": "INT",
+      "category": "Awareness",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "evasion",
+      "nameRu": "Уклонение",
+      "nameEn": "Evasion",
+      "stat": "DEX",
+      "category": "Fighting",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "shoulder_arms",
+      "nameRu": "Длинноствольное оружие",
+      "nameEn": "Shoulder Arms",
+      "stat": "REF",
+      "category": "Ranged",
+      "multiplier": 1,
+      "level": 0
+    },
+    {
+      "id": "handgun",
+      "nameRu": "Короткоствольное оружие",
+      "nameEn": "Handgun",
+      "stat": "REF",
+      "category": "Ranged",
+      "multiplier": 1,
+      "level": 2
+    },
+    {
+      "id": "heavy_weapons",
+      "nameRu": "Тяжёлое оружие",
+      "nameEn": "Heavy Weapons",
+      "stat": "REF",
+      "category": "Ranged",
+      "multiplier": 2,
+      "level": 0
+    }
+  ],
+  "weapons": [
+    {
+      "name": "Система запуска снарядов",
+      "category": "Rocket Launcher",
+      "damage": "8d6",
+      "standardRof": 1,
+      "magCapacity": 1,
+      "ammoType": "Ракета",
+      "concealable": true,
+      "notes": "Fixture weapon",
+      "skillId": "heavy_weapons",
+      "quality": "Standard",
+      "damageProfiles": [
+        {
+          "name": "Ракета",
+          "damage": "8d6",
+          "category": "Rocket Launcher",
+          "skillId": "heavy_weapons",
+          "magCapacity": 1,
+          "ammoType": "Ракета"
+        },
+        {
+          "name": "Граната",
+          "damage": "6d6",
+          "category": "Grenade Launcher",
+          "skillId": "heavy_weapons",
+          "magCapacity": 1,
+          "ammoType": "Граната"
+        }
+      ],
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#2077",
+      "id": "cyberweapon:cat-cyber-162",
+      "sourceCyberwareId": "cat-cyber-162",
+      "currentAmmo": 0,
+      "selectedProfile": 1,
+      "profileAmmo": {
+        "[\"Граната\",1]": 1
+      }
+    },
+    {
+      "name": "Лампа-Вспышка",
+      "category": "Exotic",
+      "damage": "",
+      "standardRof": 1,
+      "magCapacity": 0,
+      "ammoType": "—",
+      "concealable": true,
+      "notes": "Fixture weapon",
+      "skillId": "",
+      "quality": "Standard",
+      "attackRequiresRoll": false,
+      "canCrit": false,
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#arm",
+      "id": "cyberweapon:cat-cyber-121",
+      "sourceCyberwareId": "cat-cyber-121",
+      "currentAmmo": 0
+    },
+    {
+      "name": "Выкидной Сеткомет",
+      "category": "Shotgun",
+      "damage": "",
+      "standardRof": 1,
+      "magCapacity": 1,
+      "ammoType": "Сеть",
+      "concealable": true,
+      "notes": "Fixture weapon",
+      "skillId": "shoulder_arms",
+      "quality": "Standard",
+      "canCrit": false,
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#arm",
+      "id": "cyberweapon:cat-cyber-122",
+      "sourceCyberwareId": "cat-cyber-122",
+      "currentAmmo": 1
+    }
+  ],
+  "cyberware": [
+    {
+      "id": "cat-cyber-96",
+      "catalogId": "cat-cyber-96",
+      "name": "Киберрука",
+      "category": "Cyberlimb",
+      "kind": "implant",
+      "installLocation": "arm-site",
+      "installationFacility": "Госпиталь",
+      "humanityCost": 7,
+      "humanityCostKnown": true,
+      "humanityCostFormula": "2d6",
+      "costEb": 500,
+      "description": "Fixture item",
+      "sourceBook": "“КорБук”",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#arm",
+      "installRule": {
+        "allowedHosts": [
+          "arm-site"
+        ],
+        "slots": 1,
+        "provides": [
+          {
+            "type": "arm",
+            "capacity": 4
+          }
+        ],
+        "repeatHumanityFree": true
+      },
+      "isInstalled": true,
+      "installedIn": [
+        "body:left-arm"
+      ],
+      "hasBeenInstalled": true
+    },
+    {
+      "id": "fixture-second-arm",
+      "catalogId": "cat-cyber-96",
+      "name": "Киберрука",
+      "category": "Cyberlimb",
+      "kind": "implant",
+      "installLocation": "arm-site",
+      "installationFacility": "Госпиталь",
+      "humanityCost": 7,
+      "humanityCostKnown": true,
+      "humanityCostFormula": "2d6",
+      "costEb": 500,
+      "description": "Fixture item",
+      "sourceBook": "“КорБук”",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#arm",
+      "installRule": {
+        "allowedHosts": [
+          "arm-site"
+        ],
+        "slots": 1,
+        "provides": [
+          {
+            "type": "arm",
+            "capacity": 4
+          }
+        ],
+        "repeatHumanityFree": true
+      },
+      "isInstalled": true,
+      "installedIn": [
+        "body:right-arm"
+      ],
+      "hasBeenInstalled": true
+    },
+    {
+      "id": "cat-cyber-162",
+      "catalogId": "cat-cyber-162",
+      "name": "Система запуска снарядов",
+      "category": "Cyberlimb",
+      "kind": "implant",
+      "installLocation": "arm",
+      "installationFacility": "Клиника",
+      "humanityCost": 14,
+      "humanityCostKnown": true,
+      "humanityCostFormula": "4d6",
+      "costEb": 1000,
+      "description": "Fixture item",
+      "sourceBook": "Edgerunners Mission Kit",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#2077",
+      "installRule": {
+        "allowedHosts": [
+          "arm"
+        ],
+        "slots": 2
+      },
+      "borgware": true,
+      "weapon": {
+        "name": "Система запуска снарядов",
+        "category": "Rocket Launcher",
+        "damage": "8d6",
+        "standardRof": 1,
+        "magCapacity": 1,
+        "ammoType": "Ракета",
+        "concealable": true,
+        "notes": "Fixture weapon",
+        "skillId": "heavy_weapons",
+        "quality": "Standard",
+        "damageProfiles": [
+          {
+            "name": "Ракета",
+            "damage": "8d6",
+            "category": "Rocket Launcher",
+            "skillId": "heavy_weapons",
+            "magCapacity": 1,
+            "ammoType": "Ракета"
+          },
+          {
+            "name": "Граната",
+            "damage": "6d6",
+            "category": "Grenade Launcher",
+            "skillId": "heavy_weapons",
+            "magCapacity": 1,
+            "ammoType": "Граната"
+          }
+        ],
+        "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#2077"
+      },
+      "isInstalled": true,
+      "installedIn": [
+        "cat-cyber-96:arm"
+      ],
+      "hasBeenInstalled": true
+    },
+    {
+      "id": "cat-cyber-121",
+      "catalogId": "cat-cyber-121",
+      "name": "Лампа-Вспышка",
+      "category": "Cyberlimb",
+      "kind": "implant",
+      "installLocation": "arm",
+      "installationFacility": "Клиника",
+      "humanityCost": 7,
+      "humanityCostKnown": true,
+      "humanityCostFormula": "2d6",
+      "costEb": 500,
+      "description": "Fixture item",
+      "sourceBook": "ЧерныйХром",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#arm",
+      "installRule": {
+        "allowedHosts": [
+          "arm"
+        ],
+        "slots": 2
+      },
+      "weapon": {
+        "name": "Лампа-Вспышка",
+        "category": "Exotic",
+        "damage": "",
+        "standardRof": 1,
+        "magCapacity": 0,
+        "ammoType": "—",
+        "concealable": true,
+        "notes": "Fixture weapon",
+        "skillId": "",
+        "quality": "Standard",
+        "attackRequiresRoll": false,
+        "canCrit": false,
+        "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#arm"
+      },
+      "isInstalled": true,
+      "installedIn": [
+        "cat-cyber-96:arm"
+      ],
+      "hasBeenInstalled": true
+    },
+    {
+      "id": "cat-cyber-122",
+      "catalogId": "cat-cyber-122",
+      "name": "Выкидной Сеткомет",
+      "category": "Cyberlimb",
+      "kind": "implant",
+      "installLocation": "arm",
+      "installationFacility": "Клиника",
+      "humanityCost": 7,
+      "humanityCostKnown": true,
+      "humanityCostFormula": "2d6",
+      "costEb": 500,
+      "description": "Fixture item",
+      "sourceBook": "ЧерныйХром",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#arm",
+      "installRule": {
+        "allowedHosts": [
+          "arm"
+        ],
+        "slots": 3
+      },
+      "weapon": {
+        "name": "Выкидной Сеткомет",
+        "category": "Shotgun",
+        "damage": "",
+        "standardRof": 1,
+        "magCapacity": 1,
+        "ammoType": "Сеть",
+        "concealable": true,
+        "notes": "Fixture weapon",
+        "skillId": "shoulder_arms",
+        "quality": "Standard",
+        "canCrit": false,
+        "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#arm"
+      },
+      "isInstalled": true,
+      "installedIn": [
+        "fixture-second-arm:arm"
+      ],
+      "hasBeenInstalled": true
+    },
+    {
+      "id": "cat-cyber-167",
+      "catalogId": "cat-cyber-167",
+      "name": "Вольфрамовое укрепление",
+      "category": "Cyberlimb",
+      "kind": "upgrade",
+      "installLocation": "gorilla",
+      "installationFacility": "",
+      "humanityCost": 0,
+      "humanityCostKnown": false,
+      "humanityCostFormula": "Не указано",
+      "costEb": 500,
+      "description": "Fixture item",
+      "sourceBook": "Edgerunners Mission Kit",
+      "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#2077-mods",
+      "installRule": {
+        "allowedHosts": [
+          "gorilla"
+        ],
+        "slots": 0,
+        "requires": [
+          "cat-cyber-161"
+        ],
+        "notes": "Модуль улучшения, не самостоятельный имплант. В источнике не указаны отдельные ПЧ и предел числа модулей; сверяйте допустимую комбинацию с EMK."
+      },
+      "weapon": {
+        "name": "Вольфрамовое укрепление",
+        "category": "Heavy Melee",
+        "damage": "3d6",
+        "standardRof": 2,
+        "magCapacity": 0,
+        "ammoType": "—",
+        "concealable": true,
+        "notes": "Fixture weapon",
+        "skillId": "melee_weapon",
+        "quality": "Excellent",
+        "armorPenetration": "half",
+        "damageProfiles": [
+          {
+            "name": "Тяжёлый удар",
+            "damage": "3d6",
+            "category": "Heavy Melee",
+            "skillId": "melee_weapon",
+            "standardRof": 2,
+            "quality": "Excellent",
+            "armorPenetration": "half"
+          },
+          {
+            "name": "Очень тяжёлый удар",
+            "damage": "4d6",
+            "category": "Very Heavy Melee",
+            "skillId": "melee_weapon",
+            "standardRof": 1,
+            "quality": "Excellent",
+            "armorPenetration": "half"
+          }
+        ],
+        "sourceUrl": "https://alec-leon.github.io/data-pool/chrome/implants/#2077-mods"
+      },
+      "isInstalled": false,
+      "weaponState": {
+        "currentAmmo": 0
+      }
+    }
+  ],
+  "criticalInjuries": [],
+  "cyberdeck": {
+    "slotsMax": 7,
+    "name": "Kirama Cyberdeck",
+    "hardwareSlotsMax": 3,
+    "hardwareSlotsUsed": 1,
+    "programSlotsMax": 5,
+    "installedHardware": [
+      "Backup Drive (+1 slot)"
+    ]
+  },
+  "programs": [],
+  "gear": [],
+  "vehicles": [],
+  "lifepath": {
+    "culturalOrigin": "Северная Америка (Английский, Уличный сленг)",
+    "languages": "Streetslang, English",
+    "personality": "Холодный профессионал с ледяным взглядом",
+    "clothingStyle": "Милитари / Тактика (Tactical: разгрузки, кевларовые вставки)",
+    "hairstyle": "Короткий армейский ёжик",
+    "affectation": "Темные зеркальные очки даже в темных закоулках",
+    "valueMost": "Собственная свобода и независимость",
+    "feelingsAboutPeople": "Я верен только тем, кто доказал свою преданность в бою",
+    "valuedPerson": "Боевой напарник, спасший жизнь в перестрелке",
+    "valuedPossession": "Отцовский модифицированный кольт",
+    "familyBackground": "Семья наемников или соло-ветеранов Четвертой корпоративной",
+    "childhoodEnv": "В темном подвале, прячась от перестрелок банд",
+    "familyCrisis": "Родители погибли во время налета банды Арасаки",
+    "lifeGoals": "Стать живой легендой Посмертия (Afterlife)",
+    "friends": "Фиксер из Маленького Китая",
+    "tragicLoveAffairs": "Любимый человек погиб в результате предательства",
+    "enemies": "Капитан охраны Arasaka Security (Личная вендетта)",
+    "roleLifepathNotes": "Специализация: штурм и скрытное проникновение."
+  },
+  "roleAbilities": {
+    "solo": {
+      "threatDetection": 1,
+      "initiativeReaction": 1,
+      "precisionAttack": 1,
+      "spotWeakness": 1,
+      "damageAbsorb": 0
+    },
+    "netrunner": {
+      "interfaceRank": 4
+    },
+    "tech": {
+      "makerRank": 4,
+      "fieldExpertise": 2,
+      "upgrade": 2,
+      "fabrication": 2,
+      "invention": 2
+    },
+    "medtech": {
+      "medicineRank": 4,
+      "surgery": 2,
+      "medicalTech": 1,
+      "pharmaceuticals": 1,
+      "speedhealDoses": 2,
+      "cryopumpDoses": 1
+    },
+    "generic": {
+      "rank": 4,
+      "details": "Способность роли ранга 4."
+    }
+  },
+  "cashEb": 500,
+  "bankEb": 1200,
+  "lifestyle": "Good Prepak (Качественные полуфабрикаты - 600 eb/мес)",
+  "housing": "Studio Apartment (Квартира-студия в Хейвуде - 1000 eb/мес)",
+  "rentDueEb": 1000,
+  "createdAt": 1792911949151,
+  "updatedAt": 1792911949151,
+  "futureField": {
+    "zero": 0,
+    "flag": false,
+    "nested": [
+      null,
+      {
+        "a": 1
+      }
+    ]
+  }
+}

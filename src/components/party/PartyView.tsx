@@ -19,9 +19,8 @@ import {
   Dices
 } from 'lucide-react';
 import { PartyMember } from '../../types/party';
-import { Character, Weapon } from '../../types/character';
-import { convertCharSheetToPartyMember } from '../../utils/storage';
-import { validParty } from '../../utils/validation';
+import { Weapon } from '../../types/character';
+import { importPartyMembers, charSheetImportWarning } from '../../utils/storage';
 import { 
   getCyberpsychosisStage, 
   PSYCHOPATHY_CHECKLIST, 
@@ -113,7 +112,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setPassivePerception(member.passivePerception);
     const mainW = member.weapons[0];
     setWeaponName(mainW?.name || 'Очень тяжёлый пистолет');
-    setWeaponDamage(mainW?.damage || '4d6');
+    setWeaponDamage(mainW?.damage ?? '4d6');
     setNotes(member.notes || '');
     setIsFormOpen(true);
   };
@@ -211,9 +210,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           const content = event.target?.result as string;
           const parsed = JSON.parse(content);
 
-          const importedMembers: PartyMember[] = parsed?.party !== undefined
-            ? parsed.party : (Array.isArray(parsed) ? parsed : [parsed]).map((char: Character) => convertCharSheetToPartyMember(char));
-          if (!validParty(importedMembers)) throw new Error('Некорректный состав партии. Импорт отменён.');
+          const importedMembers = importPartyMembers(parsed);
           setParty(prev => {
             const merged = new Map(prev.map(p => [p.id, p]));
             importedMembers.forEach(p => merged.set(p.id, p));
@@ -222,7 +219,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           sfx.playCritSuccess();
         } catch (err) {
           console.error('Ошибка чтения JSON персонажа:', err);
-          alert('Не удалось прочитать файл персонажа. Убедитесь, что это корректный JSON лист из Cyberpunk RED CharSheet.');
+          alert(err instanceof Error ? err.message : 'Не удалось прочитать файл персонажа.');
         }
       };
       reader.readAsText(file);
@@ -357,6 +354,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
                   <h3 className="font-orbitron font-black text-white text-base">
                     {member.name}
                   </h3>
+                  {charSheetImportWarning(member) && <p className="text-xs text-amber-300 mt-2" role="note">{charSheetImportWarning(member)}</p>}
                   <div className="text-xs text-zinc-400 font-tech">
                     «<span className="text-cyan-400 font-bold">{member.handle}</span>» | Роль: <strong className="text-amber-400">{member.role}</strong>
                   </div>

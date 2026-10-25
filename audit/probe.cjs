@@ -507,6 +507,103 @@ check('NPC: individual encounter skills stay separate from template and other NP
   const first=app.get('combatState').combatants[0];
   return [loaded.npcs[0].skills[0].base,template.skills[0].base,loaded.npcs[1].skills[0].base,combat.skillBase(first,/уклонение/i,'dex')];
 });
+// Fixture serialized by the current sheet's real exportSingleCharacter (dfced0c).
+// Descriptions and personal data were replaced with synthetic values before export.
+const cyberSheet = JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/charsheet-cyberware.json'),'utf8'));
+const weaponsUtil = load('src/utils/weapons.ts');
+check('charsheet: linked weapons, installed slots and inventory survive import, combat and backup restore', true, () => {
+  const original=JSON.stringify(cyberSheet);
+  const [member]=persist.importPartyMembers(cyberSheet);
+  persist.saveStoredData('cpgm_party',[member]);
+  const loaded=persist.loadStoredData('cpgm_party',[])[0];
+  const fighter=persist.partyMemberToCombatant(loaded);
+  const backup=JSON.parse(JSON.stringify({exportVersion:'2.0.0',party:[loaded]}));
+  persist.clearGmDatabase();persist.restoreGmDatabase(backup);
+  return JSON.stringify(persist.loadStoredData('cpgm_party',[])[0].sourceCharSheet)===original &&
+    JSON.stringify(fighter.weapons)===JSON.stringify(cyberSheet.weapons) &&
+    cyberSheet.cyberware.some(i=>i.isInstalled===false) &&
+    JSON.stringify(cyberSheet)===original;
+});
+check('charsheet: Export All accepted by both import entry points and reimport replaces matching IDs', [2,2,2], () => {
+  const other={...cyberSheet,id:'compat-other'};
+  let party=[];
+  const o=mount('src/components/party/PartyView.tsx','PartyView',{party,setParty:f=>party=f(party)});
+  const files=nodes(o.tree,n=>n.type==='input'&&n.props.type==='file')[0];
+  files.props.onChange({target:{files:[{text:JSON.stringify([cyberSheet,other])}]}});
+  const partyCount=party.length;
+  const data=mount('src/components/common/DataManagementModal.tsx','DataManagementModal',{onClose(){},onDataRestored(){}});
+  const upload=nodes(data.tree,n=>n.type==='input'&&n.props.type==='file')[0];
+  upload.props.onChange({target:{files:[{text:JSON.stringify([cyberSheet,other])}]}});
+  upload.props.onChange({target:{files:[{text:JSON.stringify(cyberSheet)}]}});
+  return [partyCount,persist.loadStoredData('cpgm_party',[]).length,party[0].weapons.filter(w=>w.damage==='').length];
+});
+check('charsheet: one invalid sheet rejects the entire array without changing the stored party', true, () => {
+  persist.saveStoredData('cpgm_party',persist.importPartyMembers(cyberSheet));
+  const before=storage.get('cpgm_database_v2');
+  const o=mount('src/components/common/DataManagementModal.tsx','DataManagementModal',{onClose(){},onDataRestored(){}});
+  nodes(o.tree,n=>n.type==='input'&&n.props.type==='file')[0].props.onChange({target:{files:[{text:JSON.stringify([cyberSheet,{...cyberSheet,id:'bad',weapons:[{...cyberSheet.weapons[0],selectedProfile:99}]}])}]}});
+  return storage.get('cpgm_database_v2')===before;
+});
+check('charsheet: malformed profile, flags and magazine data are rejected', [true,true,true,true,true,true], () => {
+  const validate=load('src/utils/validation.ts').validWeapon;
+  const base=cyberSheet.weapons[0];
+  return [{selectedProfile:-1},{profileAmmo:{x:-1}},{damageProfiles:[{name:'bad',damage:'x'}]},
+    {attackRequiresRoll:'false'},{canCrit:0},{armorPenetration:'all'}].map(change=>!validate({...base,...change}));
+});
+check('charsheet: selected profile spends its own magazine without changing original ammo or implant ownership', [6,0,1,0,0,'cat-cyber-162'], () => {
+  const raw=cyberSheet.weapons[0];const selected=weaponsUtil.selectedWeaponProfile(raw);
+  const spent=weaponsUtil.spendWeaponAmmo(raw,1);
+  return [Number(selected.damage[0]),raw.currentAmmo,selected.currentAmmo,spent.currentAmmo,
+    weaponsUtil.selectedWeaponProfile(spent).currentAmmo,spent.sourceCyberwareId];
+});
+check('charsheet: profiles sharing a magazine consume the base magazine', [2,1,undefined], () => {
+  const w={...weapon(),currentAmmo:2,damageProfiles:[{name:'mode',damage:'3d6'}]};
+  const spent=weaponsUtil.spendWeaponAmmo(w,1);
+  return [w.currentAmmo,spent.currentAmmo,spent.profileAmmo];
+});
+check('charsheet: combat confirmation spends selected profile ammo', [0,0], () => {
+  const fighter=actor('profile-user',{weapons:[cyberSheet.weapons[0]]});
+  let state={isActive:false,round:1,currentTurnIndex:0,combatants:[fighter],log:[]};
+  const o=mount('src/components/combat/CombatTrackerView.tsx','CombatTrackerView',{combatState:state,setCombatState:f=>state=f(state)});
+  o.set('attackModalData',{attacker:fighter});o.render();
+  const resolver=nodes(o.tree,n=>n.type?.name==='AttackResolverModal')[0];
+  if(!resolver)throw Error('Resolver not open');
+  resolver.props.onSpendResources(fighter.id,0,1,0);
+  return [state.combatants[0].weapons[0].currentAmmo,weaponsUtil.selectedWeaponProfile(state.combatants[0].weapons[0]).currentAmmo];
+});
+check('charsheet: no-damage and no-roll implant effects do not invent attacks or damage', [null,null,true,true], () => {
+  const outcomes=[cyberSheet.weapons[1],{...weapon(),attackRequiresRoll:false}].map(w=>{
+    const o=attack({weapons:[w]});rollAttack(o);
+    return {attack:o.get('attackRoll'),damage:o.get('damageRoll'),error:o.get('attackError')};
+  });
+  return [outcomes[0].attack,outcomes[1].damage,...outcomes.map(r=>r.error.includes('вручную'))];
+});
+check('charsheet: selected profile drives attack skill and damage', [12,12], () => {
+  const w={...weapon(),damageProfiles:[{name:'Melee mode',damage:'4d6',category:'Heavy Melee',skillId:'melee_weapon'}]};
+  const o=attack({weapons:[w],skills:[{id:'handgun',base:5},{id:'melee_weapon',base:12}]},{bodySp:0});
+  o.set('isAmbush',true);o.render();rollAttack(o);
+  return [o.get('attackerSkillBase'),o.get('damageRoll').totalDamage];
+});
+check('charsheet: cyberweapon penetration overrides category defaults', [11,5,0], () => ['none','half','ignore'].map(armorPenetration=>combat.resolveCprDamage({rawDamage:12,location:'body',targetSp:11,isMelee:true,armorPenetration}).effectiveSp));
+check('charsheet: canCrit=false suppresses automatic and manual double-six injury', [false,false], () => {
+  const auto=attack({weapons:[{...weapon(),canCrit:false}]},{bodySp:0});auto.set('attackMode','player_total');auto.set('directPlayerTotal',30);auto.render();
+  fixedRandom(0.99,()=>nodes(auto.tree,n=>n.type==='button'&&n.props.onClick?.name==='handleRollAttack')[0].props.onClick());auto.render();
+  const manual=attack({weapons:[{...weapon(),canCrit:false}]},{bodySp:0});manual.set('damageMode','manual');manual.set('manualIsCrit',true);manual.set('attackMode','player_total');manual.set('directPlayerTotal',30);manual.render();rollAttack(manual);
+  return [auto.get('damageRoll').isCriticalInjury,manual.get('damageRoll').isCriticalInjury];
+});
+check('charsheet: editing name preserves a non-damaging first weapon', '', () => {
+  let party=persist.importPartyMembers({...cyberSheet,weapons:[cyberSheet.weapons[1]]});
+  const o=mount('src/components/party/PartyView.tsx','PartyView',{party,setParty:f=>party=f(party)});
+  nodes(o.tree,n=>n.type==='button'&&n.props.title?.includes('Редакт'))[0].props.onClick();o.render();
+  o.set('name','Renamed');o.render();nodes(o.tree,n=>n.type==='form')[0].props.onSubmit({preventDefault(){}});
+  return party[0].weapons[0].damage;
+});
+check('charsheet: automatic implant stat effects have an explicit manual-review warning', [true,undefined], () => [!!persist.charSheetImportWarning(persist.importPartyMembers(cyberSheet)[0]),persist.charSheetImportWarning(persist.importPartyMembers({...cyberSheet,automaticCyberwareEffects:false})[0])]);
+check('charsheet: increased implant HP imports without discarding current health', [60,60,true], () => {
+  const [member]=persist.importPartyMembers({...cyberSheet,hpCurrent:60});
+  return [member.hpCurrent,member.hpMax,!!persist.charSheetImportWarning(member)];
+});
+
 const errors = results.filter(r => r.error);
 const output = { generatedAt: new Date().toISOString(), method: 'actual TS/TSX functions and synchronous component-handler/effect harness; no browser or real storage',
   passed: results.filter(r => r.passed).length, failed: results.filter(r => !r.passed).length, harnessErrors: errors.length, results };

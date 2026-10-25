@@ -4,7 +4,7 @@ import { Combatant, ActiveCombatState } from '../types/combat';
 import { Encounter, NpcTemplate } from '../types/bestiary';
 import { NetArchitecture } from '../types/netrun';
 import { GeneratedGig } from '../types/generators';
-import { validateStored, validateCharacter, isObject } from './validation';
+import { validateStored, validateCharacter, validParty, isObject } from './validation';
 import { activeInjuries } from './cprCombat';
 
 const STORAGE_KEYS = {
@@ -105,6 +105,23 @@ export function clearGmDatabase(): void {
 
 export { STORAGE_KEYS };
 
+/** Both import entry points accept single sheets, Export All arrays, and party backups. */
+export function importPartyMembers(value: unknown): PartyMember[] {
+  const members = isObject(value) && value.party !== undefined ? value.party :
+    (Array.isArray(value) ? value : [value]).map(char => {
+      validateCharacter(char);
+      return convertCharSheetToPartyMember(char);
+    });
+  if (!validParty(members)) throw new Error('Некорректный состав партии. Импорт отменён.');
+  return members;
+}
+
+export function charSheetImportWarning(member: PartyMember): string | undefined {
+  if (member.sourceCharSheet?.automaticCyberwareEffects && member.sourceCharSheet.cyberware?.length) {
+    return 'Сверьте BODY, HP, SP и инициативу с чарником: GM Tools не пересчитывает автоэффекты киберимплантов. Слоты и исходный лист сохранены в бэкапе. Итоговые параметры можно изменить в карточке; бонус инициативы учтите вручную.';
+  }
+}
+
 /**
  * Converts a Character JSON exported from Cyberpunk RED CharSheet into a PartyMember
  */
@@ -114,7 +131,11 @@ export function convertCharSheetToPartyMember(char: Character): PartyMember {
   const body = stat('BODY');
   const will = stat('WILL');
   const calculatedHp = 10 + 5 * Math.ceil((body + will) / 2);
-  const hpMax = char.hpMaxManual && char.hpMaxManual > 0 ? char.hpMaxManual : calculatedHp;
+  // The sheet can have a higher BODY/HP from automatic implants. Until those
+  // effects are resolved manually, preserve all current HP rather than reject
+  // the sheet or silently reduce health. This is a lower bound, not a new max.
+  const hpMax = char.hpMaxManual && char.hpMaxManual > 0 ? char.hpMaxManual :
+    char.automaticCyberwareEffects && char.cyberware?.length ? Math.max(calculatedHp, char.hpCurrent ?? 0) : calculatedHp;
 
   // Find perception skill if available
   let perceptionBase = (char.stats?.INT ?? 6) + 2;

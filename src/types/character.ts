@@ -35,6 +35,15 @@ export interface Weapon {
   notes?: string;
   quality?: 'Poor' | 'Standard' | 'Excellent';
   skillId?: string;
+  damageProfiles?: ({ name: string; damage: string } & Partial<Pick<Weapon, 'category' | 'skillId' | 'standardRof' | 'magCapacity' | 'ammoType' | 'quality' | 'armorPenetration' | 'canCrit' | 'bodyRequirement' | 'autofireLimit' | 'attackRequiresRoll'>>)[];
+  selectedProfile?: number;
+  profileAmmo?: Record<string, number>;
+  sourceCyberwareId?: string;
+  armorPenetration?: 'none' | 'half' | 'ignore';
+  canCrit?: boolean;
+  attackRequiresRoll?: boolean;
+  bodyRequirement?: number;
+  autofireLimit?: number;
 }
 
 export interface ArmorItem {
@@ -95,6 +104,7 @@ export interface Character {
   skills?: any[];
   weapons: Weapon[];
   cyberware?: any[];
+  automaticCyberwareEffects?: boolean;
   gear?: any[];
   criticalInjuries?: CriticalInjury[];
 }

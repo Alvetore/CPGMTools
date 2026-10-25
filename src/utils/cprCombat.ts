@@ -77,6 +77,7 @@ export interface ApplyDamageParams {
   targetHp?: number;
   coverHp?: number;
   isBrawling?: boolean;
+  armorPenetration?: 'none' | 'half' | 'ignore';
 }
 
 export interface DamageResolutionResult {
@@ -113,7 +114,8 @@ export function resolveCprDamage(params: ApplyDamageParams): DamageResolutionRes
   };
 
   // Melee attacks ignore half armor SP (round down in CPR)
-  const effectiveSp = isMelee && !isBrawling ? Math.floor(targetSp / 2) : targetSp;
+  const penetration = params.armorPenetration ?? (isMelee && !isBrawling ? 'half' : 'none');
+  const effectiveSp = penetration === 'ignore' ? 0 : penetration === 'half' ? Math.floor(targetSp / 2) : targetSp;
   const headMultiplier = Math.max(2, ...activeInjuries(existingInjuries).map(i => i.headMultiplier ?? 2));
   const isPenetrated = rawDamage > effectiveSp;
 

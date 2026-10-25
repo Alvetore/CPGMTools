@@ -12,9 +12,16 @@ const numericFields = (o: Obj, fields: string[]) => fields.every(k => nonnegativ
 const uniqueIds = (v: Obj[]) => new Set(v.map(o => o.id)).size === v.length;
 const withIds = (v: unknown, test: (o: Obj) => boolean) => list(v, o => isObject(o) && string(o.id) && o.id.length > 0 && test(o)) && uniqueIds(v as Obj[]);
 const skills = (v: unknown) => list(v, o => isObject(o) && optional(o.id, string) && optional(o.nameRu, string) && optional(o.stat, string) && optional(o.base, num) && optional(o.level, nonnegative));
-export const validWeapon = (v: unknown) => isObject(v) && string(v.id) && string(v.name) && string(v.category) &&
-  string(v.damage) && /^(?:[1-9]\d?|100)d6(?:\+\d+)?$/i.test(v.damage.trim()) && numericFields(v, ['standardRof','magCapacity','currentAmmo']) &&
-  optional(v.ammoType, string) && optional(v.skillId, string) && optional(v.quality, q => ['Poor','Standard','Excellent'].includes(q));
+const damage = (v: unknown) => string(v) && (v === '' || /^(?:[1-9]\d?|100)d6(?:\+\d+)?$/i.test((v as string).trim()));
+const weaponOptions = (v: Obj): boolean => optional(v.category,string) && optional(v.skillId,string) &&
+  optional(v.quality,q => ['Poor','Standard','Excellent'].includes(q)) && optional(v.ammoType,string) &&
+  ['standardRof','magCapacity','bodyRequirement','autofireLimit'].every(k => optional(v[k],nonnegative)) &&
+  optional(v.armorPenetration,p => ['none','half','ignore'].includes(p)) && optional(v.canCrit,bool) && optional(v.attackRequiresRoll,bool);
+export const validWeapon = (v: unknown): boolean => isObject(v) && string(v.id) && string(v.name) && string(v.category) &&
+  damage(v.damage) && numericFields(v, ['standardRof','magCapacity','currentAmmo']) && weaponOptions(v) && optional(v.sourceCyberwareId,string) &&
+  optional(v.damageProfiles,p => list(p,o => isObject(o) && string(o.name) && damage(o.damage) && weaponOptions(o))) &&
+  optional(v.selectedProfile,p => nonnegative(p) && p < Math.max(1,v.damageProfiles?.length ?? 0)) &&
+  optional(v.profileAmmo,a => isObject(a) && Object.values(a).every(nonnegative));
 const injuries = (v: unknown) => list(v, i => isObject(i) && string(i.id) && string(i.nameRu) && string(i.effectRu) && ['head','body'].includes(i.location) && bool(i.isActive) &&
   ['deathSaveModifier','actionModifier','rangedModifier','meleeModifier','moveModifier','headMultiplier','recurringDamage'].every(k => optional(i[k], num)));
 const condition = (v: unknown) => isObject(v) && string(v.id) && string(v.name) && (v.roundsRemaining === null || nonnegative(v.roundsRemaining));
@@ -63,6 +70,8 @@ export function validateCharacter(value: unknown): asserts value is import('../t
     !['id','name','handle','role','notes','avatarUrl'].every(k => optional(value[k],string)) ||
     !['hpCurrent','hpMaxManual','luckCurrent','deathSavePenalties','roleRank'].every(k => optional(value[k],nonnegative)) ||
     !optional(value.humanityCurrent,num) || !optional(value.criticalInjuries, injuries) ||
+    !optional(value.automaticCyberwareEffects,bool) ||
+    !optional(value.cyberware,c => list(c,i => isObject(i) && string(i.id) && string(i.name) && optional(i.isInstalled,bool) && optional(i.installedIn,t => list(t,string)))) ||
     !optional(value.armor, a => isObject(a) && ['head','body','shield'].every(k => optional(a[k], p => isObject(p) && numericFields(p,['spCurrent','spMax']) && optional(p.penalty,num))))) {
     throw new Error('Некорректный лист персонажа. Импорт отменён.');
   }

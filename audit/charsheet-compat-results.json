@@ -1,0 +1,1223 @@
+{
+  "sourceRepository": "https://github.com/Alvetore/CyberpunkREDCharSheet",
+  "sourceRevision": "dfced0c5d861a32eedf10c3b3b25d8e03f13598f",
+  "method": "Actual sheet factory, syncCyberwareWeapons and exportSingleCharacter; one legacy-compatible implant record per synthetic character, not a test of all legal installation combinations; isolated GM import, save/load, source equality and combat weapon equality",
+  "entries": 173,
+  "passed": 173,
+  "failed": 0,
+  "linkedWeapons": 26,
+  "nonDamagingEntries": 5,
+  "results": [
+    {
+      "catalogId": "cat-cyber-1",
+      "name": "Биомонитор",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-2",
+      "name": "Химкожа",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-3",
+      "name": "ЭМИ-нить",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-4",
+      "name": "Светящиеся Тату",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-5",
+      "name": "Изменчивые такты",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-6",
+      "name": "Подкожные Часы",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-7",
+      "name": "Техноволосы",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-8",
+      "name": "Эвристический Отслеживатель Здоровья",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-9",
+      "name": "Циферблат Убийств",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-10",
+      "name": "СоблазнительныеНоготочки \"Вкл-Выкл”",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-11",
+      "name": "Глаза Настроения",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-12",
+      "name": "Нейролинк",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-13",
+      "name": "Записыватель брейндансов",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-14",
+      "name": "Сопроцессор Рефлексов",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-15",
+      "name": "Транс Смерти",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-16",
+      "name": "Личный порт",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-17",
+      "name": "Керензиков",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-18",
+      "name": "Сандевистан",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-19",
+      "name": "Управление Дронами",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-20",
+      "name": "Бюджетный разъем для щепок",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-21",
+      "name": "Разъём для Щепок",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-22",
+      "name": "Щепка памяти",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-23",
+      "name": "Химический анализатор",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-24",
+      "name": "Усилитель обоняния",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-25",
+      "name": "Редактор боли",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-26",
+      "name": "Щепка навыка",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-27",
+      "name": "Тактильное усиление",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-28",
+      "name": "Позер Чип",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-29",
+      "name": "Поведенческий Чип: Животное",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-30",
+      "name": "Чип переводчик",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-31",
+      "name": "Киберглаз",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-32",
+      "name": "Анти-ослепление",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-33",
+      "name": "Хирон",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-34",
+      "name": "Сдвиг Цвета",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-35",
+      "name": "Дартган",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-36",
+      "name": "Усилитель Картинки",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-37",
+      "name": "Слабое освещение/ИК/УФ",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-38",
+      "name": "Микро-Оптика",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-39",
+      "name": "Микро-видео",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-40",
+      "name": "Детектор радиации",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-41",
+      "name": "Тактический прицел",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-42",
+      "name": "Теле-оптика",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-43",
+      "name": "Виртуальное зрение",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-44",
+      "name": "Укрепленный Корпус Киберглаза",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-45",
+      "name": "Спонсируемый Киберглаз",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-46",
+      "name": "Хранилище щепок",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-47",
+      "name": "Hello Cutie sparkle-ize",
+      "linkedWeapons": 1,
+      "nonDamaging": true,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-48",
+      "name": "Комплекс Кибераудио",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-49",
+      "name": "Усиленный слух",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-50",
+      "name": "Аудио рекордер",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-51",
+      "name": "Детектор жучков",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-52",
+      "name": "Трекер маячков",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-53",
+      "name": "Внутренний агент",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-54",
+      "name": "Демпфер",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-55",
+      "name": "Коммуникатор",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-56",
+      "name": "Радиосканер/проигрыватель",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-57",
+      "name": "Радар детектор",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-58",
+      "name": "Шифратор/дешифратор",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-59",
+      "name": "Анализатор голосового стресса",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-60",
+      "name": "Комплект КиберАудио по скидке",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-61",
+      "name": "Автоинъектор Бодивейт",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-62",
+      "name": "АудиоВокс",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-63",
+      "name": "Вампиры",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-64",
+      "name": "Водительский Ошейник",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-65",
+      "name": "Жабры",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-66",
+      "name": "Искусственные мышцы и усиленные кости",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-67",
+      "name": "Контрацептив",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-68",
+      "name": "Киберзмея",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-69",
+      "name": "Киберпечень от Hammered Industries",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-70",
+      "name": "Киберчереп",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-71",
+      "name": "Назальные фильтры",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-72",
+      "name": "Наноматрица Травматической Реакции",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-73",
+      "name": "НеоЯзык",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-74",
+      "name": "Независимая подача воздуха",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-75",
+      "name": "Огненное Дыхание",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-76",
+      "name": "Полуночница сексуальный имплант",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-77",
+      "name": "Мр. Перчик Сексуальный имплант",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-78",
+      "name": "Связыватель токсинов",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-79",
+      "name": "Радар/Сканер",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-80",
+      "name": "Регулятор Голода",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-81",
+      "name": "Усиленные антитела",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-82",
+      "name": "Экранирование Внутренних имплантов",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-83",
+      "name": "Хотсвап крепление Лицевой Панели",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-84",
+      "name": "Sycust Киберпозвоночник",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-85",
+      "name": "КиберПроводник Zetatech, Встроенный",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-86",
+      "name": "Боевой Хвост",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-87",
+      "name": "Боевая Челюсть",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-88",
+      "name": "Кироши ОптиЩит",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-89",
+      "name": "Наружный Видеоэкран",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-90",
+      "name": "Подкожный карман",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-91",
+      "name": "Подкожная броня",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-92",
+      "name": "Сайкаст плетеная кожа",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-93",
+      "name": "Скрытая кобура",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-94",
+      "name": "Тканекожа",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-95",
+      "name": "Тяжелая Подкожная Броня",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-96",
+      "name": "Киберрука",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-97",
+      "name": "Нео-Советская КиберРука",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-98",
+      "name": "Радлайн Киберрука-Дугомет “Блицкриг”",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-99",
+      "name": "Стандартная Кисть",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-100",
+      "name": "КиберКисть с модульными пальцами",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-101",
+      "name": "КиберКисть Энтузиаста с Модульными пальцами",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-102",
+      "name": "Профессиональная Киберкисть Dynalar",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-103",
+      "name": "Большие костяшки",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-104",
+      "name": "Кибердека",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-105",
+      "name": "Обновленная Интегрированная Кибердека",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-106",
+      "name": "Рукохват",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-107",
+      "name": "Медсканер",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-108",
+      "name": "Выкидной гранатомёт",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-109",
+      "name": "Выкидное оружие ближнего боя",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-110",
+      "name": "Выкидной щит",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-111",
+      "name": "Выкидное оружие дальнего боя",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-112",
+      "name": "Быстросъёмное крепление",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-113",
+      "name": "Царапки",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-114",
+      "name": "Потрошители",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-115",
+      "name": "Плечевая камера",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-116",
+      "name": "Слайсы да Кубики",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-117",
+      "name": "Смартлинк",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-118",
+      "name": "Техсканер",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-119",
+      "name": "Рука-мультитул",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-120",
+      "name": "Когти росомахи",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-121",
+      "name": "Лампа-Вспышка",
+      "linkedWeapons": 1,
+      "nonDamaging": true,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-122",
+      "name": "Выкидной Сеткомет",
+      "linkedWeapons": 1,
+      "nonDamaging": true,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-123",
+      "name": "Выкидной Дробовик",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-124",
+      "name": "Цепной потрошитель",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-125",
+      "name": "Киберматрикс Гэнг Джаззлер",
+      "linkedWeapons": 1,
+      "nonDamaging": true,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-126",
+      "name": "Псайберстаф УотчМэн",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-127",
+      "name": "Рейвен МикроКибернетикс МикроВалдо",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-128",
+      "name": "КиберПодушка",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-129",
+      "name": "Голопроектор Для Ладони",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-130",
+      "name": "Персональный Разогреватель Киббла",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-131",
+      "name": "Ускоренный Защищенный Встроенный Персональный Шредер",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-132",
+      "name": "Газомет от Стремительной охраны ИНК",
+      "linkedWeapons": 1,
+      "nonDamaging": true,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-133",
+      "name": "Интегрированный КиберСканер",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-134",
+      "name": "Быстрые Пальцы Rocklin Augmentics",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-135",
+      "name": "Hello Cutie Mono-Paw",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-136",
+      "name": "Кибернога",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-137",
+      "name": "Визард Технолоджис Киберноги Романовой",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-138",
+      "name": "Rocklin Augmentics Skydrivers",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-139",
+      "name": "Стандартная Стопа",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-140",
+      "name": "Цепкая подошва",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-141",
+      "name": "Прыжковый ускоритель",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-142",
+      "name": "Стопа скейт",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-143",
+      "name": "Коготь",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-144",
+      "name": "Ласты",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-145",
+      "name": "Идеальная Киберстопа",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-146",
+      "name": "Устройство нулевой гравитации",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-147",
+      "name": "Стопа-Трансформер",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-148",
+      "name": "Закаленноеэкранирование",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-149",
+      "name": "Пластиковоепокрытие",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-150",
+      "name": "ПокрытиеРеалскин™",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-151",
+      "name": "ПокрытиеСуперхром®",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-152",
+      "name": "Покрытие для спонсоров",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-153",
+      "name": "ОБНОВЛЕННАЯ УСИЛЕННАЯ КИБЕРКОНЕЧНОСТЬ",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-154",
+      "name": "Экстра-Сочленение конечности",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-155",
+      "name": "Берсерк",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-156",
+      "name": "ИнтраЛЕД",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-157",
+      "name": "Клинок Богомола",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-158",
+      "name": "Мега-Диск",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-159",
+      "name": "Моноструна",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-160",
+      "name": "Нейропорт",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-161",
+      "name": "Рука Гориллы",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-162",
+      "name": "Система запуска снарядов",
+      "linkedWeapons": 1,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-163",
+      "name": "Слот Нейропорта для Кибердеки",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-164",
+      "name": "Эксперементальный Сандевистан Девида",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-165",
+      "name": "Гидравлический Таран",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-166",
+      "name": "Пневматические приводы",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-167",
+      "name": "Вольфрамовое укрепление",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-168",
+      "name": "Двухсторонняя заточка",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-169",
+      "name": "Мономолекулярное лезвие",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-170",
+      "name": "Обтекаемость",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-171",
+      "name": "Колючая проволока",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-172",
+      "name": "Электрошокер",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    },
+    {
+      "catalogId": "cat-cyber-173",
+      "name": "Раскалённые лезвия",
+      "linkedWeapons": 0,
+      "nonDamaging": false,
+      "passed": true
+    }
+  ]
+}

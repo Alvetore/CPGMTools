@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-24T16:30:57.746Z",
+  "generatedAt": "2026-10-25T07:10:25.224Z",
   "method": "actual TS/TSX functions and synchronous component-handler/effect harness; no browser or real storage",
-  "passed": 76,
+  "passed": 90,
   "failed": 0,
   "harnessErrors": 0,
   "results": [
@@ -625,6 +625,184 @@
         10,
         10,
         20
+      ]
+    },
+    {
+      "id": "charsheet: linked weapons, installed slots and inventory survive import, combat and backup restore",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "id": "charsheet: Export All accepted by both import entry points and reimport replaces matching IDs",
+      "passed": true,
+      "expected": [
+        2,
+        2,
+        2
+      ],
+      "actual": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "id": "charsheet: one invalid sheet rejects the entire array without changing the stored party",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "id": "charsheet: malformed profile, flags and magazine data are rejected",
+      "passed": true,
+      "expected": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "actual": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "id": "charsheet: selected profile spends its own magazine without changing original ammo or implant ownership",
+      "passed": true,
+      "expected": [
+        6,
+        0,
+        1,
+        0,
+        0,
+        "cat-cyber-162"
+      ],
+      "actual": [
+        6,
+        0,
+        1,
+        0,
+        0,
+        "cat-cyber-162"
+      ]
+    },
+    {
+      "id": "charsheet: profiles sharing a magazine consume the base magazine",
+      "passed": true,
+      "expected": [
+        2,
+        1,
+        null
+      ],
+      "actual": [
+        2,
+        1,
+        null
+      ]
+    },
+    {
+      "id": "charsheet: combat confirmation spends selected profile ammo",
+      "passed": true,
+      "expected": [
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "charsheet: no-damage and no-roll implant effects do not invent attacks or damage",
+      "passed": true,
+      "expected": [
+        null,
+        null,
+        true,
+        true
+      ],
+      "actual": [
+        null,
+        null,
+        true,
+        true
+      ]
+    },
+    {
+      "id": "charsheet: selected profile drives attack skill and damage",
+      "passed": true,
+      "expected": [
+        12,
+        12
+      ],
+      "actual": [
+        12,
+        12
+      ]
+    },
+    {
+      "id": "charsheet: cyberweapon penetration overrides category defaults",
+      "passed": true,
+      "expected": [
+        11,
+        5,
+        0
+      ],
+      "actual": [
+        11,
+        5,
+        0
+      ]
+    },
+    {
+      "id": "charsheet: canCrit=false suppresses automatic and manual double-six injury",
+      "passed": true,
+      "expected": [
+        false,
+        false
+      ],
+      "actual": [
+        false,
+        false
+      ]
+    },
+    {
+      "id": "charsheet: editing name preserves a non-damaging first weapon",
+      "passed": true,
+      "expected": "",
+      "actual": ""
+    },
+    {
+      "id": "charsheet: automatic implant stat effects have an explicit manual-review warning",
+      "passed": true,
+      "expected": [
+        true,
+        null
+      ],
+      "actual": [
+        true,
+        null
+      ]
+    },
+    {
+      "id": "charsheet: increased implant HP imports without discarding current health",
+      "passed": true,
+      "expected": [
+        60,
+        60,
+        true
+      ],
+      "actual": [
+        60,
+        60,
+        true
       ]
     }
   ]

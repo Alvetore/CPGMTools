@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Crosshair, Shield, Zap, Skull, Check, X, AlertTriangle, Dices, Edit3, ArrowLeftRight, Target } from 'lucide-react';
 import { Combatant } from '../../types/combat';
+import { Weapon } from '../../types/character';
 import { CPR_RANGE_DV_TABLE, CPR_CRITICAL_INJURIES_HEAD, CPR_CRITICAL_INJURIES_BODY, RANGE_BANDS, RangeBand, weaponRangeKey } from '../../data/cprRules';
 import { executeCPRCheck, rollDamageFormula } from '../../utils/dice';
 import { resolveCprDamage, actionModifier, activeInjuries, skillBase, attackBase, getWoundedStatus } from '../../utils/cprCombat';
 import { sfx } from '../../utils/audio';
+import { selectedWeaponProfile } from '../../utils/weapons';
 
 function getDefenseModifier(c: Combatant): number {
   return getWoundedStatus(c.hpCurrent, c.hpMax).penalty + (c.armorPenalty ?? 0) + activeInjuries(c.criticalInjuries).reduce((n, i) => n + (i.actionModifier ?? 0), 0);
@@ -53,8 +55,9 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
   // Selected weapon
   const [selectedWeaponIndex, setSelectedWeaponIndex] = useState<number>(0);
-  const attackerWeapons = currentAttacker?.weapons || [];
-  const activeWeapon = attackerWeapons[selectedWeaponIndex] || {
+  const attackerWeapons = (currentAttacker?.weapons || []).map(selectedWeaponProfile);
+  const activeWeapon: Weapon = attackerWeapons[selectedWeaponIndex] || {
+    id: 'unarmed', ammoType: '',
     name: 'Без оружия (Brawling)',
     damage: `${(currentAttacker?.body ?? 6) < 5 ? 1 : (currentAttacker?.body ?? 6) < 7 ? 2 : (currentAttacker?.body ?? 6) < 11 ? 3 : 4}d6`,
     category: 'Brawling',
@@ -117,7 +120,7 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
     setAttackerId(oldTargetId);
     setTargetId(oldAttackerId);
     setSelectedWeaponIndex(0);
-    const weapon = currentTarget.weapons[0];
+    const weapon = currentTarget.weapons[0] && selectedWeaponProfile(currentTarget.weapons[0]);
     const melee = /melee|brawl|martial/i.test(weapon?.category ?? '');
     setIsMelee(melee);
     setAttackerSkillBase(attackBase(currentTarget, weapon ?? { category: 'Heavy Pistol' }, melee) ?? currentTarget.ref + 4);
@@ -144,6 +147,8 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
     sfx.playClick();
     setAttackError('');
     if (!currentTarget || !currentAttacker || currentAttacker.isDead) return;
+    if (activeWeapon.attackRequiresRoll === false || !activeWeapon.damage) { setAttackError('Спецэффект импланта разрешается вручную по описанию в чарнике. Обычный бросок атаки и урон не подставляются.'); return; }
+    if (activeWeapon.bodyRequirement !== undefined && currentAttacker.body < activeWeapon.bodyRequirement) { setAttackError(`Для этого профиля требуется BODY ${activeWeapon.bodyRequirement}.`); return; }
     if (defenseRequired && defenseTotal === '') { setAttackError('Введите итог уклонения цели или бросьте её Evasion перед атакой.'); return; }
     if (!isMelee && (targetDv === null || targetDv === undefined)) { setAttackError('Для этого оружия и дистанции нет допустимой сложности.'); return; }
     if (autofire && (!canAutofire || targetLocation === 'head')) { setAttackError('Автоогонь: только ПП/штурмовая винтовка, попадание в тело.'); return; }
@@ -211,8 +216,9 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
   const handleRollDamage = (check = attackRoll) => {
     let dResult;
-    try { dResult = rollDamageFormula(autofire ? '2d6' : activeWeapon.damage || '3d6'); }
+    try { dResult = rollDamageFormula(autofire ? '2d6' : activeWeapon.damage); }
     catch (error) { setAttackError(String(error)); return; }
+    if (activeWeapon.canCrit === false) dResult.isCriticalInjury = false;
     if (autofire) dResult.totalDamage *= Math.min(rangeKey === 'smg' ? 3 : 4, Math.max(1, check.margin));
     setDamageRoll(dResult);
 
@@ -226,7 +232,7 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
         targetSp: currentSp,
         isMelee,
         isApAmmo,
-        isCritInjuryRoll: dResult.isCriticalInjury,
+        isCritInjuryRoll: dResult.isCriticalInjury, armorPenetration: activeWeapon.armorPenetration,
         existingInjuries: currentTarget.criticalInjuries, targetHp: currentTarget.hpCurrent, coverHp, isBrawling
       });
 
@@ -239,9 +245,9 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
 
   const handleApplyManualDamage = (_check = attackRoll) => {
     let dResult;
-    try { dResult = rollDamageFormula(activeWeapon.damage || '3d6', {
+    try { dResult = rollDamageFormula(activeWeapon.damage, {
       totalDamage: manualDamageTotal,
-      isCriticalInjury: manualIsCrit
+      isCriticalInjury: manualIsCrit && activeWeapon.canCrit !== false
     }); } catch (error) { setAttackError(String(error)); setDamageResolution(null); return; }
     if (autofire) dResult.totalDamage *= Math.min(rangeKey === 'smg' ? 3 : 4, Math.max(1, _check.margin));
     setDamageRoll(dResult);
@@ -256,8 +262,8 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
         targetSp: currentSp,
         isMelee,
         isApAmmo,
-        isCritInjuryRoll: manualIsCrit,
-        manualInjuryId: manualIsCrit && manualInjuryId ? manualInjuryId : undefined,
+        isCritInjuryRoll: dResult.isCriticalInjury, armorPenetration: activeWeapon.armorPenetration,
+        manualInjuryId: dResult.isCriticalInjury && manualInjuryId ? manualInjuryId : undefined,
         existingInjuries: currentTarget.criticalInjuries, targetHp: currentTarget.hpCurrent, coverHp, isBrawling
       });
 
@@ -323,7 +329,7 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
                   const newAttacker = combatants.find(c => c.id === newAttackerId);
                   if (newAttacker) {
                     setSelectedWeaponIndex(0);
-                    const w = newAttacker.weapons[0];
+                    const w = newAttacker.weapons[0] && selectedWeaponProfile(newAttacker.weapons[0]);
                     const melee = /melee|brawl|martial/i.test(w?.category ?? '');
                     setIsMelee(melee);
                     setAttackerSkillBase(attackBase(newAttacker, w ?? { category: 'Heavy Pistol' }, melee) ?? newAttacker.ref + 4);
@@ -421,8 +427,9 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
                     }`}
                   >
                     <div className="font-bold text-xs">{w.name}</div>
+                    {w.damageProfiles?.[w.selectedProfile ?? 0] && <div className="text-[11px] text-cyan-300">Профиль из чарника: {w.damageProfiles[w.selectedProfile ?? 0].name}</div>}
                     <div className="text-[11px] font-tech text-zinc-400 flex items-center justify-between mt-1">
-                      <span>Урон: <strong className="text-amber-400">{w.damage}</strong></span>
+                      <span>Урон: <strong className="text-amber-400">{w.damage || 'Спецэффект — вручную'}</strong></span>
                       <span>СКОР: {w.standardRof}</span>
                     </div>
                   </button>
@@ -436,6 +443,9 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
           </div>
 
           {/* Attack Setup: Range & Location */}
+          {(activeWeapon.attackRequiresRoll === false || !activeWeapon.damage) && <p role="note" className="text-xs text-amber-300 whitespace-pre-wrap">
+            Спецэффект разрешается вручную по описанию. {activeWeapon.notes}
+          </p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-tech text-zinc-400 block mb-1 uppercase">Дистанция до цели</label>

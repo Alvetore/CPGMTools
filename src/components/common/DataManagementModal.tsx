@@ -1,8 +1,7 @@
 import React, { useRef } from 'react';
 import { Download, Upload, X, AlertTriangle, RefreshCw, FileText, CheckCircle } from 'lucide-react';
-import { exportEntireGmDatabase, saveStoredData, loadStoredData, restoreGmDatabase, clearGmDatabase, STORAGE_KEYS, convertCharSheetToPartyMember } from '../../utils/storage';
+import { exportEntireGmDatabase, saveStoredData, loadStoredData, restoreGmDatabase, clearGmDatabase, STORAGE_KEYS, importPartyMembers } from '../../utils/storage';
 import { PartyMember } from '../../types/party';
-import { Character } from '../../types/character';
 import { sfx } from '../../utils/audio';
 
 interface DataManagementModalProps {
@@ -34,15 +33,16 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
           alert('Резервная копия базы ГМа успешно восстановлена!');
           onDataRestored();
           onClose();
-        } else if (data.stats && data.armor) {
-          // Single character from Cyberpunk RED CharSheet
-          const member = convertCharSheetToPartyMember(data as Character);
+        } else if (Array.isArray(data) || (data.stats && data.armor)) {
+          const members = importPartyMembers(data);
           const currentParty = loadStoredData<PartyMember[]>(STORAGE_KEYS.PARTY, []);
-          const nextParty = [...currentParty.filter(p => p.id !== member.id), member];
+          const merged = new Map(currentParty.map(p => [p.id,p]));
+          members.forEach(member => merged.set(member.id,member));
+          const nextParty = [...merged.values()];
           if (!saveStoredData(STORAGE_KEYS.PARTY, nextParty)) throw new Error('Не удалось сохранить персонажа.');
 
           sfx.playCritSuccess();
-          alert(`Персонаж ${member.name} (${member.handle}) успешно импортирован в партию!`);
+          alert(`Импортировано персонажей в партию: ${members.length}.`);
           onDataRestored();
           onClose();
         } else {

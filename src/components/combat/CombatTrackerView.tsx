@@ -27,6 +27,7 @@ import { Combatant, ActiveCombatState, CombatLogEntry, Condition } from '../../t
 import { CriticalInjury, Weapon } from '../../types/character';
 import { getWoundedStatus, resolveCprDamage, applyCombatDamage, activeInjuries, deathSaveModifier, effectiveMove } from '../../utils/cprCombat';
 import { rollInitiative, sortInitiative, preserveTurn } from '../../utils/initiative';
+import { spendWeaponAmmo } from '../../utils/weapons';
 import { executeDeathSave, rollD10 } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
 import { AttackResolverModal } from './AttackResolverModal';
@@ -1020,7 +1021,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
           }}
           onSpendResources={(attackerId, weaponIndex, ammo, luck) => {
             setCombatState(prev => ({ ...prev, combatants: prev.combatants.map(c => c.id === attackerId ? { ...c,
-              weapons: c.weapons.map((w, i) => i === weaponIndex ? { ...w, currentAmmo: Math.max(0, w.currentAmmo - ammo) } : w),
+              weapons: c.weapons.map((w, i) => i === weaponIndex ? spendWeaponAmmo(w, ammo) : w),
               luckCurrent: c.luckCurrent === undefined ? undefined : Math.max(0, c.luckCurrent - luck) } : c) }));
             addLog(`Атака зафиксирована: патронов −${ammo}, Удачи −${luck}.`, 'attack');
           }}
