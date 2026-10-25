@@ -159,7 +159,129 @@ check('baseline: natural 10 death save dies', false, () => dice.executeDeathSave
 check('baseline: death save equality fails', false, () => dice.executeDeathSave(6, 1, 5).isSaved);
 check('baseline: head multiplier after armor', 8, () => combat.resolveCprDamage({ rawDamage: 15, targetSp: 11, location: 'head' }).finalHpLoss);
 check('baseline: AP ablation', 9, () => combat.resolveCprDamage({ rawDamage: 15, targetSp: 11, location: 'body', isApAmmo: true }).newSp);
-check('baseline: melee ignores half SP rounded up', 5, () => combat.resolveCprDamage({ rawDamage: 15, targetSp: 11, location: 'body', isMelee: true }).effectiveSp);
+check('melee: remaining half SP rounds up', [6,9,10], () => {
+  const r = combat.resolveCprDamage({ rawDamage:15, targetSp:11, location:'body', isMelee:true });
+  return [r.effectiveSp,r.finalHpLoss,r.newSp];
+});
+check('melee: damage equal to rounded half SP cannot penetrate or ablate', [0,11], () => {
+  const r = combat.resolveCprDamage({ rawDamage:6, targetSp:11, location:'body', isMelee:true });
+  return [r.finalHpLoss,r.newSp];
+});
+check('melee: SP1, even SP, head/AP, explicit half, brawling and ignore', [1,5,18,9,6,11,0], () => {
+  const resolve = extra => combat.resolveCprDamage({rawDamage:15,targetSp:11,location:'body',isMelee:true,...extra});
+  const head = resolve({location:'head',isApAmmo:true});
+  return [resolve({targetSp:1}).effectiveSp,resolve({targetSp:10}).effectiveSp,head.finalHpLoss,head.newSp,
+    resolve({isMelee:false,armorPenetration:'half'}).effectiveSp,resolve({isBrawling:true}).effectiveSp,
+    resolve({armorPenetration:'ignore'}).effectiveSp];
+});
+
+function tracker(active = true, combatants = [actor('a',{initiative:15}),actor('b',{initiative:10})]) {
+  let state = {isActive:active,round:3,currentTurnIndex:1,combatants,log:[]};
+  const owner = mount('src/components/combat/CombatTrackerView.tsx','CombatTrackerView',{
+    combatState:state,setCombatState:f=>{state=typeof f==='function'?f(state):f;owner.props.combatState=state;},
+  });
+  return {owner,state:()=>state};
+}
+const turnSummary = s => [s.combatants.map(c=>c.name),s.combatants[s.currentTurnIndex]?.id,s.round];
+for (const active of [false,true]) check(`initiative: manual card edit sorts (${active?'active':'precombat'})`, [['b','a'],'b',3], () => {
+  const t=tracker(active),o=t.owner;
+  nodes(o.tree,n=>n.type==='input'&&n.props['aria-label']==='Инициатива: b')[0].props.onChange({target:{value:'25'}});
+  return turnSummary(t.state());
+});
+check('initiative: editing another actor preserves the active actor', [['b','a'],'b',3], () => {
+  const t=tracker(),o=t.owner;
+  nodes(o.tree,n=>n.type==='input'&&n.props['aria-label']==='Инициатива: a')[0].props.onChange({target:{value:'-2'}});
+  return turnSummary(t.state());
+});
+check('initiative: all/NPC rerolls and manual dialog preserve current actor', ['b','b','b'], () => {
+  const run = mode => {
+    const t=tracker(true,[actor('a',{initiative:15,ref:20}),actor('b',{initiative:10,ref:4})]),o=t.owner;
+    if(mode==='manual') {
+      o.set('isInitiativeModalOpen',true);o.set('initiativeDraft',{a:25,b:15});o.render();
+      click(o,'Применить и отсортировать');
+    } else fixedRandom(0.45,()=>nodes(o.tree,n=>n.type==='button'&&n.props.onClick?.name===mode)[0].props.onClick());
+    return t.state().combatants[t.state().currentTurnIndex].id;
+  };
+  return ['handleRollAllInitiative','handleRollNpcInitiative','manual'].map(run);
+});
+check('initiative: quick add rolls during combat, sorts and preserves turn', [['new','a','b'],'b',3], () => {
+  const t=tracker(),o=t.owner;o.set('isQuickAddOpen',true);o.set('newCombatantName','new');o.set('newCombatantRef',20);o.render();
+  fixedRandom(0.45,()=>nodes(o.tree,n=>n.type==='form'&&n.props.onSubmit?.name==='handleAddQuickCombatant')[0].props.onSubmit({preventDefault(){}}));
+  return turnSummary(t.state());
+});
+check('initiative: start sorts precombat and starts at highest', [['b','a'],'b',1], () => {
+  const t=tracker(false,[actor('a',{initiative:5}),actor('b',{initiative:18})]);
+  nodes(t.owner.tree,n=>n.type==='button'&&n.props.onClick?.name==='handleStartCombat')[0].props.onClick();
+  return turnSummary(t.state());
+});
+check('initiative: restored order is repaired, active ID and round retained', [['b','a'],'a',3], () => {
+  persist.saveStoredData('cpgm_combat',{isActive:true,round:3,currentTurnIndex:0,
+    combatants:[actor('a',{initiative:-2}),actor('b',{initiative:18})],log:[]});
+  return turnSummary(persist.loadStoredData('cpgm_combat',null));
+});
+check('initiative: stable ties never reroll on edit/load and input is unchanged', [['b','a','c'],'a',['a','b','c']], () => {
+  const state={isActive:true,round:2,currentTurnIndex:0,log:[],combatants:[actor('a',{initiative:5}),actor('b',{initiative:20}),actor('c',{initiative:5})]};
+  const random=globals.Math.random;globals.Math.random=()=>{throw Error('Unexpected tie reroll');};
+  try {
+    const result=load('src/utils/initiative.ts').orderCombatants(state);
+    return [result.combatants.map(c=>c.id),result.combatants[result.currentTurnIndex].id,state.combatants.map(c=>c.id)];
+  } finally {globals.Math.random=random;}
+});
+check('initiative: explicit tie rerolls order actors without changing totals', [['b',12],['a',12]], () => {
+  const random=globals.Math.random;let i=0;globals.Math.random=()=>[0.15,0.85][i++];
+  try{return load('src/utils/initiative.ts').sortInitiative([actor('a'),actor('b')]).map(c=>[c.id,c.initiative]);}
+  finally{globals.Math.random=random;}
+});
+check('initiative: next turn follows the reordered queue and wraps the round', ['a',3,'b',4], () => {
+  const t=tracker(),o=t.owner;
+  nodes(o.tree,n=>n.type==='input'&&n.props['aria-label']==='Инициатива: b')[0].props.onChange({target:{value:'25'}});o.render();
+  const next=()=>{nodes(o.tree,n=>n.type==='button'&&n.props.onClick?.name==='handleNextTurn')[0].props.onClick();o.render();};
+  next();const first=t.state();next();const second=t.state();
+  return [first.combatants[first.currentTurnIndex].id,first.round,second.combatants[second.currentTurnIndex].id,second.round];
+});
+check('initiative: party, bestiary and reinforcement insertion roll, sort and preserve active turn', [true,true,true], () => {
+  const app=mount('src/App.tsx','App'),current=actor('a',{initiative:-5});
+  app.set('combatState',{isActive:true,round:3,currentTurnIndex:0,combatants:[current],log:[]});
+  const fixture=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/charsheet-current.json'),'utf8'));
+  app.set('party',persist.importPartyMembers(fixture));app.render();
+  const valid=()=>{
+    const s=app.get('combatState');return s.combatants[s.currentTurnIndex].id==='a'&&s.round===3&&
+      s.combatants.length>1&&s.combatants[0].initiative>0&&s.combatants.every((c,i,all)=>i===0||all[i-1].initiative>=c.initiative);
+  };
+  fixedRandom(0.45,()=>nodes(app.tree,n=>n.type?.name==='CombatTrackerView')[0].props.onAddPartyToCombat());app.render();const party=valid();
+  app.set('activeTab','bestiary');app.render();
+  fixedRandom(0.45,()=>nodes(app.tree,n=>n.type?.name==='BestiaryView')[0].props.onAddNpcToCombat(bestiary.OFFICIAL_CPR_BESTIARY[0],1));app.render();const npc=valid();
+  app.set('activeTab','encounters');app.render();
+  fixedRandom(0.45,()=>nodes(app.tree,n=>n.type?.name==='EncountersView')[0].props.onAddAsReinforcement({title:'probe',npcs:[{name:'reinforcement',count:1,ref:20,hpMax:30,weapons:[]}]}));
+  return [party,npc,valid()];
+});
+check('melee: quick IRL damage uses rounded half SP', [21,10], () => {
+  const t=tracker(),o=t.owner;o.set('quickDmgMap',{a:{amount:15,location:'body',isAp:false,isMelee:true}});o.render();
+  nodes(o.tree,n=>n.type==='button'&&/handleApplyQuickDirectDamage/.test(String(n.props.onClick)))[0].props.onClick();
+  const a=t.state().combatants[0];return [a.hpCurrent,a.bodySp];
+});
+
+// Load a fresh real audio singleton for each simulated browser reload. Other
+// component probes keep their silent audio stub to avoid Web Audio side effects.
+function freshAudio() {
+  const code=ts.transpileModule(fs.readFileSync(path.join(root,'src/utils/audio.ts'),'utf8'),{
+    compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const module={exports:{}};vm.runInNewContext('(function(exports){'+code+'\n})',globals)(module.exports);
+  return module.exports.sfx;
+}
+check('sound: mute and unmute each survive a browser reload', [false,true,false,'false'], () => {
+  const first=freshAudio(),initial=first.getMuted();first.setMuted(true);
+  const second=freshAudio(),muted=second.getMuted();second.setMuted(false);
+  return [initial,muted,freshAudio().getMuted(),storage.get('cpgm_sound_muted')];
+});
+check('sound: blocked storage does not break session mute or initialization', [false,true,false], () => {
+  const original={...globals.localStorage};
+  try {
+    globals.localStorage.getItem=()=>{throw Error('blocked');};globals.localStorage.setItem=()=>{throw Error('quota');};
+    const s=freshAudio(),initial=s.getMuted();s.setMuted(true);const muted=s.getMuted();s.setMuted(false);
+    return [initial,muted,s.getMuted()];
+  } finally {Object.assign(globals.localStorage,original);}
+});
 check('R01: 6+6 against SP11 body loses 6HP', 6, () => fixedRandom(0.999, () => {
   const d = dice.rollDamageFormula('2d6');
   return combat.resolveCprDamage({ rawDamage: d.totalDamage, targetSp: 11, location: 'body', isCritInjuryRoll: d.isCriticalInjury }).finalHpLoss;
@@ -585,7 +707,7 @@ check('charsheet: selected profile drives attack skill and damage', [12,12], () 
   o.set('isAmbush',true);o.render();rollAttack(o);
   return [o.get('attackerSkillBase'),o.get('damageRoll').totalDamage];
 });
-check('charsheet: cyberweapon penetration overrides category defaults', [11,5,0], () => ['none','half','ignore'].map(armorPenetration=>combat.resolveCprDamage({rawDamage:12,location:'body',targetSp:11,isMelee:true,armorPenetration}).effectiveSp));
+check('charsheet: cyberweapon penetration overrides category defaults', [11,6,0], () => ['none','half','ignore'].map(armorPenetration=>combat.resolveCprDamage({rawDamage:12,location:'body',targetSp:11,isMelee:true,armorPenetration}).effectiveSp));
 check('charsheet: canCrit=false suppresses automatic and manual double-six injury', [false,false], () => {
   const auto=attack({weapons:[{...weapon(),canCrit:false}]},{bodySp:0});auto.set('attackMode','player_total');auto.set('directPlayerTotal',30);auto.render();
   fixedRandom(0.99,()=>nodes(auto.tree,n=>n.type==='button'&&n.props.onClick?.name==='handleRollAttack')[0].props.onClick());auto.render();

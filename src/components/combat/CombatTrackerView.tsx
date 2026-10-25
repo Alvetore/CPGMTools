@@ -26,7 +26,7 @@ import {
 import { Combatant, ActiveCombatState, CombatLogEntry, Condition } from '../../types/combat';
 import { CriticalInjury, Weapon } from '../../types/character';
 import { getWoundedStatus, resolveCprDamage, applyCombatDamage, activeInjuries, deathSaveModifier, effectiveMove } from '../../utils/cprCombat';
-import { rollInitiative, sortInitiative, preserveTurn } from '../../utils/initiative';
+import { rollInitiative, sortInitiative, orderCombatants, preserveTurn } from '../../utils/initiative';
 import { spendWeaponAmmo } from '../../utils/weapons';
 import { executeDeathSave, rollD10 } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
@@ -108,7 +108,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   const handleStartCombat = () => {
     sfx.playCritSuccess();
     setCombatState(prev => ({
-      ...prev,
+      ...orderCombatants(prev),
       isActive: true,
       round: 1,
       currentTurnIndex: 0
@@ -166,14 +166,8 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
       return { ...c, initiative: init };
     });
 
-    // Sort descending by initiative, tie-break by REF
     const ordered = sortInitiative(updated);
-
-    setCombatState(prev => ({
-      ...prev,
-      combatants: ordered,
-      currentTurnIndex: 0
-    }));
+    setCombatState(prev => orderCombatants(prev, ordered));
 
     addLog('Брошена инициатива для всех участников (1d10 + РЕФ).', 'system');
   };
@@ -194,14 +188,8 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
       return c;
     });
 
-    // Sort descending by initiative, tie-break by REF
     const ordered = sortInitiative(updated);
-
-    setCombatState(prev => ({
-      ...prev,
-      combatants: ordered,
-      currentTurnIndex: 0
-    }));
+    setCombatState(prev => orderCombatants(prev, ordered));
 
     addLog(`Брошена инициатива только для NPC (${npcs.length} участников). Значения игроков сохранены.`, 'system');
   };
@@ -232,10 +220,10 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   };
 
   const handleUpdateCombatant = (id: string, updates: Partial<Combatant>) => {
-    setCombatState(prev => ({
-      ...prev,
-      combatants: prev.combatants.map(c => c.id === id ? { ...c, ...updates } : c)
-    }));
+    setCombatState(prev => {
+      const combatants = prev.combatants.map(c => c.id === id ? { ...c, ...updates } : c);
+      return updates.initiative !== undefined ? orderCombatants(prev, combatants) : { ...prev, combatants };
+    });
   };
 
   const handleAblateArmor = (id: string, location: 'head' | 'body', amount: number = 1) => {
@@ -368,10 +356,9 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
       isDelayed: false
     };
 
-    setCombatState(prev => ({
-      ...prev,
-      combatants: [...prev.combatants, newC]
-    }));
+    if (combatState.isActive) newC.initiative = rollInitiative(newC);
+
+    setCombatState(prev => orderCombatants(prev, [...prev.combatants, newC]));
 
     setNewCombatantName('');
     setIsQuickAddOpen(false);
@@ -640,6 +627,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                       <span className="text-[9px] font-tech text-zinc-500 uppercase">ИНИ</span>
                       <input
                         type="number"
+                        aria-label={`Инициатива: ${c.name}`}
                         value={c.initiative}
                         onChange={(e) => handleUpdateCombatant(c.id, { initiative: parseInt(e.target.value) || 0 })}
                         className="w-8 bg-transparent text-center font-orbitron font-black text-amber-400 text-sm outline-none"
@@ -1354,13 +1342,8 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                     const rolled = initiativeDraft[c.id] ?? c.initiative;
                     return { ...c, initiative: rolled };
                   });
-                  // Sort descending by initiative, tie-break by REF
                   const ordered = sortInitiative(updated);
-                  setCombatState(prev => ({
-                    ...prev,
-                    combatants: ordered,
-                    currentTurnIndex: 0
-                  }));
+                  setCombatState(prev => orderCombatants(prev, ordered));
                   addLog('Инициатива обновлена и отсортирована.', 'system');
                   setIsInitiativeModalOpen(false);
                 }}

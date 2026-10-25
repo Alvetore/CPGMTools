@@ -378,7 +378,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
     <div className="space-y-4 animate-in fade-in">
       
       {/* Sub Tabs Navigation */}
-      <div className="bg-zinc-900 border border-zinc-800 p-1.5 sm:p-2 rounded-lg flex overflow-x-auto scrollbar-none gap-1.5 shadow-lg touch-pan-x">
+      <nav aria-label="Разделы ширмы мастера" className="bg-zinc-900 border border-zinc-800 p-1.5 sm:p-2 rounded-lg flex md:flex-wrap overflow-x-auto gap-1.5 shadow-lg touch-pan-x">
         {[
           { id: 'tables', label: 'Таблицы боя и брони', icon: <BookOpen className="w-3.5 h-3.5 text-red-500" /> },
           { id: 'modifiers', label: 'Модификаторы & Прокачка (IP)', icon: <Sliders className="w-3.5 h-3.5 text-cyan-400" /> },
@@ -408,7 +408,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
             <span>{tab.label}</span>
           </button>
         ))}
-      </div>
+      </nav>
 
       {/* SUBTAB 1: RULES TABLES */}
       {subTab === 'tables' && (

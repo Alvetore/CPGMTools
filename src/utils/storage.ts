@@ -6,6 +6,7 @@ import { NetArchitecture } from '../types/netrun';
 import { GeneratedGig } from '../types/generators';
 import { validateStored, validateCharacter, validParty, isObject } from './validation';
 import { activeInjuries } from './cprCombat';
+import { orderCombatants } from './initiative';
 
 const STORAGE_KEYS = {
   PARTY: 'cpgm_party',
@@ -52,7 +53,7 @@ export function loadStoredData<T>(key: string, fallback: T): T {
     const value = data[key] as T;
     if (key === STORAGE_KEYS.COMBAT) {
       const combat = value as ActiveCombatState;
-      return { ...combat, combatants: combat.combatants.map(c => ({ ...c, criticalInjuries: c.criticalInjuries.map(i => activeInjuries([{ ...i, isActive: true }])[0] ? { ...activeInjuries([{ ...i, isActive: true }])[0], isActive: i.isActive } : i) })) } as T;
+      return orderCombatants({ ...combat, combatants: combat.combatants.map(c => ({ ...c, criticalInjuries: c.criticalInjuries.map(i => activeInjuries([{ ...i, isActive: true }])[0] ? { ...activeInjuries([{ ...i, isActive: true }])[0], isActive: i.isActive } : i) })) }) as T;
     }
     return value;
   } catch (e) {

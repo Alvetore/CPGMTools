@@ -98,6 +98,8 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={toggleSound}
               title={isMuted ? 'Включить звук' : 'Выключить звук'}
+              aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
+              aria-pressed={!isMuted}
               className="p-1.5 sm:p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded transition-colors"
             >
               {isMuted ? <VolumeX className="w-4 h-4 text-zinc-500" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}

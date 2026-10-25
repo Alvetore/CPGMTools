@@ -23,7 +23,7 @@ import {
 } from './utils/storage';
 import { sfx } from './utils/audio';
 import { rollD10 } from './utils/dice';
-import { rollInitiative, sortInitiative, preserveTurn } from './utils/initiative';
+import { rollInitiative, orderCombatants } from './utils/initiative';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('combat');
@@ -118,7 +118,10 @@ export const App: React.FC = () => {
     }
 
     sfx.playCritSuccess();
-    const newCombatants: Combatant[] = party.map(member => partyMemberToCombatant(member, 0));
+    const newCombatants: Combatant[] = party.map(member => {
+      const combatant = partyMemberToCombatant(member, 0);
+      return combatState.isActive ? { ...combatant, initiative: rollInitiative(combatant) } : combatant;
+    });
 
     // Filter out already present combatants with same sourceCharacterId
     const existingIds = new Set(combatState.combatants.map(c => c.sourceCharacterId));
@@ -131,8 +134,7 @@ export const App: React.FC = () => {
     }
 
     setCombatState(prev => ({
-      ...prev,
-      combatants: [...prev.combatants, ...toAdd],
+      ...orderCombatants(prev, [...prev.combatants, ...toAdd]),
       log: [
         {
           id: `log-${Date.now()}`,
@@ -160,7 +162,7 @@ export const App: React.FC = () => {
         name: displayName,
         role: npc.threatLevel,
         type: npc.threatLevel === 'Drone' ? 'drone' : 'enemy',
-        initiative: 0,
+        initiative: combatState.isActive ? rollInitiative({ ref: npc.stats.REF }) : 0,
         ref: npc.stats.REF,
         dex: npc.stats.DEX,
         move: npc.stats.MOVE,
@@ -183,8 +185,7 @@ export const App: React.FC = () => {
     }
 
     setCombatState(prev => ({
-      ...prev,
-      combatants: [...prev.combatants, ...newNpcs],
+      ...orderCombatants(prev, [...prev.combatants, ...newNpcs]),
       log: [
         {
           id: `log-${Date.now()}`,
@@ -329,13 +330,8 @@ export const App: React.FC = () => {
       }
     });
 
-    const combined = [...combatState.combatants, ...newNpcs];
-    const updatedCombatants = combatState.isActive ? sortInitiative(combined) : combined;
-
     setCombatState(prev => ({
-      ...prev,
-      combatants: updatedCombatants,
-      currentTurnIndex: preserveTurn(prev.combatants, updatedCombatants, prev.currentTurnIndex),
+      ...orderCombatants(prev, [...prev.combatants, ...newNpcs]),
       log: [
         {
           id: `log-${Date.now()}`,

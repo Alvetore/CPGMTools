@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-25T09:11:43.376Z",
+  "generatedAt": "2026-10-25T18:27:05.407Z",
   "method": "actual TS/TSX functions and synchronous component-handler/effect harness; no browser or real storage",
-  "passed": 108,
+  "passed": 116,
   "failed": 0,
   "harnessErrors": 0,
   "results": [
@@ -48,10 +48,314 @@
       "actual": 9
     },
     {
-      "id": "baseline: melee ignores half SP rounded up",
+      "id": "melee: remaining half SP rounds up",
       "passed": true,
-      "expected": 5,
-      "actual": 5
+      "expected": [
+        6,
+        9,
+        10
+      ],
+      "actual": [
+        6,
+        9,
+        10
+      ]
+    },
+    {
+      "id": "melee: damage equal to rounded half SP cannot penetrate or ablate",
+      "passed": true,
+      "expected": [
+        0,
+        11
+      ],
+      "actual": [
+        0,
+        11
+      ]
+    },
+    {
+      "id": "melee: SP1, even SP, head/AP, explicit half, brawling and ignore",
+      "passed": true,
+      "expected": [
+        1,
+        5,
+        18,
+        9,
+        6,
+        11,
+        0
+      ],
+      "actual": [
+        1,
+        5,
+        18,
+        9,
+        6,
+        11,
+        0
+      ]
+    },
+    {
+      "id": "initiative: manual card edit sorts (precombat)",
+      "passed": true,
+      "expected": [
+        [
+          "b",
+          "a"
+        ],
+        "b",
+        3
+      ],
+      "actual": [
+        [
+          "b",
+          "a"
+        ],
+        "b",
+        3
+      ]
+    },
+    {
+      "id": "initiative: manual card edit sorts (active)",
+      "passed": true,
+      "expected": [
+        [
+          "b",
+          "a"
+        ],
+        "b",
+        3
+      ],
+      "actual": [
+        [
+          "b",
+          "a"
+        ],
+        "b",
+        3
+      ]
+    },
+    {
+      "id": "initiative: editing another actor preserves the active actor",
+      "passed": true,
+      "expected": [
+        [
+          "b",
+          "a"
+        ],
+        "b",
+        3
+      ],
+      "actual": [
+        [
+          "b",
+          "a"
+        ],
+        "b",
+        3
+      ]
+    },
+    {
+      "id": "initiative: all/NPC rerolls and manual dialog preserve current actor",
+      "passed": true,
+      "expected": [
+        "b",
+        "b",
+        "b"
+      ],
+      "actual": [
+        "b",
+        "b",
+        "b"
+      ]
+    },
+    {
+      "id": "initiative: quick add rolls during combat, sorts and preserves turn",
+      "passed": true,
+      "expected": [
+        [
+          "new",
+          "a",
+          "b"
+        ],
+        "b",
+        3
+      ],
+      "actual": [
+        [
+          "new",
+          "a",
+          "b"
+        ],
+        "b",
+        3
+      ]
+    },
+    {
+      "id": "initiative: start sorts precombat and starts at highest",
+      "passed": true,
+      "expected": [
+        [
+          "b",
+          "a"
+        ],
+        "b",
+        1
+      ],
+      "actual": [
+        [
+          "b",
+          "a"
+        ],
+        "b",
+        1
+      ]
+    },
+    {
+      "id": "initiative: restored order is repaired, active ID and round retained",
+      "passed": true,
+      "expected": [
+        [
+          "b",
+          "a"
+        ],
+        "a",
+        3
+      ],
+      "actual": [
+        [
+          "b",
+          "a"
+        ],
+        "a",
+        3
+      ]
+    },
+    {
+      "id": "initiative: stable ties never reroll on edit/load and input is unchanged",
+      "passed": true,
+      "expected": [
+        [
+          "b",
+          "a",
+          "c"
+        ],
+        "a",
+        [
+          "a",
+          "b",
+          "c"
+        ]
+      ],
+      "actual": [
+        [
+          "b",
+          "a",
+          "c"
+        ],
+        "a",
+        [
+          "a",
+          "b",
+          "c"
+        ]
+      ]
+    },
+    {
+      "id": "initiative: explicit tie rerolls order actors without changing totals",
+      "passed": true,
+      "expected": [
+        [
+          "b",
+          12
+        ],
+        [
+          "a",
+          12
+        ]
+      ],
+      "actual": [
+        [
+          "b",
+          12
+        ],
+        [
+          "a",
+          12
+        ]
+      ]
+    },
+    {
+      "id": "initiative: next turn follows the reordered queue and wraps the round",
+      "passed": true,
+      "expected": [
+        "a",
+        3,
+        "b",
+        4
+      ],
+      "actual": [
+        "a",
+        3,
+        "b",
+        4
+      ]
+    },
+    {
+      "id": "initiative: party, bestiary and reinforcement insertion roll, sort and preserve active turn",
+      "passed": true,
+      "expected": [
+        true,
+        true,
+        true
+      ],
+      "actual": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "id": "melee: quick IRL damage uses rounded half SP",
+      "passed": true,
+      "expected": [
+        21,
+        10
+      ],
+      "actual": [
+        21,
+        10
+      ]
+    },
+    {
+      "id": "sound: mute and unmute each survive a browser reload",
+      "passed": true,
+      "expected": [
+        false,
+        true,
+        false,
+        "false"
+      ],
+      "actual": [
+        false,
+        true,
+        false,
+        "false"
+      ]
+    },
+    {
+      "id": "sound: blocked storage does not break session mute or initialization",
+      "passed": true,
+      "expected": [
+        false,
+        true,
+        false
+      ],
+      "actual": [
+        false,
+        true,
+        false
+      ]
     },
     {
       "id": "R01: 6+6 against SP11 body loses 6HP",
@@ -752,12 +1056,12 @@
       "passed": true,
       "expected": [
         11,
-        5,
+        6,
         0
       ],
       "actual": [
         11,
-        5,
+        6,
         0
       ]
     },
@@ -946,54 +1250,6 @@
         true,
         "implant"
       ]
-    },
-    {
-      "id": "live sheet: ready weapons including grenades",
-      "passed": true,
-      "expected": 218,
-      "actual": 218
-    },
-    {
-      "id": "live sheet: backpack weapons",
-      "passed": true,
-      "expected": 218,
-      "actual": 218
-    },
-    {
-      "id": "live sheet: spare armor",
-      "passed": true,
-      "expected": 35,
-      "actual": 35
-    },
-    {
-      "id": "live sheet: uninstalled cyberware",
-      "passed": true,
-      "expected": 173,
-      "actual": 173
-    },
-    {
-      "id": "live sheet: legacy cyberware with linked weapons",
-      "passed": true,
-      "expected": 173,
-      "actual": 173
-    },
-    {
-      "id": "live sheet: gear",
-      "passed": true,
-      "expected": 261,
-      "actual": 261
-    },
-    {
-      "id": "live sheet: vehicles",
-      "passed": true,
-      "expected": 59,
-      "actual": 59
-    },
-    {
-      "id": "live sheet: current fixture accepted and Export All preserves the same payload",
-      "passed": true,
-      "expected": true,
-      "actual": true
     }
   ]
 }

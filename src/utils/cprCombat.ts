@@ -113,9 +113,9 @@ export function resolveCprDamage(params: ApplyDamageParams): DamageResolutionRes
     logSummary: `Атака укрытия: ${rawDamage} урона. HP укрытия ${coverHp} → ${Math.max(0, coverHp - rawDamage)}. Избыточный урон теряется; цель не повреждена.`
   };
 
-  // Melee attacks ignore half armor SP (round down in CPR)
+  // Round the remaining SP up when armor is halved.
   const penetration = params.armorPenetration ?? (isMelee && !isBrawling ? 'half' : 'none');
-  const effectiveSp = penetration === 'ignore' ? 0 : penetration === 'half' ? Math.floor(targetSp / 2) : targetSp;
+  const effectiveSp = penetration === 'ignore' ? 0 : penetration === 'half' ? Math.ceil(targetSp / 2) : targetSp;
   const headMultiplier = Math.max(2, ...activeInjuries(existingInjuries).map(i => i.headMultiplier ?? 2));
   const isPenetrated = rawDamage > effectiveSp;
 

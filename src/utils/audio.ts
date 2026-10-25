@@ -1,6 +1,16 @@
+const SOUND_MUTED_KEY = 'cpgm_sound_muted';
+
 class SoundEffects {
   private ctx: AudioContext | null = null;
   private isMuted: boolean = false;
+
+  constructor() {
+    try {
+      this.isMuted = localStorage.getItem(SOUND_MUTED_KEY) === 'true';
+    } catch {
+      // Sound still works for this session if browser storage is unavailable.
+    }
+  }
 
   private getContext(): AudioContext | null {
     if (this.isMuted) return null;
@@ -18,6 +28,11 @@ class SoundEffects {
 
   public setMuted(muted: boolean) {
     this.isMuted = muted;
+    try {
+      localStorage.setItem(SOUND_MUTED_KEY, String(muted));
+    } catch {
+      // Keep the in-memory setting even when persistence is blocked.
+    }
   }
 
   public getMuted(): boolean {
