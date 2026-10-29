@@ -1,19 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Car, 
-  Sparkles, 
-  Play, 
-  RotateCcw, 
   Plus, 
   Trash2, 
-  Shield, 
-  Heart, 
   AlertTriangle, 
   Gauge, 
-  Crosshair, 
   FastForward, 
   Zap,
-  CheckCircle,
   HelpCircle,
   Dices,
   Edit3,
@@ -144,9 +137,12 @@ export const ChaseTrackerView: React.FC = () => {
     if (v.hasActed) { alert('Стандартное действие водителя уже потрачено в этом раунде.'); return; }
     if (v.driverBase < 9) { alert('При базе управления ниже 9 стандартное действие уходит на управление.'); return; }
     if (mId === 'm-nos' && !v.hasNos) { alert('На этом ТС нет NOS.'); return; }
-    const adjacent = vehicles.filter(x => x.id !== v.id && !x.isWrecked && !x.isEscaped && Math.abs(x.gridSquare - v.gridSquare) === 1);
-    const target = maneuverTargetId ? adjacent.find(x => x.id === maneuverTargetId) : adjacent.length === 1 ? adjacent[0] : undefined;
-    if (['m-pit','m-overtake','m-ram'].includes(mId) && !target) { alert('Выберите цель на соседней клетке.'); return; }
+    const targetCandidates = vehicles.filter(x => x.id !== v.id && !x.isWrecked && !x.isEscaped && (
+      mId === 'm-ram' ? x.gridSquare === v.gridSquare : Math.abs(x.gridSquare - v.gridSquare) === 1
+    ));
+    const target = maneuverTargetId ? targetCandidates.find(x => x.id === maneuverTargetId) : targetCandidates.length === 1 ? targetCandidates[0] : undefined;
+    if (['m-pit','m-overtake'].includes(mId) && !target) { alert('Выберите цель на соседней клетке.'); return; }
+    if (mId === 'm-ram' && !target) { alert('Выберите цель на той же клетке.'); return; }
     const dv = mId === 'm-pit' ? 15 : ['m-overtake','m-ram'].includes(mId) ? 17 : 13;
     const check = executeCPRCheck(v.driverBase, 0, 0, dv, manualD10 === undefined ? undefined : { firstDie: manualD10 });
     let updated = vehicles.map(x => x.id === v.id ? { ...x, hasActed: true } : x);
@@ -278,7 +274,15 @@ export const ChaseTrackerView: React.FC = () => {
 
         {/* The 8 Track Bands */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-          {trackSquares.map(square => ({ square, range: '', description: 'Относительная координата погони' })).map((band) => {
+          {trackSquares.map(square => {
+            const offset = square - firstSquare + 1;
+            const bandInfo = HOT_PURSUIT_RANGE_BANDS.find(b => b.square === offset);
+            return {
+              square,
+              range: bandInfo ? bandInfo.range : (offset > 8 ? '> 800 м' : ''),
+              description: bandInfo ? bandInfo.description : 'Координата погони'
+            };
+          }).map((band) => {
             const vehiclesHere = vehicles.filter(v => v.gridSquare === band.square && !v.isWrecked && !v.isEscaped);
 
             return (
@@ -287,7 +291,7 @@ export const ChaseTrackerView: React.FC = () => {
                 className={`p-2 sm:p-2.5 rounded border flex flex-col justify-between min-h-[90px] sm:min-h-[120px] transition-all ${
                   vehiclesHere.length > 0
                     ? 'bg-zinc-950 border-amber-500/80 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
-                    : 'bg-zinc-950/60 border-zinc-850'
+                    : 'bg-zinc-950/60 border-zinc-800'
                 }`}
               >
                 <div>
@@ -312,6 +316,9 @@ export const ChaseTrackerView: React.FC = () => {
                       </div>
                       {v.isPitSuffering && (
                         <span className="text-[9px] text-red-400 font-bold block">⚠️ PIT штраф</span>
+                      )}
+                      {v.isPulledClose && (
+                        <span className="text-[9px] text-cyan-400 font-bold block">📍 Вплотную</span>
                       )}
                     </div>
                   ))}
@@ -352,6 +359,11 @@ export const ChaseTrackerView: React.FC = () => {
                     {v.isWrecked && (
                       <span className="px-1.5 py-0.2 bg-red-950 border border-red-600 text-red-400 font-tech font-bold text-[10px] rounded uppercase">
                         РАЗБИТ / ВЫВЕДЕН
+                      </span>
+                    )}
+                    {v.isPulledClose && (
+                      <span className="px-1.5 py-0.2 bg-cyan-950 border border-cyan-600 text-cyan-300 font-tech font-bold text-[10px] rounded uppercase">
+                        Вплотную (Ближний бой)
                       </span>
                     )}
                   </div>
@@ -570,7 +582,7 @@ export const ChaseTrackerView: React.FC = () => {
             <div className="text-zinc-600 text-center py-2">Событий погони пока нет. Нажмите «Итог раунда» или выберите манёвр.</div>
           ) : (
             chaseLog.map((log, idx) => (
-              <div key={idx} className="text-zinc-300 border-b border-zinc-850 pb-0.5">
+              <div key={idx} className="text-zinc-300 border-b border-zinc-800 pb-0.5">
                 {log}
               </div>
             ))
@@ -900,10 +912,23 @@ export const ChaseTrackerView: React.FC = () => {
             </div>
 
             {/* Mode switch */}
-            {['m-pit','m-overtake','m-ram'].includes(activeManeuverModal.maneuverId) && <label className="block text-xs">Цель манёвра <select value={maneuverTargetId} onChange={e => setManeuverTargetId(e.target.value)} className="block w-full bg-zinc-950 border rounded p-1">
-              <option value="">Выберите цель (одна соседняя выбирается автоматически)</option>
-              {vehicles.filter(v => v.id !== activeManeuverModal.vehicle.id && !v.isWrecked && !v.isEscaped).map(v => <option key={v.id} value={v.id}>{v.name} — клетка {v.gridSquare}</option>)}
-            </select></label>}
+            {['m-pit','m-overtake','m-ram'].includes(activeManeuverModal.maneuverId) && (
+              <label className="block text-xs">
+                Цель манёвра ({activeManeuverModal.maneuverId === 'm-ram' ? 'на той же клетке' : 'на соседней клетке'})
+                <select value={maneuverTargetId} onChange={e => setManeuverTargetId(e.target.value)} className="block w-full bg-zinc-950 border rounded p-1 mt-1">
+                  <option value="">
+                    {activeManeuverModal.maneuverId === 'm-ram' ? 'Выберите цель на той же клетке (одна цель выбирается авто)' : 'Выберите цель на соседней клетке (одна цель выбирается авто)'}
+                  </option>
+                  {vehicles.filter(v => v.id !== activeManeuverModal.vehicle.id && !v.isWrecked && !v.isEscaped && (
+                    activeManeuverModal.maneuverId === 'm-ram'
+                      ? v.gridSquare === activeManeuverModal.vehicle.gridSquare
+                      : Math.abs(v.gridSquare - activeManeuverModal.vehicle.gridSquare) === 1
+                  )).map(v => (
+                    <option key={v.id} value={v.id}>{v.name} — клетка #{v.gridSquare}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <div className="flex items-center justify-between bg-zinc-950 p-2 rounded border border-zinc-800">
               <span className="text-zinc-400 font-bold uppercase text-[11px]">Режим проверки:</span>
               <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800">

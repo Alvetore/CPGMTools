@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Dices, X, Sparkles, AlertTriangle, Skull, Shield, Heart, Edit3 } from 'lucide-react';
-import { executeCPRCheck, rollDamageFormula, executeDeathSave, rollD10, rollD6 } from '../../utils/dice';
+import { Dices, X, AlertTriangle, Edit3 } from 'lucide-react';
+import { executeCPRCheck, rollDamageFormula, executeDeathSave } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
 
 interface DiceRollerModalProps {

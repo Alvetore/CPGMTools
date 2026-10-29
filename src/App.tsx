@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Header, ActiveTab } from './components/Header';
 import { CombatTrackerView } from './components/combat/CombatTrackerView';
 import { EncountersView } from './components/encounters/EncountersView';
@@ -22,7 +22,6 @@ import {
   partyMemberToCombatant 
 } from './utils/storage';
 import { sfx } from './utils/audio';
-import { rollD10 } from './utils/dice';
 import { rollInitiative, orderCombatants } from './utils/initiative';
 
 export const App: React.FC = () => {
@@ -55,6 +54,8 @@ export const App: React.FC = () => {
   const [customBestiary, setCustomBestiary] = useState<NpcTemplate[]>(() => 
     loadStoredData<NpcTemplate[]>(STORAGE_KEYS.CUSTOM_BESTIARY, [])
   );
+
+  const allTemplates = useMemo(() => [...OFFICIAL_CPR_BESTIARY, ...customBestiary], [customBestiary]);
 
   // Encounters state
   const [encounters, setEncounters] = useState<Encounter[]>(() => 
@@ -152,11 +153,12 @@ export const App: React.FC = () => {
 
   // Add NPC from bestiary to combat
   const handleAddNpcToCombat = (npc: NpcTemplate, count: number) => {
+    const safeCount = Math.min(50, Math.max(1, count));
     sfx.playHit();
     const newNpcs: Combatant[] = [];
 
-    for (let i = 1; i <= count; i++) {
-      const displayName = count > 1 ? `${npc.nameRu} #${i}` : npc.nameRu;
+    for (let i = 1; i <= safeCount; i++) {
+      const displayName = safeCount > 1 ? `${npc.nameRu} #${i}` : npc.nameRu;
       newNpcs.push({
         id: `c-npc-${npc.id}-${Date.now()}-${i}`,
         name: displayName,
@@ -378,7 +380,7 @@ export const App: React.FC = () => {
         {activeTab === 'encounters' && (
           <EncountersView
             encounters={encounters}
-            templates={[...OFFICIAL_CPR_BESTIARY, ...customBestiary]}
+            templates={allTemplates}
             isCombatActive={combatState.isActive}
             combatantsCount={combatState.combatants.length}
             partyCount={party.length}

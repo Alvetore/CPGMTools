@@ -8,13 +8,9 @@ import {
   Play, 
   Layers, 
   MapPin, 
-  Tag, 
   Skull, 
   Swords, 
-  ShieldAlert, 
-  Users,
-  CheckCircle,
-  HelpCircle
+  Users
 } from 'lucide-react';
 import { Encounter, NpcTemplate } from '../../types/bestiary';
 import { EncounterFormModal } from './EncounterFormModal';
@@ -341,7 +337,7 @@ export const EncountersView: React.FC<EncountersViewProps> = ({
                     <span>ЗАПУСТИТЬ ЭТОТ БОЙ</span>
                   </button>
 
-                  {combatantsCount > 0 && (
+                  {(isCombatActive || combatantsCount > 0) && (
                     <button
                       onClick={() => {
                         sfx.playHit();

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Download, Upload, X, AlertTriangle, RefreshCw, FileText, CheckCircle } from 'lucide-react';
+import { Download, Upload, X } from 'lucide-react';
 import { exportEntireGmDatabase, saveStoredData, loadStoredData, restoreGmDatabase, clearGmDatabase, STORAGE_KEYS, importPartyMembers } from '../../utils/storage';
 import { PartyMember } from '../../types/party';
 import { sfx } from '../../utils/audio';
@@ -27,13 +27,16 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
 
         // Check if it's a full backup
         if (data.exportVersion) {
+          if (!confirm('ВНИМАНИЕ: Восстановление полной резервной копии заменит текущую партию, бой, энкаунтеры и все данные в базе. Продолжить?')) {
+            return;
+          }
           restoreGmDatabase(data);
 
           sfx.playCritSuccess();
           alert('Резервная копия базы ГМа успешно восстановлена!');
           onDataRestored();
           onClose();
-        } else if (Array.isArray(data) || (data.stats && data.armor)) {
+        } else if (Array.isArray(data) || (data.stats && data.armor) || (data.party !== undefined)) {
           const members = importPartyMembers(data);
           const currentParty = loadStoredData<PartyMember[]>(STORAGE_KEYS.PARTY, []);
           const merged = new Map(currentParty.map(p => [p.id,p]));

@@ -34,6 +34,8 @@ const react = {
     const index = hooks.refCursor++;
     return hooks.refs[index] ??= { current: value };
   },
+  useMemo: fn => fn(),
+  useCallback: fn => fn,
 };
 const globals = {
   console, Math: Object.create(Math), Date, Blob,
@@ -799,6 +801,38 @@ check('current sheet: a profile cannot override ownership, backpack state or con
   const selected=weaponsUtil.selectedWeaponProfile({...currentSheet.weapons[0],id:'owned',isEquipped:false,consumable:true,sourceCyberwareId:'implant',
     damageProfiles:[{name:'mode',damage:'3d6',id:'other',isEquipped:true,consumable:false,sourceCyberwareId:'other-implant'}]});
   return [selected.id,selected.isEquipped,selected.consumable,selected.sourceCyberwareId];
+});
+
+check('audit: F-01 Autofire SMG 51-100m DV is 30', 30, () => {
+  return rules.CPR_RANGE_DV_TABLE.autofire_smg.dvs['51-100m'];
+});
+check('audit: F-02 Drone template conversion has skills, weapons and half armor penetration', [true, true, 'half'], () => {
+  const expanded = load('src/data/cprExpandedRules.ts');
+  const swarm = expanded.DRONES_CATALOG.find(d => d.id === 'drone-swarm');
+  const tpl = expanded.droneToNpcTemplate(swarm);
+  return [tpl.skills.length > 0, tpl.weapons.length > 0, tpl.weapons[0].armorPenetration];
+});
+check('audit: F-04 Chase escape when pursuers list is empty', true, () => {
+  const chaseUtil = load('src/utils/chase.ts');
+  const vehicles = [
+    { id: 'esc-1', name: 'Runner', side: 'evader', gridSquare: 15, isWrecked: false, isEscaped: false }
+  ];
+  const updated = chaseUtil.markEscapes(vehicles);
+  return updated[0].isEscaped;
+});
+check('audit: F-16 Party perceptionBase includes INT stat modifier', 10, () => {
+  const sheet = {
+    ...cyberSheet,
+    id: 'sheet-int-mod-test',
+    statMods: { INT: 2 }
+  };
+  const [member] = persist.importPartyMembers(sheet);
+  return member.passivePerception;
+});
+check('audit: F-22 Manual dice clamping for exploded and botch die', [20, -9], () => {
+  const high = dice.executeCPRCheck(10, 0, 0, undefined, { firstDie: 10, explodedDie: 99 });
+  const low = dice.executeCPRCheck(10, 0, 0, undefined, { firstDie: 1, botchDie: 99 });
+  return [high.d10Total, low.d10Total];
 });
 
 // Optional contract check against a real current checkout; CI retains the pinned

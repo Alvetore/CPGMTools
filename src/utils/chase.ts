@@ -10,7 +10,14 @@ export function getEffectiveSpeed(v: ChaseVehicle): { effectiveSpeed: CombatSpee
 
 export function markEscapes(vehicles: ChaseVehicle[]): ChaseVehicle[] {
   const pursuers = vehicles.filter(v => v.side === 'pursuer' && !v.isWrecked && !v.isEscaped);
-  return vehicles.map(v => ({ ...v, isEscaped: v.isEscaped || (v.side === 'evader' && !v.isWrecked && pursuers.length > 0 && pursuers.every(p => Math.abs(v.gridSquare - p.gridSquare) > 8)) }));
+  return vehicles.map(v => ({
+    ...v,
+    isEscaped: v.isEscaped || (
+      v.side === 'evader' &&
+      !v.isWrecked &&
+      (pursuers.length === 0 || pursuers.every(p => Math.abs(v.gridSquare - p.gridSquare) > 8))
+    )
+  }));
 }
 
 export function positionVehicle(v: ChaseVehicle, manual?: ManualD10Input) {

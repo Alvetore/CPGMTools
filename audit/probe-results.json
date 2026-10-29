@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-25T18:27:05.407Z",
+  "generatedAt": "2026-10-29T23:04:05.675Z",
   "method": "actual TS/TSX functions and synchronous component-handler/effect harness; no browser or real storage",
-  "passed": 116,
+  "passed": 121,
   "failed": 0,
   "harnessErrors": 0,
   "results": [
@@ -1249,6 +1249,50 @@
         false,
         true,
         "implant"
+      ]
+    },
+    {
+      "id": "audit: F-01 Autofire SMG 51-100m DV is 30",
+      "passed": true,
+      "expected": 30,
+      "actual": 30
+    },
+    {
+      "id": "audit: F-02 Drone template conversion has skills, weapons and half armor penetration",
+      "passed": true,
+      "expected": [
+        true,
+        true,
+        "half"
+      ],
+      "actual": [
+        true,
+        true,
+        "half"
+      ]
+    },
+    {
+      "id": "audit: F-04 Chase escape when pursuers list is empty",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "id": "audit: F-16 Party perceptionBase includes INT stat modifier",
+      "passed": true,
+      "expected": 10,
+      "actual": 10
+    },
+    {
+      "id": "audit: F-22 Manual dice clamping for exploded and botch die",
+      "passed": true,
+      "expected": [
+        20,
+        -9
+      ],
+      "actual": [
+        20,
+        -9
       ]
     }
   ]

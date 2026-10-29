@@ -8,9 +8,7 @@ import {
   Tag, 
   ShieldAlert, 
   Minus,
-  Swords,
-  Crosshair,
-  Sparkles
+  Swords
 } from 'lucide-react';
 import { Encounter, EncounterNpcItem, NpcTemplate, ThreatLevel } from '../../types/bestiary';
 import { CombatantType } from '../../types/combat';
@@ -63,11 +61,11 @@ export const EncounterFormModal: React.FC<EncounterFormModalProps> = ({
       setTags([]);
       setNpcs([]);
     }
-    if (templates.length > 0) {
+    if (templates.length > 0 && !selectedTemplateId) {
       setSelectedTemplateId(templates[0].id);
     }
     setError('');
-  }, [initialEncounter, isOpen, templates]);
+  }, [initialEncounter, isOpen]);
 
   if (!isOpen) return null;
 
@@ -80,7 +78,7 @@ export const EncounterFormModal: React.FC<EncounterFormModalProps> = ({
     // Check if already in list
     const existingIndex = npcs.findIndex(n => n.templateId === tpl.id);
     if (existingIndex !== -1) {
-      setNpcs(prev => prev.map((n, i) => i === existingIndex ? { ...n, count: n.count + 1 } : n));
+      setNpcs(prev => prev.map((n, i) => i === existingIndex ? { ...n, count: Math.min(100, n.count + 1) } : n));
       return;
     }
 
@@ -169,6 +167,10 @@ export const EncounterFormModal: React.FC<EncounterFormModalProps> = ({
     }
     if (npcs.length === 0) {
       setError('Добавьте хотя бы одного NPC или противника в энкаунтер!');
+      return;
+    }
+    if (npcs.some(n => !Number.isInteger(n.count) || n.count < 1 || n.count > 100)) {
+      setError('Количество каждого противника в энкаунтере должно быть от 1 до 100.');
       return;
     }
     if (npcs.some(n => n.skills?.some(s => !s.nameRu.trim() || !Number.isInteger(s.base) || s.base < 0))) {
@@ -443,7 +445,7 @@ export const EncounterFormModal: React.FC<EncounterFormModalProps> = ({
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleUpdateNpc(npc.id, { count: npc.count + 1 })}
+                          onClick={() => handleUpdateNpc(npc.id, { count: Math.min(100, npc.count + 1) })}
                           className="p-1 hover:text-emerald-400 text-zinc-400"
                         >
                           <Plus className="w-3 h-3" />

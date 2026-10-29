@@ -6,32 +6,24 @@ import {
   ChevronLeft, 
   Plus, 
   Crosshair, 
-  Shield, 
   Heart, 
   Skull, 
   AlertTriangle, 
   Trash2, 
-  Volume2, 
-  Flame, 
-  CheckCircle,
-  Clock,
-  Sparkles,
-  Dices,
-  Edit3,
-  X,
-  Target,
-  Zap,
-  Swords
+  Clock, 
+  Dices, 
+  Edit3, 
+  X, 
+  Zap, 
+  Swords 
 } from 'lucide-react';
-import { Combatant, ActiveCombatState, CombatLogEntry, Condition } from '../../types/combat';
-import { CriticalInjury, Weapon } from '../../types/character';
+import { Combatant, ActiveCombatState, CombatLogEntry } from '../../types/combat';
 import { getWoundedStatus, resolveCprDamage, applyCombatDamage, activeInjuries, deathSaveModifier, effectiveMove } from '../../utils/cprCombat';
 import { rollInitiative, sortInitiative, orderCombatants, preserveTurn } from '../../utils/initiative';
 import { spendWeaponAmmo } from '../../utils/weapons';
-import { executeDeathSave, rollD10 } from '../../utils/dice';
+import { executeDeathSave } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
 import { AttackResolverModal } from './AttackResolverModal';
-import { CPR_CRITICAL_INJURIES_BODY, CPR_CRITICAL_INJURIES_HEAD } from '../../data/cprRules';
 
 interface CombatTrackerViewProps {
   combatState: ActiveCombatState;
@@ -82,6 +74,7 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
   // Keyboard shortcut: Space for Next Turn
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
       if (e.code === 'Space' && combatState.isActive && !attackModalData && !deathSaveModalTarget && !isInitiativeModalOpen && !isQuickAddOpen && !injuryModalCombatant && !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes((e.target as HTMLElement).tagName)) {
         e.preventDefault();
         handleNextTurn();
@@ -129,12 +122,25 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
       addLog(`Начался новый раунд ${nextRound}!`, 'system');
     }
 
+    const updatedCombatants: Combatant[] = nextRound > combatState.round
+      ? combatState.combatants.map(c => ({
+          ...c,
+          conditions: (c.conditions || [])
+            .map(cond => ({
+              ...cond,
+              roundsRemaining: typeof cond.roundsRemaining === 'number' ? cond.roundsRemaining - 1 : null
+            }))
+            .filter(cond => cond.roundsRemaining === null || cond.roundsRemaining > 0)
+        }))
+      : combatState.combatants;
+
     // Death-save penalties change when the save is actually made, not on navigation.
-    const current = combatState.combatants[nextIndex];
+    const current = updatedCombatants[nextIndex];
     if (current?.hpCurrent <= 0 && !current.isDead) addLog(`${current.name}: в начале хода требуется спасбросок смерти (+${deathSaveModifier(current)}).`, 'deathsave');
 
     setCombatState(prev => ({
       ...prev,
+      combatants: updatedCombatants,
       round: nextRound,
       currentTurnIndex: nextIndex
     }));
@@ -261,7 +267,6 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
     if (delta < 0) sfx.playHit(); else sfx.playClick();
 
     const newHp = Math.min(c.hpMax, Math.max(0, c.hpCurrent + delta));
-    const wasDefeated = c.isDefeated;
 
     handleUpdateCombatant(id, { 
       hpCurrent: newHp,
@@ -925,6 +930,24 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                         <AlertTriangle className="w-3 h-3 text-red-400" />
                         <span>{injury.nameRu}</span>
                       </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Conditions list */}
+                {c.conditions && c.conditions.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] font-tech text-amber-400 uppercase">Состояния:</span>
+                    {c.conditions.map((cond) => (
+                      <span
+                        key={cond.id}
+                        className="text-[11px] font-tech px-2 py-0.5 rounded bg-amber-950/80 border border-amber-700/80 text-amber-200 flex items-center gap-1"
+                      >
+                        <span>⏳ {cond.name}</span>
+                        {cond.roundsRemaining !== undefined && (
+                          <strong className="text-amber-400">({cond.roundsRemaining} раунд.)</strong>
+                        )}
+                      </span>
                     ))}
                   </div>
                 )}

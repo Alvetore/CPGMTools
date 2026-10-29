@@ -10,7 +10,6 @@ import {
   Upload, 
   Volume2, 
   VolumeX, 
-  Sparkles,
   Swords
 } from 'lucide-react';
 import { sfx } from '../utils/audio';

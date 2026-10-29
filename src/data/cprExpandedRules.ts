@@ -1,5 +1,6 @@
 // Cyberpunk RED Expanded Rules & GM Data
 // Sources: Corebook, Interface RED, Listen Up!, Solo of Fortune, Night Markets, Data Pool
+import { NpcTemplate } from '../types/bestiary';
 
 export interface SituationalModifier {
   id: string;
@@ -294,6 +295,176 @@ export const DRONES_CATALOG: DroneData[] = [
     description: 'Огромный промышленный дрон высотой 4 метра. Используется корпорациями для охраны складов и строек.'
   }
 ];
+
+export function droneToNpcTemplate(drone: DroneData): NpcTemplate {
+  const commonStats = { INT: 2, REF: 6, DEX: 6, TECH: 2, COOL: 1, WILL: 1, LUCK: 0, MOVE: drone.move, BODY: 4, EMP: 0 };
+  
+  if (drone.id === 'drone-swarm') {
+    return {
+      id: `drone-${drone.id}`,
+      nameRu: drone.nameRu,
+      nameEn: 'Micro-drone Swarm',
+      threatLevel: 'Drone',
+      faction: 'Автономная охрана',
+      description: drone.description,
+      stats: commonStats,
+      hpMax: drone.hp,
+      headSp: drone.sp,
+      bodySp: drone.sp,
+      armorName: 'Рой без брони (SP 0)',
+      weapons: [
+        {
+          id: 'w-dr-swarm-1',
+          name: 'Нанопроволочные лезвия',
+          category: 'Very Heavy Melee Weapon',
+          damage: '4d6',
+          standardRof: 1,
+          magCapacity: 1,
+          currentAmmo: 1,
+          ammoType: 'Ближний бой',
+          armorPenetration: 'half'
+        }
+      ],
+      skills: [{ nameRu: 'Холодное оружие', base: 10 }, { nameRu: 'Уклонение', base: 10 }, { nameRu: 'Восприятие', base: 8 }],
+      cyberware: [],
+      gear: ['Сенсор инфракрасного контура']
+    };
+  }
+
+  if (drone.id === 'drone-ground-ball') {
+    return {
+      id: `drone-${drone.id}`,
+      nameRu: drone.nameRu,
+      nameEn: 'Combat Ground Sphere Drone',
+      threatLevel: 'Drone',
+      faction: 'Корпоративная охрана',
+      description: drone.description,
+      stats: commonStats,
+      hpMax: drone.hp,
+      headSp: drone.sp,
+      bodySp: drone.sp,
+      armorName: 'Легкая броня дрона (SP 7)',
+      weapons: [
+        {
+          id: 'w-dr-ball-1',
+          name: 'Тяжёлый пистолет Sternmeyer',
+          category: 'Heavy Pistol',
+          damage: '3d6',
+          standardRof: 2,
+          magCapacity: 8,
+          currentAmmo: 8,
+          ammoType: 'Стандарт'
+        }
+      ],
+      skills: [{ nameRu: 'Стрельба из пистолета', base: 10 }, { nameRu: 'Уклонение', base: 8 }, { nameRu: 'Восприятие', base: 8 }],
+      cyberware: [],
+      gear: ['Камера кругового обзора']
+    };
+  }
+
+  if (drone.id === 'drone-spider') {
+    return {
+      id: `drone-${drone.id}`,
+      nameRu: drone.nameRu,
+      nameEn: 'Militech Combat Spider Drone',
+      threatLevel: 'Drone',
+      faction: 'Militech',
+      description: drone.description,
+      stats: commonStats,
+      hpMax: drone.hp,
+      headSp: drone.sp,
+      bodySp: drone.sp,
+      armorName: 'Армейская броня Militech (SP 11)',
+      weapons: [
+        {
+          id: 'w-dr-spider-1',
+          name: 'Спаренный тактический ПП',
+          category: 'SMG',
+          damage: '3d6',
+          standardRof: 1,
+          magCapacity: 30,
+          currentAmmo: 30,
+          ammoType: 'Стандарт'
+        },
+        {
+          id: 'w-dr-spider-2',
+          name: 'Гранатомёт (слезоточивый газ)',
+          category: 'Grenade Launcher',
+          damage: '0d6',
+          standardRof: 1,
+          magCapacity: 2,
+          currentAmmo: 2,
+          ammoType: 'Слезоточивый газ'
+        }
+      ],
+      skills: [{ nameRu: 'Стрельба из автомата/ПП', base: 11 }, { nameRu: 'Тяжелое оружие', base: 10 }, { nameRu: 'Уклонение', base: 8 }, { nameRu: 'Восприятие', base: 10 }],
+      cyberware: [],
+      gear: ['2 слезоточивые гранаты']
+    };
+  }
+
+  if (drone.id === 'drone-eagle') {
+    return {
+      id: `drone-${drone.id}`,
+      nameRu: drone.nameRu,
+      nameEn: 'Savannah Eagle Drone',
+      threatLevel: 'Drone',
+      faction: 'Городская безопасность',
+      description: drone.description,
+      stats: commonStats,
+      hpMax: drone.hp,
+      headSp: drone.sp,
+      bodySp: drone.sp,
+      armorName: 'Кевларовый корпус (SP 7)',
+      weapons: [
+        {
+          id: 'w-dr-eagle-1',
+          name: 'Тактический ПП',
+          category: 'SMG',
+          damage: '3d6',
+          standardRof: 1,
+          magCapacity: 30,
+          currentAmmo: 30,
+          ammoType: 'Стандарт'
+        }
+      ],
+      skills: [{ nameRu: 'Стрельба из автомата/ПП', base: 10 }, { nameRu: 'Уклонение', base: 10 }, { nameRu: 'Восприятие', base: 11 }],
+      cyberware: [],
+      gear: ['Термооптический камуфляж (СЛ 17 Восприятия)', 'Акустический визгун']
+    };
+  }
+
+  // drone-graf3 and any fallback
+  return {
+    id: `drone-${drone.id}`,
+    nameRu: drone.nameRu,
+    nameEn: 'GRAF3 Heavy Giraffe Robot',
+    threatLevel: 'Drone',
+    faction: 'Строительные корпорации',
+    description: drone.description,
+    stats: { ...commonStats, BODY: 8 },
+    hpMax: drone.hp,
+    headSp: drone.sp,
+    bodySp: drone.sp,
+    armorName: 'Усиленная пром-броня (SP 11)',
+    weapons: [
+      {
+        id: 'w-dr-graf-1',
+        name: 'Гидравлический манипулятор-таран',
+        category: 'Very Heavy Melee Weapon',
+        damage: '4d6',
+        standardRof: 1,
+        magCapacity: 1,
+        currentAmmo: 1,
+        ammoType: 'Ближний бой',
+        armorPenetration: 'half'
+      }
+    ],
+    skills: [{ nameRu: 'Холодное оружие', base: 10 }, { nameRu: 'Драка', base: 10 }, { nameRu: 'Восприятие', base: 6 }],
+    cyberware: [],
+    gear: ['Промышленный манипулятор']
+  };
+}
 
 // Traps Catalog
 export interface TrapData {

@@ -5,9 +5,7 @@ import {
   Plus, 
   Trash2, 
   Heart, 
-  Shield, 
   Eye, 
-  Sparkles, 
   Swords, 
   RefreshCw, 
   FileText, 
@@ -64,6 +62,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [humanity, setHumanity] = useState<number>(50);
   const [luck, setLuck] = useState<number>(5);
   const [hpMax, setHpMax] = useState<number>(45);
+  const [hpCurrent, setHpCurrent] = useState<number>(45);
   const [headSp, setHeadSp] = useState<number>(11);
   const [bodySp, setBodySp] = useState<number>(11);
   const [passivePerception, setPassivePerception] = useState<number>(13);
@@ -85,6 +84,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setHumanity(50);
     setLuck(5);
     setHpMax(45);
+    setHpCurrent(45);
     setHeadSp(11);
     setBodySp(11);
     setPassivePerception(13);
@@ -108,6 +108,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setHumanity(member.humanity ?? 50);
     setLuck(member.luckMax);
     setHpMax(member.hpMax);
+    setHpCurrent(member.hpCurrent);
     setHeadSp(member.headSpMax);
     setBodySp(member.bodySpMax);
     setPassivePerception(member.passivePerception);
@@ -157,7 +158,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         luckMax: luck,
         luckCurrent: Math.min(m.luckCurrent, luck),
         hpMax,
-        hpCurrent: Math.min(m.hpCurrent, hpMax),
+        hpCurrent: Math.max(0, Math.min(hpCurrent, hpMax)),
         headSp: Math.min(m.headSp, headSp),
         headSpMax: headSp,
         bodySp: Math.min(m.bodySp, bodySp),
@@ -174,7 +175,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         handle: handle.trim() || name.trim(),
         role,
         hpMax,
-        hpCurrent: hpMax,
+        hpCurrent: Math.max(0, Math.min(hpCurrent, hpMax)),
         headSp,
         headSpMax: headSp,
         bodySp,
@@ -381,7 +382,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
               {/* Core Stats Bar */}
               <label className="flex gap-2 text-xs text-zinc-400">
-                <input type="checkbox" checked={member.isStabilized ?? false} disabled={member.hpCurrent <= 0 || member.isDead}
+                <input type="checkbox" checked={member.isStabilized ?? false} disabled={member.isDead}
                   onChange={e => setParty(prev => prev.map(p => p.id === member.id ? { ...p, isStabilized: e.target.checked } : p))} />
                 Стабилизирован (после успешной медицинской проверки)
               </label>
@@ -419,7 +420,36 @@ export const PartyView: React.FC<PartyViewProps> = ({
                     <Heart className="w-3.5 h-3.5 text-red-500" />
                     <span>Здоровье (HP):</span>
                   </span>
-                  <strong className="text-white">{member.hpCurrent} / {member.hpMax}</strong>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setParty(prev => prev.map(p => p.id === member.id ? { ...p, hpCurrent: Math.max(0, p.hpCurrent - 1) } : p))}
+                      className="w-5 h-5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs flex items-center justify-center font-bold"
+                      title="-1 HP"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min="0"
+                      max={member.hpMax}
+                      value={member.hpCurrent}
+                      onChange={(e) => {
+                        const val = Math.max(0, Math.min(member.hpMax, parseInt(e.target.value) || 0));
+                        setParty(prev => prev.map(p => p.id === member.id ? { ...p, hpCurrent: val } : p));
+                      }}
+                      className="w-12 bg-zinc-950 border border-zinc-700 rounded text-center text-white font-orbitron font-bold text-xs py-0.5 outline-none focus:border-red-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setParty(prev => prev.map(p => p.id === member.id ? { ...p, hpCurrent: Math.min(member.hpMax, p.hpCurrent + 1) } : p))}
+                      className="w-5 h-5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs flex items-center justify-center font-bold"
+                      title="+1 HP"
+                    >
+                      +
+                    </button>
+                    <span className="text-zinc-400 font-orbitron font-bold text-xs">/ {member.hpMax}</span>
+                  </div>
                 </div>
 
                 <div className="w-full bg-zinc-950 rounded-full h-2 overflow-hidden border border-zinc-800">
@@ -649,16 +679,16 @@ export const PartyView: React.FC<PartyViewProps> = ({
             </div>
 
             {/* Health & Perception */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-zinc-950 p-3 rounded border border-zinc-800">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-zinc-950 p-3 rounded border border-zinc-800">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-zinc-400 text-[10px] uppercase">Максимальное здоровье (HP)</label>
+                  <label className="text-zinc-400 text-[10px] uppercase">Макс. HP</label>
                   <button
                     type="button"
                     onClick={handleAutoCalcHp}
                     className="text-[10px] text-cyan-400 hover:text-cyan-300 underline"
                   >
-                    Авторасчет (ТЕЛО+ВОЛЯ)
+                    Авторасчет
                   </button>
                 </div>
                 <input
@@ -670,7 +700,19 @@ export const PartyView: React.FC<PartyViewProps> = ({
               </div>
 
               <div>
-                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">База Восприятия (ИНТ + Навык)</label>
+                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">Текущее HP</label>
+                <input
+                  type="number"
+                  min="0"
+                  max={hpMax}
+                  value={hpCurrent}
+                  onChange={(e) => setHpCurrent(Math.max(0, Math.min(hpMax, parseInt(e.target.value) || 0)))}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1 text-emerald-400 font-orbitron font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-400 block mb-1 uppercase text-[10px]">База Восприятия</label>
                 <input
                   type="number"
                   value={passivePerception}

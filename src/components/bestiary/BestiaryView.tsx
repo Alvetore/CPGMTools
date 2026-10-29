@@ -5,17 +5,12 @@ import {
   Plus, 
   Sparkles, 
   Swords, 
-  Crosshair, 
   Shield, 
   Heart, 
-  Skull,
-  Zap,
-  Tag,
-  Trash2,
+  Trash2, 
   X
 } from 'lucide-react';
 import { NpcTemplate, ThreatLevel } from '../../types/bestiary';
-import { Combatant } from '../../types/combat';
 import { OFFICIAL_CPR_BESTIARY } from '../../data/bestiaryData';
 import { NIGHT_CITY_GANGS, POCKET_JUNK_TABLE } from '../../data/nightCityData';
 import { sfx } from '../../utils/audio';
@@ -81,7 +76,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
 
   const getCount = (id: string) => addCounts[id] || 1;
   const setCount = (id: string, count: number) => {
-    setAddCounts(prev => ({ ...prev, [id]: Math.max(1, count) }));
+    setAddCounts(prev => ({ ...prev, [id]: Math.min(12, Math.max(1, count)) }));
   };
 
   const handleOpenManualBuilder = (source?: NpcTemplate) => {
@@ -440,7 +435,7 @@ export const BestiaryView: React.FC<BestiaryViewProps> = ({
               <div className="space-y-1">
                 <div className="text-[10px] font-tech text-zinc-500 uppercase">Вооружение:</div>
                 {npc.weapons.map((w, idx) => (
-                  <div key={idx} className="bg-zinc-950 p-1.5 rounded border border-zinc-850 text-xs font-tech flex items-center justify-between">
+                  <div key={idx} className="bg-zinc-950 p-1.5 rounded border border-zinc-800 text-xs font-tech flex items-center justify-between">
                     <span className="text-zinc-300">{w.name}</span>
                     <strong className="text-amber-400 font-orbitron text-[11px]">{w.damage}</strong>
                   </div>

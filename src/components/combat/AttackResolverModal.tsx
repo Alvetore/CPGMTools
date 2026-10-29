@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Crosshair, Shield, Zap, Skull, Check, X, AlertTriangle, Dices, Edit3, ArrowLeftRight, Target } from 'lucide-react';
+import { Crosshair, X, AlertTriangle, Dices, Edit3, ArrowLeftRight, Target } from 'lucide-react';
 import { Combatant } from '../../types/combat';
 import { Weapon } from '../../types/character';
 import { CPR_RANGE_DV_TABLE, CPR_CRITICAL_INJURIES_HEAD, CPR_CRITICAL_INJURIES_BODY, RANGE_BANDS, RangeBand, weaponRangeKey } from '../../data/cprRules';
@@ -219,7 +219,11 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
     let dResult;
     try { dResult = rollDamageFormula(autofire ? '2d6' : activeWeapon.damage); }
     catch (error) { setAttackError(String(error)); return; }
-    if (activeWeapon.canCrit === false) dResult.isCriticalInjury = false;
+    if (activeWeapon.canCrit === false) {
+      dResult.isCriticalInjury = false;
+      dResult.bonusDamage = 0;
+      dResult.sixesCount = 0;
+    }
     if (autofire) dResult.totalDamage *= Math.min(rangeKey === 'smg' ? 3 : 4, Math.max(1, check.margin));
     setDamageRoll(dResult);
 
@@ -563,8 +567,10 @@ export const AttackResolverModal: React.FC<AttackResolverModalProps> = ({
               <input aria-label="Ситуационный модификатор" type="number" value={situationalModifier} onChange={e => { setSituationalModifier(Number(e.target.value) || 0); setAttackRoll(null); }} className="w-16 bg-zinc-900 border rounded" />
             </label>
             {canAutofire && <label className="flex gap-2"><input type="checkbox" checked={autofire} onChange={e => {
-              setAutofire(e.target.checked); setTargetLocation('body'); setAttackRoll(null);
-              setAttackerSkillBase(attackBase(currentAttacker, { ...activeWeapon, category: `Autofire ${activeWeapon.category}` }, false) ?? currentAttacker.ref + 4);
+              const nextAutofire = e.target.checked;
+              setAutofire(nextAutofire); setTargetLocation('body'); setAttackRoll(null);
+              const weaponForBase = nextAutofire ? { ...activeWeapon, category: `Autofire ${activeWeapon.category}` } : activeWeapon;
+              setAttackerSkillBase(attackBase(currentAttacker, weaponForBase, false) ?? currentAttacker.ref + 4);
             }} />Автоогонь: 10 патронов, 2d6 × перевес (максимум {rangeKey === 'smg' ? 3 : 4})</label>}
             {!isMelee && <label className="flex gap-2"><input type="checkbox" checked={dodgeBullets} disabled={cannotDodge} onChange={e => { setDodgeBullets(e.target.checked); setDefenseTotal(''); setAttackRoll(null); }} />Цель объявляет уклонение от пуль (REF8 или разрешающая способность)</label>}
             {defenseRequired && <div className="space-y-2">

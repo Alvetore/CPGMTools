@@ -1,26 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Network, 
-  Sparkles, 
   Lock, 
   FileText, 
   Sliders, 
   Skull, 
   Bot, 
-  ShieldAlert, 
-  ChevronDown, 
-  ChevronUp, 
-  Play, 
   CheckCircle2, 
-  Dices,
-  RefreshCw,
-  Edit3,
-  X,
-  AlertTriangle
+  Dices, 
+  Edit3, 
+  X
 } from 'lucide-react';
 import { NetArchitecture, NetFloor, NetNodeType } from '../../types/netrun';
-import { OFFICIAL_BLACK_ICE, DEMON_PROGRAMS } from '../../data/blackIceData';
-import { executeCPRCheck, rollD6 } from '../../utils/dice';
+import { OFFICIAL_BLACK_ICE } from '../../data/blackIceData';
+import { executeCPRCheck } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
 import { loadStoredData, saveStoredData, STORAGE_KEYS } from '../../utils/storage';
 
@@ -630,7 +623,7 @@ export const NetArchitectureView: React.FC = () => {
                 <div className="text-zinc-600 text-center py-2">Сетевых действий пока не зафиксировано</div>
               ) : (
                 runnerLog.map((log, i) => (
-                  <div key={i} className="text-zinc-300 border-b border-zinc-850 pb-1">
+                  <div key={i} className="text-zinc-300 border-b border-zinc-800 pb-1">
                     {log}
                   </div>
                 ))

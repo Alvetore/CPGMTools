@@ -47,8 +47,8 @@ export function executeCPRCheck(
   let d10Total = firstDie;
   let isCritSuccess = false;
   let isCritFail = false;
-  let explodedDie: number | undefined = manualD10?.explodedDie;
-  let botchDie: number | undefined = manualD10?.botchDie;
+  let explodedDie: number | undefined = manualD10?.explodedDie !== undefined ? Math.min(10, Math.max(1, manualD10.explodedDie)) : undefined;
+  let botchDie: number | undefined = manualD10?.botchDie !== undefined ? Math.min(10, Math.max(1, manualD10.botchDie)) : undefined;
 
   if (firstDie === 10) {
     isCritSuccess = true;

@@ -18,12 +18,10 @@ import {
   Zap,
   Eye,
   CheckCircle,
-  HelpCircle,
   Coffee,
   Car,
   Award,
   Plus,
-  Play,
   Pill,
   Brain,
   Skull,
@@ -45,13 +43,12 @@ import {
   NIGHT_CITY_ECONOMY_SERVICES,
   MERC_TIER_REWARDS,
   DRONES_CATALOG,
+  droneToNpcTemplate,
   TRAPS_CATALOG,
   FLASHBACK_LUCK_TIERS,
   STREET_INCIDENTS_D100,
   VENDING_MACHINE_TABLE,
-  VendingTableRow,
   RolledVendingResult,
-  SituationalModifier,
   StreetIncidentEvent
 } from '../../data/cprExpandedRules';
 import {
@@ -59,7 +56,6 @@ import {
   MEDTECH_PHARMACEUTICALS,
   COMBAT_CHEMICALS,
   DRUG_INTENSITY_TIERS,
-  CYBERPSYCHOSIS_STAGES,
   PSYCHOPATHY_CHECKLIST,
   INSTANT_HUMANITY_LOSS,
   LONG_TERM_HUMANITY_LOSS,
@@ -67,16 +63,15 @@ import {
   LONG_TERM_HUMANITY_GAIN,
   getCyberpsychosisStage,
   StreetDrug,
-  MedtechPharma,
   CombatChemical,
-  PsychopathyTrait,
-  HumanityEvent
+  PsychopathyTrait
 } from '../../data/cprDrugsAndCyberpsychosis';
 import { WEATHER_CONDITIONS, GIG_GENERATOR_DATA, POCKET_JUNK_TABLE } from '../../data/nightCityData';
 import { GeneratedGig, GeneratedWeather, PocketLootItem } from '../../types/generators';
 import { rollD10, rollD6, executeCPRCheck } from '../../utils/dice';
 import { sfx } from '../../utils/audio';
 import { loadStoredData, saveStoredData, STORAGE_KEYS } from '../../utils/storage';
+import { NpcTemplate } from '../../types/bestiary';
 
 type ReferenceTab = 
   | 'tables' 
@@ -92,7 +87,7 @@ type ReferenceTab =
   | 'loot';
 
 interface GMReferenceViewProps {
-  onAddNpcToCombat?: (npc: any, count: number) => void;
+  onAddNpcToCombat?: (npc: NpcTemplate, count: number) => void;
 }
 
 export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToCombat }) => {
@@ -158,7 +153,6 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
   // 12. Cyberpsychosis & Mental Trauma State
   const [calcHumanity, setCalcHumanity] = useState<number>(45);
   const [selectedTrait, setSelectedTrait] = useState<PsychopathyTrait | null>(null);
-  const [manualTraitD10, setManualTraitD10] = useState<number>(1);
   const [humanityEventsTab, setHumanityEventsTab] = useState<'instant_loss' | 'longterm_loss' | 'instant_gain' | 'longterm_gain'>('instant_loss');
   const [rolledHumanityResult, setRolledHumanityResult] = useState<{
     tierTitle: string;
@@ -242,12 +236,30 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
   };
 
   // Roll Street Incident
-  const handleRollIncident = () => {
+  const handleRollIncident = (manualD100?: number) => {
     sfx.playDiceRoll();
     const filtered = STREET_INCIDENTS_D100.filter(inc => 
       incidentTimeFilter === 'all' || inc.timeOfDay === 'any' || inc.timeOfDay === incidentTimeFilter
     );
-    const item = filtered[Math.floor(Math.random() * filtered.length)] || STREET_INCIDENTS_D100[0];
+    if (filtered.length === 0) return;
+
+    let item: StreetIncidentEvent;
+    if (manualD100 !== undefined) {
+      const d100 = Math.min(100, Math.max(1, manualD100));
+      item = filtered.find(inc => d100 >= inc.rollMin && d100 <= inc.rollMax) || filtered[0];
+    } else {
+      const totalWeight = filtered.reduce((sum, inc) => sum + (inc.rollMax - inc.rollMin + 1), 0);
+      let rand = Math.floor(Math.random() * totalWeight);
+      item = filtered[0];
+      for (const inc of filtered) {
+        const span = inc.rollMax - inc.rollMin + 1;
+        if (rand < span) {
+          item = inc;
+          break;
+        }
+        rand -= span;
+      }
+    }
     setCurrentIncident(item);
   };
 
@@ -359,11 +371,13 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
   };
 
   // Pocket Loot roll
-  const handleRollPocketLoot = () => {
+  const handleRollPocketLoot = (manualD100?: number) => {
     sfx.playDiceRoll();
-    const item = POCKET_JUNK_TABLE[Math.floor(Math.random() * POCKET_JUNK_TABLE.length)];
-    setRolledLoot(item);
-    setRolledLootHistory(prev => [item, ...prev.slice(0, 9)]);
+    const d100 = manualD100 !== undefined ? Math.min(100, Math.max(1, manualD100)) : Math.floor(Math.random() * 100) + 1;
+    const item = [...POCKET_JUNK_TABLE].reverse().find(x => x.roll <= d100) || POCKET_JUNK_TABLE[0];
+    const lootResult: PocketLootItem = { ...item, roll: d100 };
+    setRolledLoot(lootResult);
+    setRolledLootHistory(prev => [lootResult, ...prev.slice(0, 9)]);
   };
 
   const filteredServices = NIGHT_CITY_ECONOMY_SERVICES.filter(srv => {
@@ -869,26 +883,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
                     <button
                       onClick={() => {
                         sfx.playHit();
-                        onAddNpcToCombat({
-                          id: `drone-${drone.id}`,
-                          nameRu: drone.nameRu,
-                          threatLevel: 'Drone',
-                          hpMax: drone.hp,
-                          headSp: drone.sp,
-                          bodySp: drone.sp,
-                          stats: { INT: 2, REF: 6, DEX: 6, TECH: 2, COOL: 1, WILL: 1, LUCK: 0, MOVE: drone.move, BODY: 4, EMP: 0 },
-                          weapons: drone.weapons.map((w, idx) => ({
-                            id: `w-dr-${idx}`,
-                            name: w,
-                            category: 'Drone Weapon',
-                            damage: '3d6',
-                            standardRof: 1,
-                            magCapacity: 30,
-                            currentAmmo: 30,
-                            ammoType: 'Стандарт'
-                          })),
-                          description: drone.description
-                        }, 1);
+                        onAddNpcToCombat(droneToNpcTemplate(drone), 1);
                         alert(`Дрон «${drone.nameRu}» отправлен в боевой трекер!`);
                       }}
                       className="mt-2 w-full py-1.5 bg-amber-600 hover:bg-amber-500 text-black font-orbitron font-bold rounded text-[11px] flex items-center justify-center gap-1.5"
@@ -963,7 +958,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
               <div className="bg-zinc-950 p-3 rounded-lg border border-red-900/60 space-y-3">
                 <h4 className="font-orbitron font-bold text-amber-400 text-xs uppercase">Быстрая проверка засады:</h4>
                 <div>
-                  <label className="text-[10px] text-zinc-500 block mb-1">Скрытность нападающего (ИНТ + Навык + d10)</label>
+                  <label className="text-[10px] text-zinc-500 block mb-1">Скрытность нападающего (ЛОВ/DEX + Навык + d10)</label>
                   <input
                     type="number"
                     value={ambushAttackerStealth}
@@ -1845,7 +1840,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
                 </select>
 
                 <button
-                  onClick={handleRollIncident}
+                  onClick={() => handleRollIncident()}
                   className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white font-orbitron font-bold text-xs rounded clip-cyber-btn shadow-md flex items-center gap-1.5"
                 >
                   <Dices className="w-4 h-4" />
@@ -2255,7 +2250,7 @@ export const GMReferenceView: React.FC<GMReferenceViewProps> = ({ onAddNpcToComb
             </div>
 
             <button
-              onClick={handleRollPocketLoot}
+              onClick={() => handleRollPocketLoot()}
               className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-orbitron font-bold text-xs rounded transition-all clip-cyber-btn shadow-md"
             >
               <Dices className="w-4 h-4 fill-current" />

@@ -112,7 +112,7 @@ export const CPR_RANGE_DV_TABLE: Record<string, WeaponRangeDVs> = {
       "7-12m": 17,
       "13-25m": 20,
       "26-50m": 25,
-      "51-100m": null,
+      "51-100m": 30,
       "101-200m": null,
       "201-400m": null,
       "401-800m": null

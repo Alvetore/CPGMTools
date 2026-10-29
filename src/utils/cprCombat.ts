@@ -1,6 +1,5 @@
 import { CriticalInjury, Weapon } from '../types/character';
 import { CPR_CRITICAL_INJURIES_BODY, CPR_CRITICAL_INJURIES_HEAD } from '../data/cprRules';
-import { rollD6 } from './dice';
 import { Combatant } from '../types/combat';
 
 export function skillBase(c: Combatant | undefined, pattern: RegExp, stat: 'ref' | 'dex'): number | undefined {

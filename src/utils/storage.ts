@@ -139,11 +139,12 @@ export function convertCharSheetToPartyMember(char: Character): PartyMember {
     char.automaticCyberwareEffects && char.cyberware?.length ? Math.max(calculatedHp, char.hpCurrent ?? 0) : calculatedHp;
 
   // Find perception skill if available
-  let perceptionBase = (char.stats?.INT ?? 6) + 2;
+  const intVal = stat('INT');
+  let perceptionBase = intVal + 2;
   if (Array.isArray(char.skills)) {
     const pSkill = char.skills.find(s => s.id === 'perception');
     if (pSkill) {
-      perceptionBase = (char.stats?.INT ?? 6) + (pSkill.level ?? 0);
+      perceptionBase = pSkill.base ?? (intVal + (pSkill.level ?? 0));
     }
   }
 
