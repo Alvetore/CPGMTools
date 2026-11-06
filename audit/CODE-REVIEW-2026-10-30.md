@@ -6,6 +6,8 @@
 
 **Что проверено:** чтение всех `src/**`, `audit/probe.cjs`, конфигурации, workflow; `npm run build`; `npm test`; `npx tsc --noEmit --noUnusedLocals --noUnusedParameters`; `npm audit`; сверка ключевых правил с `corebook.txt` и `Interface Kr45n1y v2.0.txt`; поиск мёртвого кода, обработки ошибок и граничных состояний.
 
+> **Статус на 06.11.2026:** большая часть находок F-01…F-30 закрыта в `c7df502`. Дополнительная проверка по книгам, исправления дронов/партии/хранилища и актуальные результаты — в [BOOK-VERIFICATION-2026-11-06.md](BOOK-VERIFICATION-2026-11-06.md).
+
 ---
 
 ## Краткий вывод

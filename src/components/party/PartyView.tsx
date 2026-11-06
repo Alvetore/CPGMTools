@@ -383,7 +383,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
               {/* Core Stats Bar */}
               <label className="flex gap-2 text-xs text-zinc-400">
                 <input type="checkbox" checked={member.isStabilized ?? false} disabled={member.isDead}
-                  onChange={e => setParty(prev => prev.map(p => p.id === member.id ? { ...p, isStabilized: e.target.checked } : p))} />
+                  onChange={e => setParty(prev => prev.map(p => p.id === member.id ? {
+                    ...p,
+                    isStabilized: e.target.checked,
+                    ...(e.target.checked && p.hpCurrent <= 0 ? { hpCurrent: 1, deathSavePenalties: 0 } : {})
+                  } : p))} />
                 Стабилизирован (после успешной медицинской проверки)
               </label>
               <div className="grid grid-cols-6 gap-1 bg-zinc-950 p-2 rounded border border-zinc-800 text-center font-tech text-xs">

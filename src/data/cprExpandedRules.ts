@@ -247,25 +247,27 @@ export const DRONES_CATALOG: DroneData[] = [
     description: 'Сотни жужжащих микро-дронов размером с шершня. Атакуют единой стаей, разрезая одежду и плоть.'
   },
   {
+    // Corebook p. 213, «Наземный дрон»: MOVE 4, 30 HP, Electronics/Security DV 21.
     id: 'drone-ground-ball',
     nameRu: 'Боевой наземный дрон-сфера',
     typeRu: 'Наземный колесный/сферический',
     hp: 30,
-    sp: 7,
-    move: 6,
-    weapons: ['Тяжёлый пистолет Sternmeyer (3d6)', 'Камера кругового обзора'],
-    hackDv: 17,
+    sp: 0,
+    move: 4,
+    weapons: ['Очень тяжёлый пистолет с 8 бронебойными патронами (4d6)', 'Камера наблюдения'],
+    hackDv: 21,
     trigger: 'Датчик движения в коридоре охраняемой зоны',
-    description: 'Быстрый бронированный шар, раскладывающийся в боевую платформу при обнаружении нарушителя.'
+    description: 'Бронированный шар, раскладывающийся в боевую платформу при обнаружении нарушителя.'
   },
   {
+    // Corebook p. 213, «Шагающий дрон-паук»: MOVE 4, 40 HP, Electronics/Security DV 21.
     id: 'drone-spider',
     nameRu: 'Боевой дрон-паук Militech',
     typeRu: 'Тяжелый шагоход',
     hp: 40,
-    sp: 11,
-    move: 5,
-    weapons: ['Гранатомёт с 2 слезоточивыми гранатами', 'Спаренный тактический ПП (3d6)'],
+    sp: 0,
+    move: 4,
+    weapons: ['Гранатомёт с 2 слезоточивыми гранатами', 'Тяжёлый ПП (40 патронов, 3d6)'],
     hackDv: 21,
     trigger: 'Тревога охранного контура здания',
     description: 'Четвероногий тяжелый дрон для зачистки коридоров и подавления бунтов.'
@@ -343,22 +345,22 @@ export function droneToNpcTemplate(drone: DroneData): NpcTemplate {
       hpMax: drone.hp,
       headSp: drone.sp,
       bodySp: drone.sp,
-      armorName: 'Легкая броня дрона (SP 7)',
+      armorName: 'Без брони (SP 0)',
       weapons: [
         {
           id: 'w-dr-ball-1',
-          name: 'Тяжёлый пистолет Sternmeyer',
-          category: 'Heavy Pistol',
-          damage: '3d6',
-          standardRof: 2,
+          name: 'Очень тяжёлый пистолет (AP)',
+          category: 'Very Heavy Pistol',
+          damage: '4d6',
+          standardRof: 1,
           magCapacity: 8,
           currentAmmo: 8,
-          ammoType: 'Стандарт'
+          ammoType: 'Бронебойные'
         }
       ],
-      skills: [{ nameRu: 'Стрельба из пистолета', base: 10 }, { nameRu: 'Уклонение', base: 8 }, { nameRu: 'Восприятие', base: 8 }],
+      skills: [{ nameRu: 'Короткоствольное оружие', base: 10 }, { nameRu: 'Уклонение', base: 8 }, { nameRu: 'Восприятие', base: 8 }],
       cyberware: [],
-      gear: ['Камера кругового обзора']
+      gear: ['Камера наблюдения']
     };
   }
 
@@ -374,30 +376,30 @@ export function droneToNpcTemplate(drone: DroneData): NpcTemplate {
       hpMax: drone.hp,
       headSp: drone.sp,
       bodySp: drone.sp,
-      armorName: 'Армейская броня Militech (SP 11)',
+      armorName: 'Без брони (SP 0)',
       weapons: [
         {
           id: 'w-dr-spider-1',
-          name: 'Спаренный тактический ПП',
+          name: 'Тяжёлый ПП',
           category: 'SMG',
           damage: '3d6',
           standardRof: 1,
-          magCapacity: 30,
-          currentAmmo: 30,
+          magCapacity: 40,
+          currentAmmo: 40,
           ammoType: 'Стандарт'
         },
         {
           id: 'w-dr-spider-2',
           name: 'Гранатомёт (слезоточивый газ)',
           category: 'Grenade Launcher',
-          damage: '0d6',
+          damage: '',
           standardRof: 1,
           magCapacity: 2,
           currentAmmo: 2,
           ammoType: 'Слезоточивый газ'
         }
       ],
-      skills: [{ nameRu: 'Стрельба из автомата/ПП', base: 11 }, { nameRu: 'Тяжелое оружие', base: 10 }, { nameRu: 'Уклонение', base: 8 }, { nameRu: 'Восприятие', base: 10 }],
+      skills: [{ nameRu: 'Короткоствольное оружие', base: 11 }, { nameRu: 'Тяжелое оружие', base: 10 }, { nameRu: 'Уклонение', base: 8 }, { nameRu: 'Восприятие', base: 10 }],
       cyberware: [],
       gear: ['2 слезоточивые гранаты']
     };
@@ -428,7 +430,7 @@ export function droneToNpcTemplate(drone: DroneData): NpcTemplate {
           ammoType: 'Стандарт'
         }
       ],
-      skills: [{ nameRu: 'Стрельба из автомата/ПП', base: 10 }, { nameRu: 'Уклонение', base: 10 }, { nameRu: 'Восприятие', base: 11 }],
+      skills: [{ nameRu: 'Короткоствольное оружие', base: 10 }, { nameRu: 'Уклонение', base: 10 }, { nameRu: 'Восприятие', base: 11 }],
       cyberware: [],
       gear: ['Термооптический камуфляж (СЛ 17 Восприятия)', 'Акустический визгун']
     };

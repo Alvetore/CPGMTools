@@ -23,18 +23,31 @@ const STORAGE_KEYS = {
 // migration and retained for recovery; a failed setItem cannot leave a partial restore.
 const DATABASE_KEY = 'cpgm_database_v2';
 const pendingWrites: Record<string, unknown> = {};
-function readDatabase(): Record<string, unknown> {
+let invalidKeys = new Set<string>();
+
+// Strict reads are used for exports/restores. Loads and saves may proceed with
+// other keys when one section is malformed, so a single bad subsystem cannot
+// block the whole notebook. The malformed value is preserved for recovery.
+function readDatabase(strict = true): Record<string, unknown> {
+  invalidKeys = new Set<string>();
   const raw = localStorage.getItem(DATABASE_KEY);
   if (raw !== null) {
     const data: unknown = JSON.parse(raw);
     if (!isObject(data)) throw new Error('Повреждена база CPGMTools. Восстановите резервную копию.');
-    for (const [key, value] of Object.entries(data)) if (Object.values(STORAGE_KEYS).includes(key)) validateStored(key, value);
+    for (const [key, value] of Object.entries(data)) {
+      if (!Object.values(STORAGE_KEYS).includes(key)) continue;
+      try { validateStored(key, value); }
+      catch (error) { invalidKeys.add(key); if (strict) throw error; }
+    }
     return data;
   }
   const data: Record<string, unknown> = {};
   for (const key of Object.values(STORAGE_KEYS)) {
     const legacy = localStorage.getItem(key);
-    if (legacy !== null) { data[key] = JSON.parse(legacy); validateStored(key, data[key]); }
+    if (legacy !== null) {
+      try { data[key] = JSON.parse(legacy); validateStored(key, data[key]); }
+      catch (error) { invalidKeys.add(key); if (strict) throw error; }
+    }
   }
   return data;
 }
@@ -48,7 +61,10 @@ function reportStorageError(error: unknown) {
 
 export function loadStoredData<T>(key: string, fallback: T): T {
   try {
-    const data = { ...readDatabase(), ...pendingWrites };
+    const data = { ...readDatabase(false), ...pendingWrites };
+    if (invalidKeys.has(key) && !(key in pendingWrites)) {
+      throw new Error(`Повреждён раздел ${key}. Он сохранён для восстановления; используются значения по умолчанию.`);
+    }
     if (!(key in data)) return fallback;
     const value = data[key] as T;
     if (key === STORAGE_KEYS.COMBAT) {
@@ -67,7 +83,7 @@ export function saveStoredData<T>(key: string, data: T): boolean {
   try {
     validateStored(key, data);
     pendingWrites[key] = data;
-    const database = readDatabase();
+    const database = readDatabase(false);
     localStorage.setItem(DATABASE_KEY, JSON.stringify({ ...database, ...pendingWrites }));
     for (const pending of Object.keys(pendingWrites)) delete pendingWrites[pending];
     reportStorageError('');
@@ -87,11 +103,7 @@ export function restoreGmDatabase(value: unknown): void {
   for (const [field,key] of Object.entries(fields)) if (field in value) { validateStored(key,value[field]); updates[key] = value[field]; }
   if (!Object.keys(updates).length) throw new Error('Резервная копия не содержит данных.');
   // Valid data can repair a corrupt key only when it is actually supplied in the backup.
-  const raw = localStorage.getItem(DATABASE_KEY);
-  const old = raw ? JSON.parse(raw) : Object.fromEntries(Object.values(STORAGE_KEYS).flatMap(key => {
-    const entry = localStorage.getItem(key); return entry === null ? [] : [[key, JSON.parse(entry)]];
-  }));
-  if (!isObject(old)) throw new Error('Повреждена база. Сохраните её вручную перед сбросом.');
+  const old = readDatabase(false);
   const current = { ...old, ...pendingWrites, ...updates };
   for (const key of Object.values(STORAGE_KEYS)) if (key in current) validateStored(key,current[key]);
   localStorage.setItem(DATABASE_KEY, JSON.stringify(current));

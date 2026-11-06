@@ -430,6 +430,16 @@ check('R14: PIT can target an adjacent grid square', true, () => {
   o.set('maneuverMode', 'manual'); o.set('maneuverManualD10', 9); o.render();
   click(o, 'Применить ручной бросок манёвра'); return o.get('vehicles')[1].isPitSuffering;
 });
+check('R14: ram requires the same grid square', true, () => {
+  const o = mount('src/components/chase/ChaseTrackerView.tsx', 'ChaseTrackerView');
+  o.set('vehicles', o.get('vehicles').map(v => ({ ...v, gridSquare: 3 })));
+  const attacker = o.get('vehicles')[0], target = o.get('vehicles')[1];
+  o.set('maneuverTargetId', target.id);
+  o.set('activeManeuverModal', { vehicle: attacker, maneuverId: 'm-ram', title: 'test', dv: 17 });
+  o.set('maneuverMode', 'manual'); o.set('maneuverManualD10', 9); o.render();
+  click(o, 'Применить ручной бросок манёвра');
+  return o.get('vehicles').find(v => v.id === attacker.id).hasActed;
+});
 check('R14: Pull in Close expires at the end of the round', false, () => {
   const o = mount('src/components/chase/ChaseTrackerView.tsx', 'ChaseTrackerView');
   o.set('vehicles', o.get('vehicles').map(v => ({ ...v, isPulledClose: true }))); o.render();
@@ -469,6 +479,13 @@ check('storage: reject whole malformed restore before any write', true, () => {
   persist.saveStoredData('cpgm_party',[]); const before = storage.get('cpgm_database_v2');
   try { persist.restoreGmDatabase({ exportVersion:'2.0.0', party:[], networks:[{}] }); } catch {}
   return storage.get('cpgm_database_v2') === before;
+});
+check('storage: one corrupt section does not block saving another', [true, true, 'preserved'], () => {
+  storage.set('cpgm_database_v2', JSON.stringify({ cpgm_gigs: [{ bad: true }], cpgm_party: [] }));
+  const saved = persist.saveStoredData('cpgm_party', []);
+  const loaded = persist.loadStoredData('cpgm_party', null);
+  const raw = JSON.parse(storage.get('cpgm_database_v2'));
+  return [saved, Array.isArray(loaded), JSON.stringify(raw.cpgm_gigs) === '[{"bad":true}]' ? 'preserved' : 'lost'];
 });
 check('storage: quota failure retains persistent value and pending sections for retry', [false,true,7,2], () => {
   const o = mount('src/components/chase/ChaseTrackerView.tsx','ChaseTrackerView');
@@ -734,6 +751,13 @@ check('charsheet: party card shows the selected profile and explicit special-eff
   return [nodes(o.tree,n=>n.type==='strong'&&textOf(n)==='6d6').length===1,
     nodes(o.tree,n=>n.type==='strong'&&textOf(n)==='Спецэффект — вручную').length,party[0].emp];
 });
+check('party: stabilizing at 0 HP restores 1 HP and clears the death-save penalty', [true,1,0], () => {
+  let party=persist.importPartyMembers({...cyberSheet,hpCurrent:0,deathSavePenalties:2});
+  const o=mount('src/components/party/PartyView.tsx','PartyView',{party,setParty:f=>party=f(party)});
+  const checkbox=nodes(o.tree,n=>n.type==='input'&&n.props.type==='checkbox')[0];
+  checkbox.props.onChange({target:{checked:true}});
+  return [party[0].isStabilized,party[0].hpCurrent,party[0].deathSavePenalties];
+});
 
 const currentSheet = JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/charsheet-current.json'),'utf8'));
 check('current sheet: backpack, spare armor, vehicles and relationships survive both import entry points and backup restore', true, () => {
@@ -833,6 +857,50 @@ check('audit: F-22 Manual dice clamping for exploded and botch die', [20, -9], (
   const high = dice.executeCPRCheck(10, 0, 0, undefined, { firstDie: 10, explodedDie: 99 });
   const low = dice.executeCPRCheck(10, 0, 0, undefined, { firstDie: 1, botchDie: 99 });
   return [high.d10Total, low.d10Total];
+});
+check('audit: all drone templates validate and use corebook stat blocks', [true, true, [10, 11, 10], [0, 4, 21], [0, 4, 21]], () => {
+  const expanded = load('src/data/cprExpandedRules.ts');
+  const validation = load('src/utils/validation.ts');
+  const templates = expanded.DRONES_CATALOG.map(drone => expanded.droneToNpcTemplate(drone));
+  const fighter = template => ({
+    ...actor('drone-' + template.id), ref: template.stats.REF, dex: template.stats.DEX,
+    body: template.stats.BODY, move: template.stats.MOVE, skills: template.skills, weapons: template.weapons
+  });
+  const base = template => combat.attackBase(fighter(template), template.weapons[0], /melee|brawl|martial/i.test(template.weapons[0].category));
+  const ground = templates.find(t => t.id === 'drone-drone-ground-ball');
+  const spider = templates.find(t => t.id === 'drone-drone-spider');
+  const swarm = templates.find(t => t.id === 'drone-drone-swarm');
+  return [
+    validation.validBestiary(templates),
+    templates.every(t => t.weapons.every(w => validation.validWeapon(w))),
+    [base(ground), base(spider), base(swarm)],
+    [ground.headSp, ground.stats.MOVE, ground.id && expanded.DRONES_CATALOG.find(d => d.id === 'drone-ground-ball').hackDv],
+    [spider.headSp, spider.stats.MOVE, expanded.DRONES_CATALOG.find(d => d.id === 'drone-spider').hackDv]
+  ];
+});
+check('audit: bestiary spider follows corebook active security stats', [40, 4, 0, 40, 0], () => {
+  const spider = bestiary.OFFICIAL_CPR_BESTIARY.find(n => n.id === 'cpr-drone-spider');
+  return [spider.hpMax, spider.stats.MOVE, spider.headSp, spider.weapons[0].magCapacity, spider.bodySp];
+});
+check('audit: persistent conditions do not render a null duration', true, () => {
+  const t = tracker(true, [actor('a', { conditions: [{ id: 'c1', name: 'Постоянно', roundsRemaining: null }] })]);
+  const text = textOf(t.owner.tree);
+  return text.includes('(постоянно)') && !text.includes('(null');
+});
+check('audit: pocket junk uses the d100 anchors', [1, 100], () => {
+  const o = mount('src/components/reference/GMReferenceView.tsx', 'GMReferenceView');
+  o.set('subTab', 'loot'); o.render();
+  const roll = value => {
+    fixedRandom(value, () => nodes(o.tree, n => n.type === 'button' && String(n.props.onClick).includes('handleRollPocketLoot'))[0].props.onClick());
+    return o.get('rolledLoot').roll;
+  };
+  return [roll(0), roll(0.999999)];
+});
+check('audit: street incidents use range weights', 51, () => {
+  const o = mount('src/components/reference/GMReferenceView.tsx', 'GMReferenceView');
+  o.set('subTab', 'incidents'); o.set('incidentTimeFilter', 'all'); o.render();
+  fixedRandom(0.54, () => nodes(o.tree, n => n.type === 'button' && String(n.props.onClick).includes('handleRollIncident'))[0].props.onClick());
+  return o.get('currentIncident').rollMin;
 });
 
 // Optional contract check against a real current checkout; CI retains the pinned

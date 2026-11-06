@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-29T23:04:05.675Z",
+  "generatedAt": "2026-11-06T17:03:45.354Z",
   "method": "actual TS/TSX functions and synchronous component-handler/effect harness; no browser or real storage",
-  "passed": 121,
+  "passed": 129,
   "failed": 0,
   "harnessErrors": 0,
   "results": [
@@ -578,6 +578,12 @@
       "actual": true
     },
     {
+      "id": "R14: ram requires the same grid square",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
       "id": "R14: Pull in Close expires at the end of the round",
       "passed": true,
       "expected": false,
@@ -626,6 +632,20 @@
       "passed": true,
       "expected": true,
       "actual": true
+    },
+    {
+      "id": "storage: one corrupt section does not block saving another",
+      "passed": true,
+      "expected": [
+        true,
+        true,
+        "preserved"
+      ],
+      "actual": [
+        true,
+        true,
+        "preserved"
+      ]
     },
     {
       "id": "storage: quota failure retains persistent value and pending sections for retry",
@@ -1124,6 +1144,20 @@
       ]
     },
     {
+      "id": "party: stabilizing at 0 HP restores 1 HP and clears the death-save penalty",
+      "passed": true,
+      "expected": [
+        true,
+        1,
+        0
+      ],
+      "actual": [
+        true,
+        1,
+        0
+      ]
+    },
+    {
       "id": "current sheet: backpack, spare armor, vehicles and relationships survive both import entry points and backup restore",
       "passed": true,
       "expected": true,
@@ -1294,6 +1328,90 @@
         20,
         -9
       ]
+    },
+    {
+      "id": "audit: all drone templates validate and use corebook stat blocks",
+      "passed": true,
+      "expected": [
+        true,
+        true,
+        [
+          10,
+          11,
+          10
+        ],
+        [
+          0,
+          4,
+          21
+        ],
+        [
+          0,
+          4,
+          21
+        ]
+      ],
+      "actual": [
+        true,
+        true,
+        [
+          10,
+          11,
+          10
+        ],
+        [
+          0,
+          4,
+          21
+        ],
+        [
+          0,
+          4,
+          21
+        ]
+      ]
+    },
+    {
+      "id": "audit: bestiary spider follows corebook active security stats",
+      "passed": true,
+      "expected": [
+        40,
+        4,
+        0,
+        40,
+        0
+      ],
+      "actual": [
+        40,
+        4,
+        0,
+        40,
+        0
+      ]
+    },
+    {
+      "id": "audit: persistent conditions do not render a null duration",
+      "passed": true,
+      "expected": true,
+      "actual": true
+    },
+    {
+      "id": "audit: pocket junk uses the d100 anchors",
+      "passed": true,
+      "expected": [
+        1,
+        100
+      ],
+      "actual": [
+        1,
+        100
+      ]
+    },
+    {
+      "id": "audit: street incidents use range weights",
+      "passed": true,
+      "expected": 51,
+      "actual": 51
     }
   ]
 }

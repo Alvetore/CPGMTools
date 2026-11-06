@@ -310,26 +310,26 @@ export const OFFICIAL_CPR_BESTIARY: NpcTemplate[] = [
   },
   {
     id: 'cpr-drone-spider',
-    nameRu: 'Боевой шагоход-паук (Combat Spider Drone)',
-    nameEn: 'Combat Spider Drone',
+    nameRu: 'Шагающий дрон-паук (Spider Walking Drone)',
+    nameEn: 'Spider Walking Drone',
     threatLevel: 'Drone',
     faction: 'Автоматическая охрана',
-    description: 'Четырёхногий автономный дрон Militech с автоматическим пулемётом и сенсорами движения.',
-    stats: { INT: 1, REF: 7, DEX: 6, TECH: 1, COOL: 1, WILL: 1, LUCK: 0, MOVE: 6, BODY: 8, EMP: 0 },
-    hpMax: 30,
-    headSp: 11,
-    bodySp: 11,
-    armorName: 'Композитная обшивка дрона (SP 11)',
+    description: 'Четырёхногий автономный дрон Militech с тяжёлым ПП и сенсорами движения (corebook p. 213).',
+    stats: { INT: 1, REF: 7, DEX: 6, TECH: 1, COOL: 1, WILL: 1, LUCK: 0, MOVE: 4, BODY: 8, EMP: 0 },
+    hpMax: 40,
+    headSp: 0,
+    bodySp: 0,
+    armorName: 'Без брони (SP 0)',
     weapons: [
       {
         id: 'w-dr-smg',
-        name: 'Встроенный спаренный ПП',
+        name: 'Тяжёлый ПП',
         category: 'SMG',
         damage: '3d6',
         standardRof: 1,
-        magCapacity: 60,
-        currentAmmo: 60,
-        ammoType: 'Пистолетные'
+        magCapacity: 40,
+        currentAmmo: 40,
+        ammoType: 'Стандартные'
       }
     ],
     skills: [

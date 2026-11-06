@@ -944,9 +944,9 @@ export const CombatTrackerView: React.FC<CombatTrackerViewProps> = ({
                         className="text-[11px] font-tech px-2 py-0.5 rounded bg-amber-950/80 border border-amber-700/80 text-amber-200 flex items-center gap-1"
                       >
                         <span>⏳ {cond.name}</span>
-                        {cond.roundsRemaining !== undefined && (
-                          <strong className="text-amber-400">({cond.roundsRemaining} раунд.)</strong>
-                        )}
+                        <strong className="text-amber-400">
+                          {typeof cond.roundsRemaining === 'number' ? `(${cond.roundsRemaining} раунд.)` : '(постоянно)'}
+                        </strong>
                       </span>
                     ))}
                   </div>

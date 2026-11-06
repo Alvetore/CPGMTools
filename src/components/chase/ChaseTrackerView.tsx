@@ -265,10 +265,10 @@ export const ChaseTrackerView: React.FC = () => {
         <div className="flex items-center justify-between text-xs font-tech">
           <span className="text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
             <Gauge className="w-4 h-4 text-amber-400" />
-            <span>Сетка погони (Дистанции между участниками)</span>
+            <span>Сетка погони (координаты; полосы — от заднего ТС)</span>
           </span>
           <span className="text-zinc-500 hidden sm:inline">
-            Побег: расстояние до всех преследователей больше 8 клеток
+            Дистанция между двумя ТС = разница клеток. Побег: больше 8 клеток до всех преследователей
           </span>
         </div>
 
